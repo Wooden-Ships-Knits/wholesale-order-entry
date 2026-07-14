@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wholesale Order Portal</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Inter,sans-serif;
+    background:#f5f7fb;
+    color:#1e293b;
+}
+
+.container{
+    width:1200px;
+    max-width:95%;
+    margin:40px auto;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+}
+
+.header h1{
+    font-size:32px;
+}
+
+.user{
+    text-align:right;
+}
+
+.user strong{
+    display:block;
+}
+
+.notice{
+    background:#eef7ff;
+    border:1px solid #bfdcff;
+    color:#24598f;
+    padding:18px;
+    border-radius:10px;
+    margin-bottom:25px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:25px;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    padding:25px;
+    box-shadow:0 10px 30px rgba(0,0,0,.05);
+    margin-bottom:25px;
+}
+
+.card h2{
+    margin-bottom:20px;
+    font-size:20px;
+}
+
+label{
+    display:block;
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:8px;
+}
+
+input,select,textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #d9dfe7;
+    border-radius:8px;
+    font-size:15px;
+}
+
+textarea{
+    resize:vertical;
+}
+
+.readonly{
+    background:#f8fafc;
+}
+
+.row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-bottom:18px;
+}
+
+.badge{
+    display:inline-block;
+    padding:6px 12px;
+    background:#dcfce7;
+    color:#15803d;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+}
+
+.info{
+    background:#f8fafc;
+    border-radius:8px;
+    padding:18px;
+    line-height:1.7;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#f8fafc;
+}
+
+th,td{
+    padding:14px;
+    border-bottom:1px solid #ececec;
+    text-align:left;
+}
+
+.summary-item{
+    display:flex;
+    justify-content:space-between;
+    margin:14px 0;
+}
+
+.total{
+    font-size:24px;
+    font-weight:bold;
+    color:#0f172a;
+}
+
+button{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:20px;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.checkbox{
+    display:flex;
+    gap:10px;
+    margin:15px 0;
+}
+
+.checkbox input{
+    width:auto;
+}
+
+.security{
+    font-size:13px;
+    color:#64748b;
+    margin-top:15px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+
+<div>
+<h1>New Wholesale Order</h1>
+<p>Create your next sweater order</p>
+</div>
+
+<div class="user">
+<strong>Jane Smith</strong>
+Sunshine Boutique
+</div>
+
+</div>
+
+<div class="notice">
+
+Your account information is securely retrieved from Salesforce.
+Only your authorized account information is displayed.
+Sensitive information cannot be viewed or modified by other customers.
+
+</div>
+
+<div class="grid">
+
+<div>
+
+<div class="card">
+
+<h2>Select Store</h2>
+
+<label>Store Account</label>
+
+<input
+type="text"
+placeholder="Search your store..."
+list="stores">
+
+<datalist id="stores">
+<option>Sunshine Boutique</option>
+<option>Sunshine Boutique Downtown</option>
+<option>Sunshine Boutique West</option>
+</datalist>
+
+<br><br>
+
+<span class="badge">
+✔ Verified Wholesale Customer
+</span>
+
+</div>
+
+<div class="card">
+
+<h2>Account Information</h2>
+
+<div class="row">
+
+<div>
+<label>Store Name</label>
+<input class="readonly" value="Sunshine Boutique" readonly>
+</div>
+
+<div>
+<label>Buyer</label>
+<input class="readonly" value="Jane Smith" readonly>
+</div>
+
+</div>
+
+<div class="row">
+
+<div>
+<label>Email</label>
+<input class="readonly" value="jane@sunshine.com" readonly>
+</div>
+
+<div>
+<label>Phone</label>
+<input class="readonly" value="(555) 123-4567" readonly>
+</div>
+
+</div>
+
+<div class="row">
+
+<div>
+<label>Payment Terms</label>
+<input class="readonly" value="NET 30" readonly>
+</div>
+
+<div>
+<label>Tax Status</label>
+<input class="readonly" value="Resale Certificate On File" readonly>
+</div>
+
+</div>
+
+<label>Shipping Address</label>
+
+<textarea class="readonly" rows="3" readonly>
+123 Main Street
+Los Angeles, CA 90001
+</textarea>
+
+<p class="security">
+🔒 Account information is read-only.
+Please contact your sales representative if updates are needed.
+</p>
+
+</div>
+
+<div class="card">
+
+</div>
+
+<div class="card">
+
+<h2>Products</h2>
+
+<table>
+
+<tr>
+<th>Code #</th>
+<th>Style</th>
+<th>Color</th>
+<th>Size</th>
+<th>Qty</th>
+<th>Total</th>
+</tr>
+
+<tr>
+<th>#741</th>
+<td>THEO CHUNKY CREW COTTON</td>
+<td>Navy</td>
+<td>X/S</td>
+<td><input type="number" value="12"></td>
+<td>$360</td>
+</tr>
+
+<tr>
+<th>#250</th>
+<td>SUNSHINE CARDI COTTON</td>
+<td>Yellow/Orange</td>
+<td>S/M</td>
+<td><input type="number" value="10"></td>
+<td>$280</td>
+</tr>
+
+</table>
+
+</div>
+
+</div>
+
+<div>
+
+<div class="card">
+
+<h2>Order Summary</h2>
+
+<div class="summary-item">
+<span>Store</span>
+<strong>Sunshine Boutique</strong>
+</div>
+
+<div class="summary-item">
+<span>Payment Terms</span>
+<strong>NET 30</strong>
+</div>
+
+<div class="summary-item">
+<span>Total Items</span>
+<strong>22</strong>
+</div>
+
+<div class="summary-item">
+<span>Subtotal</span>
+<strong>$640</strong>
+</div>
+
+<hr style="margin:20px 0;">
+
+<div class="summary-item total">
+<span>Total</span>
+<span>$640</span>
+</div>
+
+<div class="checkbox">
+
+<input type="checkbox">
+
+<label>
+I confirm this purchase order is accurate.
+</label>
+
+</div>
+
+<div class="checkbox">
+
+<input type="checkbox">
+
+<label>
+I agree to the wholesale ordering terms.
+</label>
+
+</div>
+
+<button>
+
+Submit Order
+
+</button>
+
+<p class="security">
+
+Orders are securely transmitted and linked to your Salesforce account.
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
