@@ -1,0 +1,251 @@
+import { useEffect, useMemo, useState } from 'react'
+import { getSeasons, getProducts, submitOrder } from './api'
+import { computeTotals, validateMinimums, catalogKey } from './validation'
+import OrderHeader from './components/OrderHeader'
+import BuyerLookup from './components/BuyerLookup'
+import Addresses from './components/Addresses'
+import ProductLines from './components/ProductLines'
+import Payment from './components/Payment'
+import TaxExemption from './components/TaxExemption'
+import TermsSignature from './components/TermsSignature'
+import InternalUse from './components/InternalUse'
+import Footer from './components/Footer'
+
+const today = () => new Date().toISOString().slice(0, 10)
+
+let lineSeq = 0
+const makeLine = () => ({ id: ++lineSeq, query: '', styleName: '', color: '', qty: {} })
+const INITIAL_LINES = 3
+
+export default function App() {
+  const [seasons, setSeasons] = useState([])
+  const [season, setSeason] = useState('')
+  const [rows, setRows] = useState([])
+  const [loadingProducts, setLoadingProducts] = useState(false)
+  const [loadError, setLoadError] = useState('')
+
+  const [lines, setLines] = useState(() => Array.from({ length: INITIAL_LINES }, makeLine))
+  const [form, setForm] = useState({
+    orderDate: today(),
+    partShipOk: null,
+    sfAccountId: null,
+  })
+  const [billTo, setBillToState] = useState({ buyerName: '', street: '', cityState: '', zip: '', tel: '', fax: '' })
+  const [shipTo, setShipToState] = useState({ email: '', street: '', cityState: '', zip: '', resaleTaxId: '' })
+  const [payment, setPaymentState] = useState({ cardNumber: '', cardName: '', expDate: '', cvv: '' })
+  const [tax, setTaxState] = useState({ repNotified: false, sendingCert: false })
+  const [certOnFile, setCertOnFile] = useState(false)
+  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false })
+  const [internal, setInternalState] = useState({
+    newOrReorder: '',
+    accountStatus: '',
+    campaign: '',
+    campaignOther: '',
+    poNumber: '',
+    rep: '',
+    orderWrittenBy: '',
+    split: null,
+    splitWith: '',
+  })
+  const [submitNotice, setSubmitNotice] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(null)
+
+  useEffect(() => {
+    getSeasons()
+      .then((d) => setSeasons(d.seasons))
+      .catch((e) => setLoadError(`Could not load collections: ${e.message}`))
+  }, [])
+
+  function onSeasonChange(code) {
+    setSeason(code)
+    setRows([])
+    setLines(Array.from({ length: INITIAL_LINES }, makeLine))
+    if (!code) return
+    setLoadingProducts(true)
+    setLoadError('')
+    getProducts(code)
+      .then((d) => setRows(d.rows))
+      .catch((e) => setLoadError(`Could not load products: ${e.message}`))
+      .finally(() => setLoadingProducts(false))
+  }
+
+  const catalog = useMemo(() => {
+    const m = new Map()
+    for (const r of rows) m.set(catalogKey(r.styleName, r.color), r)
+    return m
+  }, [rows])
+
+  // lines resolved against the catalog (row = matched product or null)
+  const resolved = useMemo(
+    () =>
+      lines.map((l) => ({
+        ...l,
+        row: l.styleName && l.color ? catalog.get(catalogKey(l.styleName, l.color)) || null : null,
+      })),
+    [lines, catalog],
+  )
+
+  const updateLine = (id, patch) =>
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+  const addLine = () => setLines((prev) => [...prev, makeLine()])
+  const removeLine = (id) =>
+    setLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev.map(() => makeLine())))
+
+  const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }))
+  const setBillTo = (k, v) => setBillToState((p) => ({ ...p, [k]: v }))
+  const setShipTo = (k, v) => setShipToState((p) => ({ ...p, [k]: v }))
+  const setPayment = (k, v) => setPaymentState((p) => ({ ...p, [k]: v }))
+  const setTax = (k, v) => setTaxState((p) => ({ ...p, [k]: v }))
+  const setTerms = (k, v) => setTermsState((p) => ({ ...p, [k]: v }))
+  const setInternal = (k, v) => setInternalState((p) => ({ ...p, [k]: v }))
+
+  function applyAccount(m) {
+    setForm((p) => ({ ...p, sfAccountId: m.accountId }))
+    setBillToState({
+      buyerName: m.name || '',
+      street: m.billTo.street || '',
+      cityState: m.billTo.cityState || '',
+      zip: m.billTo.zip || '',
+      tel: m.billTo.tel || '',
+      fax: m.billTo.fax || '',
+    })
+    setShipToState({
+      email: m.email || '',
+      street: m.shipTo.street || '',
+      cityState: m.shipTo.cityState || '',
+      zip: m.shipTo.zip || '',
+      resaleTaxId: m.resaleTaxId || '',
+    })
+    setCertOnFile(Boolean(m.certificateOnFile))
+    if (m.rep) setInternalState((p) => ({ ...p, rep: m.rep }))
+  }
+
+  const { totalPieces, totalAmount, perLine } = useMemo(() => computeTotals(resolved), [resolved])
+  const minimums = useMemo(() => validateMinimums(resolved), [resolved])
+
+  async function onSubmit(e) {
+    e.preventDefault()
+    const problems = [...minimums.errors]
+    if (totalPieces === 0) problems.unshift('No items entered yet.')
+    if (!shipTo.email) problems.push('Ship To email is required.')
+    if (!terms.signatureName) problems.push('Signature is required.')
+    if (!terms.accepted) problems.push('You must accept the terms & conditions.')
+    if (problems.length) {
+      setSubmitNotice(problems.join(' '))
+      return
+    }
+
+    const items = resolved
+      .filter((l) => l.row && (perLine[l.id]?.pieces || 0) > 0)
+      .map((l) => ({
+        styleName: l.row.styleName,
+        color: l.row.color,
+        qtyXs: l.qty.xs || 0,
+        qtySm: l.qty.sm || 0,
+        qtyMl: l.qty.ml || 0,
+      }))
+
+    const payload = {
+      season,
+      orderDate: form.orderDate,
+      partShipOk: form.partShipOk,
+      sfAccountId: form.sfAccountId,
+      billTo,
+      shipTo,
+      payment,
+      taxExemption: { repNotified: tax.repNotified, sendingCert: tax.sendingCert, certOnFile },
+      terms,
+      internal,
+      items,
+    }
+
+    setSubmitting(true)
+    setSubmitNotice('')
+    try {
+      const result = await submitOrder(payload)
+      setSubmitted(result)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err) {
+      setSubmitNotice(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (submitted) {
+    return (
+      <main className="order-form confirmation">
+        <h1>Thank you — your order has been received.</h1>
+        <p>
+          Order reference: <strong>{submitted.orderId}</strong>
+        </p>
+        <p>
+          {submitted.totalQty} pieces · ${submitted.totalAmount.toFixed(2)}
+        </p>
+        <p className="muted">Our team will process your order and follow up by email.</p>
+      </main>
+    )
+  }
+
+  return (
+    <form className="order-form" onSubmit={onSubmit} noValidate>
+      <OrderHeader
+        seasons={seasons}
+        season={season}
+        onSeasonChange={onSeasonChange}
+        form={form}
+        setField={setField}
+        totalAmount={totalAmount}
+      />
+      {loadError && <p className="error-banner">{loadError}</p>}
+
+      <BuyerLookup onSelect={applyAccount} />
+      <Addresses billTo={billTo} shipTo={shipTo} setBillTo={setBillTo} setShipTo={setShipTo} />
+
+      <ProductLines
+        rows={rows}
+        lines={resolved}
+        updateLine={updateLine}
+        addLine={addLine}
+        removeLine={removeLine}
+        perLine={perLine}
+        totalPieces={totalPieces}
+        totalAmount={totalAmount}
+        badCells={minimums.badCells}
+        loading={loadingProducts}
+        seasonSelected={Boolean(season)}
+      />
+
+      {minimums.errors.length > 0 && (
+        <div className="validation-panel">
+          <strong>Please fix before submitting:</strong>
+          <ul>
+            {minimums.errors.map((e, i) => (
+              <li key={i}>{e}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <Payment payment={payment} setPayment={setPayment} />
+      <TaxExemption tax={tax} setTax={setTax} certOnFile={certOnFile} setCertOnFile={setCertOnFile} />
+      <TermsSignature terms={terms} setTerms={setTerms} />
+      <InternalUse
+        internal={internal}
+        setInternal={setInternal}
+        certOnFile={certOnFile}
+        setCertOnFile={setCertOnFile}
+      />
+
+      {submitNotice && <p className="submit-notice">{submitNotice}</p>}
+      <div className="submit-row">
+        <button type="submit" className="submit-btn" disabled={submitting}>
+          {submitting ? 'Submitting…' : 'Submit order'}
+        </button>
+      </div>
+
+      <Footer />
+    </form>
+  )
+}

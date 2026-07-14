@@ -61,10 +61,10 @@ SALESFORCE_USERNAME=
 SALESFORCE_PASSWORD=
 SALESFORCE_SECURITY_TOKEN=
 SALESFORCE_DOMAIN=login          # 'login' for prod, 'test' for sandbox
-SF_PRICEBOOK_ID=                 # wholesale price book — id TBC
-# NOTE: there is no season field on Product2. Season is encoded in the first 3
-# chars of ProductCode (e.g. K57 = F26): odd number = Fall, even = Spring,
-# year = floor(n/2) - 2. See architecture.md §3.2.
+# No SF_PRICEBOOK_ID: wholesale price books are resolved per season by name
+# ("<season> Wholesale", e.g. "F26 Wholesale") — confirmed 2026-07-14.
+# Season is encoded in ProductCode (K57 = F26: odd = Fall, even = Spring,
+# year = floor(n/2) - 2 — verified against the org). See architecture.md §3.2.
 
 # PostgreSQL
 POSTGRES_USER=woodenships
@@ -121,8 +121,9 @@ uvicorn app.main:app --reload --port 8080
 
 ## Things to confirm with Prada before finalizing
 - ~~Salesforce objects/fields~~ — confirmed 2026-07-14: Account (person-account org, tax id = `Tax_ID_Number__c`, lookup via `ContactBuyingEmail__c`); Product2 (`Name` = STYLE-COLOR-SIZE, one record per SKU); season = `ProductCode` prefix (odd = Fall, even = Spring). See architecture.md §3.2.
-- **Which `Pricebook2` id to use for wholesale pricing** (`SF_PRICEBOOK_ID`).
-- Confirm the season-code year formula (`year = floor(n/2) − 2`, derived from K58 = S27) against a couple more known codes.
+- ~~Price book~~ — confirmed 2026-07-14: per-season books named "<season> Wholesale"; no env var needed.
+- ~~Season-year formula~~ — verified 2026-07-14: F26 Wholesale contains exactly the K57 products.
+- ~~X/L size~~ — decision 2026-07-14: form keeps 3 size columns; X/L SKUs are not orderable on the web form.
 - ~~Email lookup field~~ — confirmed: `ContactBuyingEmail__c` is the canonical lookup key.
 - ~~Account discounts~~ — confirmed: form always shows price-book prices; discounts handled by admin.
 - Admin email recipient(s).

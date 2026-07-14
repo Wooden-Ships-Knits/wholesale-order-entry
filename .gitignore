@@ -1,0 +1,17 @@
+# Secrets — never commit
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+
+# Generated order PDFs (contain card data — never commit)
+output/
+
+# OS / editor
+.DS_Store

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: letter;
+    margin: 1.4cm 1.4cm 1.8cm;
+    @bottom-center {
+      content: "www.wooden-ships.com · woodenshipsknits.com · @woodenshipsknits";
+      font-size: 8pt;
+      color: #6d6a63;
+    }
+  }
+  body { font-family: Georgia, serif; font-size: 9.5pt; color: #1d1d1b; }
+  h1 { font-size: 16pt; letter-spacing: 0.3em; text-align: center; font-weight: normal; margin: 0; }
+  .subtitle { text-align: center; letter-spacing: 0.2em; text-transform: uppercase; font-size: 8pt; color: #6d6a63; margin-bottom: 10pt; }
+  h2 { font-size: 8.5pt; letter-spacing: 0.12em; text-transform: uppercase; color: #4c4a45;
+       border-bottom: 0.5pt solid #b9b4aa; padding-bottom: 2pt; margin: 12pt 0 5pt; }
+  table { width: 100%; border-collapse: collapse; }
+  .meta td { padding: 1.5pt 6pt 1.5pt 0; }
+  .label { color: #6d6a63; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.06em; }
+  .cols { width: 100%; }
+  .cols td { vertical-align: top; width: 50%; padding-right: 12pt; }
+  .items th { background: #efece6; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.06em;
+              border: 0.5pt solid #b9b4aa; padding: 3pt 4pt; text-align: left; }
+  .items td { border: 0.5pt solid #c9c4ba; padding: 2.5pt 4pt; }
+  .items .num { text-align: right; white-space: nowrap; }
+  .items tfoot td { background: #efece6; font-weight: bold; }
+  .ack { margin: 2pt 0; }
+  .box { border: 0.5pt solid #b9b4aa; background: #fbfaf6; padding: 5pt 7pt; font-size: 8pt; }
+  .sig-line { border-bottom: 0.5pt solid #1d1d1b; display: inline-block; min-width: 200pt; padding: 0 4pt 1pt; }
+  .internal { background: #f7f5f1; border: 0.5pt solid #d8d4cc; padding: 6pt 8pt; }
+  .internal table td { padding: 1.5pt 10pt 1.5pt 0; }
+  .warn { color: #7a281f; font-size: 8pt; }
+</style>
+</head>
+<body>
+  <h1>WOODEN SHIPS</h1>
+  <div class="subtitle">Wholesale Order Form</div>
+
+  <table class="meta">
+    <tr>
+      <td><span class="label">Order ref</span> {{ order.short_id }}</td>
+      <td><span class="label">Collection</span> {{ order.season_code }} — {{ order.season_label }}</td>
+      <td><span class="label">Order date</span> {{ order.order_date or "—" }}</td>
+      <td><span class="label">Part ship OK</span>
+        {% if order.part_ship_ok is none %}—{% elif order.part_ship_ok %}Yes{% else %}No{% endif %}
+      </td>
+      <td><span class="label">Submitted</span> {{ order.created_at }}</td>
+    </tr>
+  </table>
+  <p style="font-style: italic; color:#6d6a63; margin: 4pt 0 0;">{{ order.ship_window_note }}</p>
+
+  <table class="cols">
+    <tr>
+      <td>
+        <h2>Bill To</h2>
+        <div>{{ order.buyer_name or "—" }}</div>
+        <div>{{ order.bill_street or "" }}</div>
+        <div>{{ order.bill_city_state or "" }} {{ order.bill_zip or "" }}</div>
+        <div>Tel: {{ order.tel or "—" }} &nbsp; Fax: {{ order.fax or "—" }}</div>
+      </td>
+      <td>
+        <h2>Ship To</h2>
+        <div>{{ order.ship_email }}</div>
+        <div>{{ order.ship_street or "" }}</div>
+        <div>{{ order.ship_city_state or "" }} {{ order.ship_zip or "" }}</div>
+        <div>Resale tax ID: {{ order.resale_tax_id or "—" }}</div>
+      </td>
+    </tr>
+  </table>
+
+  <h2>Order Items</h2>
+  <table class="items">
+    <thead>
+      <tr>
+        <th>Code #</th><th>Style name</th><th>Color</th>
+        <th class="num">X/S</th><th class="num">S/M</th><th class="num">M/L</th>
+        <th class="num">Total qty</th><th class="num">Unit $</th><th class="num">Line total $</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.code }}</td>
+        <td>{{ it.style_name }}</td>
+        <td>{{ it.color }}</td>
+        <td class="num">{{ it.qty_xs or "" }}</td>
+        <td class="num">{{ it.qty_sm or "" }}</td>
+        <td class="num">{{ it.qty_ml or "" }}</td>
+        <td class="num">{{ it.line_qty }}</td>
+        <td class="num">{{ "%.2f" % it.unit_price }}</td>
+        <td class="num">{{ "%.2f" % it.line_total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="6"></td>
+        <td class="num">{{ order.total_qty }}</td>
+        <td></td>
+        <td class="num">{{ "%.2f" % order.total_amount }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <h2>Payment — for manual processing only</h2>
+  <table class="meta">
+    <tr>
+      <td><span class="label">Card number</span> {{ payment.card_number or "—" }}</td>
+      <td><span class="label">Name on card</span> {{ payment.card_name or "—" }}</td>
+      <td><span class="label">Exp</span> {{ payment.exp_date or "—" }}</td>
+      <td><span class="label">CVV</span> {{ payment.cvv or "—" }}</td>
+    </tr>
+  </table>
+  <p class="warn">Contains card data — handle per policy, do not forward, destroy after processing.</p>
+
+  <h2>Tax Exemption Certificate</h2>
+  <div class="ack">{{ "☑" if order.cert_required_ack else "☐" }} Rep has notified the account that a state-issued certificate is required.</div>
+  <div class="ack">{{ "☑" if order.cert_sending_ack else "☐" }} Account confirms sending the certificate (orders will not process without it).</div>
+  <div class="ack">{{ "☑" if order.cert_on_file else "☐" }} Certificate on file <em>(internal)</em>.</div>
+
+  <h2>Terms &amp; Conditions</h2>
+  <div class="box">
+    All Wooden Ships sweaters are made to order. Quantities may be adjusted to meet production minimums;
+    the buyer is contacted before any adjustment. Claims for damages or shortages must be reported within
+    10 days of receipt. Returns require prior authorization and are subject to a restocking fee. All sale
+    items are final sale. Orders ship via DHL unless otherwise arranged; freight payable by buyer.
+    <!-- TODO: replace with the exact wording from the Excel form once provided -->
+  </div>
+  <table class="meta" style="margin-top: 8pt;">
+    <tr>
+      <td><span class="label">Buyer's signature</span> <span class="sig-line">{{ order.signature_name }}</span></td>
+      <td><span class="label">Date</span> {{ order.signature_date or "—" }}</td>
+      <td><span class="label">Terms accepted</span> {{ "☑ Yes" if order.terms_accepted else "☐ No" }}</td>
+    </tr>
+  </table>
+
+  <h2>Internal Use</h2>
+  <div class="internal">
+    <table>
+      <tr>
+        <td><span class="label">New / reorder</span> {{ order.new_or_reorder or "—" }}</td>
+        <td><span class="label">Account</span> {{ order.account_status or "—" }}</td>
+        <td><span class="label">Campaign</span> {{ order.campaign or "—" }}</td>
+        <td><span class="label">PO #</span> {{ order.po_number or "—" }}</td>
+      </tr>
+      <tr>
+        <td><span class="label">Rep</span> {{ order.rep or "—" }}</td>
+        <td><span class="label">Order written by</span> {{ order.order_written_by or "—" }}</td>
+        <td><span class="label">Split</span> {{ order.split_with or "—" }}</td>
+        <td><span class="label">SF account</span> {{ order.sf_account_id or "—" }}</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

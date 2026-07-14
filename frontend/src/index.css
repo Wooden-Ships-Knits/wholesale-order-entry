@@ -1,0 +1,510 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #1d1d1b;
+  background: #f4f2ee;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.order-form {
+  max-width: 1280px;
+  margin: 2rem auto 4rem;
+  background: #fff;
+  border: 1px solid #d8d4cc;
+  padding: 2rem 2.5rem;
+}
+
+/* ------------------------------------------------------------- sections */
+.section {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #e3e0da;
+}
+
+.section h2 {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.75rem;
+  color: #4c4a45;
+}
+
+/* --------------------------------------------------------------- header */
+.brand h1 {
+  margin: 0;
+  letter-spacing: 0.35em;
+  font-weight: 400;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.brand .subtitle {
+  text-align: center;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: #6d6a63;
+  margin-bottom: 1.25rem;
+}
+
+.header-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+.order-total {
+  font-size: 1.15rem;
+  font-weight: bold;
+  display: block;
+  padding: 0.35rem 0;
+}
+
+.ship-window-note {
+  margin: 0.75rem 0 0;
+  font-style: italic;
+  color: #6d6a63;
+}
+
+/* --------------------------------------------------------------- fields */
+label,
+.field {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #55524c;
+}
+
+.field-label {
+  display: block;
+}
+
+label input,
+label select,
+.match-select {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  border: 1px solid #b9b4aa;
+  border-radius: 2px;
+  background: #fff;
+  color: #1d1d1b;
+}
+
+label input:focus,
+label select:focus {
+  outline: 2px solid #8c7b5c;
+  outline-offset: 0;
+}
+
+.req {
+  color: #b03a2e;
+  margin-left: 2px;
+}
+
+fieldset.inline-radios {
+  border: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #55524c;
+}
+
+fieldset.inline-radios legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+}
+
+fieldset.inline-radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-right: 1rem;
+  text-transform: none;
+}
+
+fieldset.inline-radios input[type='radio'] {
+  width: auto;
+  margin: 0;
+}
+
+label.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.95rem;
+  margin: 0.5rem 0;
+  color: #1d1d1b;
+}
+
+label.check input {
+  width: auto;
+  margin-top: 0.2rem;
+}
+
+/* --------------------------------------------------------------- lookup */
+.lookup-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.lookup-row label {
+  flex: 1;
+}
+
+.lookup-status {
+  margin: 0.5rem 0 0;
+  font-style: italic;
+  color: #4c4a45;
+}
+
+.match-select {
+  margin-top: 0.5rem;
+}
+
+/* ------------------------------------------------------------ addresses */
+.addresses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+}
+
+.address-col label {
+  margin-bottom: 0.6rem;
+}
+
+/* --------------------------------------------------------------- table */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border: 1px solid #c9c4ba;
+  padding: 0.3rem 0.4rem;
+  text-align: left;
+}
+
+th {
+  background: #efece6;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.qty-cell input {
+  width: 3.4rem;
+  padding: 0.25rem 0.3rem;
+  font: inherit;
+  border: 1px solid #b9b4aa;
+  border-radius: 2px;
+  text-align: right;
+}
+
+.qty-cell input.bad {
+  border-color: #b03a2e;
+  background: #fbeeec;
+}
+
+tr.has-qty td {
+  background: #fbfaf6;
+}
+
+/* ------------------------------------------------- manual lines / typeahead */
+.typeahead {
+  position: relative;
+  min-width: 13rem;
+}
+
+.typeahead input {
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  font: inherit;
+  border: 1px solid #b9b4aa;
+  border-radius: 2px;
+}
+
+.suggestions {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #b9b4aa;
+  border-top: none;
+  max-height: 16rem;
+  overflow-y: auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.suggestions li button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  color: #1d1d1b;
+  border: none;
+  border-radius: 0;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+
+.suggestions li button:hover {
+  background: #efece6;
+}
+
+.sugg-code {
+  color: #8a867d;
+  font-size: 0.75rem;
+  margin-right: 0.4rem;
+}
+
+.color-col select {
+  width: 100%;
+  min-width: 9rem;
+  padding: 0.3rem 0.4rem;
+  font: inherit;
+  border: 1px solid #b9b4aa;
+  border-radius: 2px;
+  background: #fff;
+}
+
+.color-col select:disabled {
+  background: #eceae5;
+  color: #8a867d;
+}
+
+.qty-cell input:disabled {
+  background: #eceae5;
+}
+
+.remove-line {
+  background: none;
+  color: #8a867d;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+}
+
+.remove-line:hover {
+  background: none;
+  color: #b03a2e;
+}
+
+.add-line-row {
+  margin-top: 0.6rem;
+}
+
+.add-line {
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px dashed #8c8577;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.9rem;
+  padding: 0.4rem 1rem;
+}
+
+.add-line:hover {
+  background: #efece6;
+}
+
+tfoot td {
+  background: #efece6;
+  font-weight: bold;
+}
+
+.strong {
+  font-weight: bold;
+}
+
+/* -------------------------------------------------------------- payment */
+.payment-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 2rem;
+  max-width: 640px;
+}
+
+.payment-grid .span2 {
+  grid-column: span 2;
+}
+
+/* ------------------------------------------------------------- internal */
+.internal-use {
+  background: #f7f5f1;
+  padding: 1.25rem 1.5rem;
+}
+
+.internal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem 2rem;
+  align-items: end;
+}
+
+.internal-grid .span2 {
+  grid-column: span 2;
+}
+
+.campaign-other,
+.split-with {
+  display: inline-block;
+  width: 12rem;
+  margin-left: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  font: inherit;
+  border: 1px solid #b9b4aa;
+  border-radius: 2px;
+}
+
+.campaign-other:disabled,
+.split-with:disabled {
+  background: #eceae5;
+}
+
+/* ------------------------------------------------------------ messages */
+.error-banner {
+  background: #fbeeec;
+  border: 1px solid #b03a2e;
+  color: #7a281f;
+  padding: 0.6rem 0.9rem;
+  margin: 1rem 0 0;
+}
+
+.validation-panel {
+  background: #fdf6ec;
+  border: 1px solid #c9962e;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.validation-panel ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.submit-notice {
+  background: #eef4ee;
+  border: 1px solid #2e7d32;
+  padding: 0.6rem 0.9rem;
+  margin-top: 1rem;
+}
+
+.terms-text {
+  border: 1px solid #d8d4cc;
+  background: #fbfaf6;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
+.signature-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-top: 0.75rem;
+}
+
+/* --------------------------------------------------------------- submit */
+.submit-row {
+  text-align: center;
+  padding: 1.5rem 0 0.5rem;
+}
+
+.submit-btn,
+button {
+  font: inherit;
+  padding: 0.55rem 1.4rem;
+  background: #1d1d1b;
+  color: #fff;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+button:hover {
+  background: #3a3a36;
+}
+
+/* --------------------------------------------------------------- footer */
+.form-footer {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding-top: 1.25rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: #6d6a63;
+}
+
+.muted {
+  color: #8a867d;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width: 720px) {
+  .order-form {
+    padding: 1.25rem 1rem;
+  }
+  .header-grid,
+  .addresses,
+  .payment-grid,
+  .internal-grid,
+  .signature-grid {
+    grid-template-columns: 1fr;
+  }
+  .internal-use {
+    padding: 1.25rem 1rem;
+  }
+  .payment-grid .span2,
+  .internal-grid .span2 {
+    grid-column: auto;
+  }
+}

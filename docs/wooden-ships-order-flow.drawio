@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="woodenships-order" name="Wooden Ships Order Flow">
-        <mxGraphModel dx="1666" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1900" math="0" shadow="0">
+        <mxGraphModel dx="1374" dy="413" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1900" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -41,25 +41,25 @@
                     <mxGeometry x="370" y="1300" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="pay" value="Enter payment (credit card):&lt;br&gt;CC#, Name on card, Exp, CVV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="1410" width="220" height="60" as="geometry"/>
+                    <mxGeometry x="370" y="1410" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="sign" value="Buyer signature + date&lt;br&gt;+ accept Terms &amp; Conditions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="1510" width="220" height="60" as="geometry"/>
+                    <mxGeometry x="370" y="1510" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="submit" value="SUBMIT ORDER" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5651d;strokeColor=#7a430f;fontColor=#ffffff;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="1610" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="370" y="1610" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="save" value="Save order to database&lt;br&gt;(WITHOUT storing card number)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="1700" width="220" height="60" as="geometry"/>
+                    <mxGeometry x="370" y="1700" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="pdf" value="Generate Order PDF" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="1800" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="370" y="1800" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="confirm" value="Show confirmation page to buyer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="1890" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="370" y="1890" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="done" value="Done - admin processes order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="1980" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="370" y="1980" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="pick" value="Show dropdown&lt;br&gt;pick correct account" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
                     <mxGeometry x="730" y="740" width="190" height="60" as="geometry"/>

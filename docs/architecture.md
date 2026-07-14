@@ -62,9 +62,9 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
 - **Products:** `Product2` — **object/fields CONFIRMED 2026-07-14** (~91.7k records in the org). Relevant fields: `Id`, `Name`, `ProductCode`, `IsActive`, `Family`, `Style__c` (style grouping), `SKU__c`, `UPCBarcode__c`. There is **no dedicated color/size/season field** — everything is encoded in `Name` and `ProductCode`:
   - **`Name` = `STYLE-COLOR-SIZE`**, e.g. `SKI PULLOVER-NIGHT/BONFIRE-X/S` → style `SKI PULLOVER`, color `NIGHT/BONFIRE`, size `X/S`. Parse **from the right**: last `-` segment = size (`X/S` | `S/M` | `M/L`), second-to-last = color (may itself contain `/`), remainder = style name.
   - **One `Product2` record per SKU** (style × color × size). The backend groups records by style + color and pivots the three sizes into the form's size columns.
-- **Season / collection — CONFIRMED: encoded in the `ProductCode` prefix** (first 3 characters), e.g. `K43Y2W941` → season code `K43`. For the 2-digit number `n`: **odd → Fall, even → Spring**, and year = `floor(n/2) − 2` (as 20XX). Worked examples: `K58` → S27 (Spring 2027), `K57` → F26 (Fall 2026), `K56` → S26, `K43` → F19. *(Odd/even rule and K58→S27 given by Prada; the year formula is derived from those examples — confirm.)* Season filtering is therefore `ProductCode LIKE 'K57%'`.
-- **Price:** `PricebookEntry.UnitPrice` filtered by `Pricebook2Id` (`SF_PRICEBOOK_ID`). `Pricebook2` and `PricebookEntry` are standard-shape (no custom fields) — **CONFIRMED**. `PricebookEntry` carries `ProductCode` and `Name` directly, so a single PricebookEntry query drives the whole product list. **Which price book to use for wholesale is still TBC.**
-- **Sizes (X/S, S/M, M/L):** because each size is its own SKU, each size cell on the form maps to its own `Product2Id` — `order_items` stores one `sf_product_id` per size column (see §4). All Name/ProductCode parsing lives behind `map_product()` in `mapping.py`.
+- **Season / collection — CONFIRMED & VERIFIED (2026-07-14):** encoded in `ProductCode` as leading letters + a 2-digit number (`K57A5W191` → 57; prefixes vary: `K` knits, `A` accessories, `PK` pillow covers). For the number `n`: **odd → Fall, even → Spring**, year = `floor(n/2) − 2` (as 20XX) — so `K57` = F26, `K58` = S27, `K43` = F19. **Verified against the org: the "F26 Wholesale" price book contains exactly and only K57 products (2,640 entries).**
+- **Price / price book — CONFIRMED (2026-07-14): one wholesale price book per season, named `"<season> Wholesale"`** (e.g. `F26 Wholesale`; `S27`, `S26`, `F25` books all exist and are active). The season selector maps directly to a book by name — **no `SF_PRICEBOOK_ID` env var**; the naming pattern lives in `mapping.py`. `Pricebook2`/`PricebookEntry` are standard-shape; `PricebookEntry` carries `ProductCode` and `Name` directly, so a single query drives the whole product list. Season prefix filtering is unnecessary (each book already contains only its season) but the formula is kept in `mapping.py` for validation/labels.
+- **Sizes — DECISION (2026-07-14): the form has exactly 3 size columns (X/S, S/M, M/L).** The org also carries `X/L` SKUs (548 of 593 F26 style+colors) and `O/S` accessories; these are **not orderable on the web form** and are skipped (counted in mapping stats) when grouping. Each size cell maps to its own `Product2Id` — `order_items` stores one `sf_product_id` per size column (see §4). All Name/ProductCode parsing lives behind `mapping.py` (`parse_product_name`, `group_products`).
 - **Buyer:** `Account` — **CONFIRMED 2026-07-14** against the real org. This is a **Person Account-enabled org**, so buyer email/person data lives directly on `Account` (no `Contact` join). Lookup by email or `Account.Id`.
   - **Email lookup key — CONFIRMED:** `ContactBuyingEmail__c` (the buying contact's email) is the canonical lookup field. (`PersonEmail` and `Email__c` also exist but are not used for lookup.)
   - **Confirmed form-autofill mapping:**
@@ -88,17 +88,18 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
   - Other potentially relevant fields (not used in v1): `Terms__c` (payment terms picklist), `Discount_Sweaters__c` / `Discount_Accessories__c` (% discounts — **CONFIRMED: not applied on the form; discounts are handled by admin during manual processing. The form always shows price-book prices.**), `Deposit_Required__c` (%), `Season__c` (multipicklist on Account), `ContactBuying__c` (reference to buying contact).
 
 ### 3.3 Queries (SOQL, illustrative)
-- Products + prices for a season, in one query on `PricebookEntry` (season = `ProductCode` prefix):
+- Seasons (`GET /api/seasons`) — the active per-season wholesale books:
+  `SELECT Id, Name FROM Pricebook2 WHERE IsActive = true AND Name LIKE '% Wholesale'`
+  → parse the season code off each name, label via the formula ("F26 — Fall 2026"), sort newest first.
+- Products + prices for a season, in one query on the season's book:
   ```sql
-  SELECT Id, Product2Id, ProductCode, Name, UnitPrice
+  SELECT Product2Id, ProductCode, UnitPrice, Product2.Name
   FROM PricebookEntry
   WHERE Pricebook2Id = :bookId
     AND IsActive = true
     AND Product2.IsActive = true
-    AND ProductCode LIKE 'K57%'
   ```
-  The backend then parses `Name` into style/color/size and pivots per-size SKUs into the form's size columns.
-- Seasons (`GET /api/seasons`): computed from the season-code formula in `mapping.py` (e.g. offer the current and upcoming season codes with labels like "F26 — Fall 2026") rather than scanned from 91k product rows. SOQL cannot group by a substring, so a config/formula-driven list is the practical option.
+  The backend parses `Product2.Name` into style/color/size, skips non-form sizes (X/L, O/S), and pivots per-size SKUs into the form's three size columns. Responses are cached in-memory for 5 minutes.
 - Account lookup by email (person-account org — query `Account` directly, no `Contact` join):
   ```sql
   SELECT Id, Name, IsPersonAccount,
@@ -211,12 +212,14 @@ Return a structured error listing offending styles/rows.
 - PDF includes: header, bill/ship to, full line-item table with totals, payment details (for manual processing), tax-exemption acknowledgements, signature, and internal-use fields.
 - Filename convention: `WS-order-{season}-{buyerName}-{YYYYMMDD}-{shortId}.pdf`.
 
-## 8. Email delivery
+## 8. Email delivery — DEFERRED (2026-07-14)
+
+**v1 stops at PDF output**: the generated PDF is written to a persistent output directory (bind-mounted volume) on the server for admin retrieval; no email is sent. The design below is kept for the follow-up phase:
 
 - `fastapi-mail` over SMTP (provider TBD — Gmail SMTP, SendGrid, etc.).
 - Env: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `ADMIN_EMAIL` (comma-separated recipients).
 - Body: order summary; attachment: the generated PDF.
-- Buyer confirmation email is optional for v1 (the Excel form promises an email confirmation — can send a no-card summary to `ship_email`).
+- Buyer confirmation email is optional (the Excel form promises an email confirmation — can send a no-card summary to `ship_email`).
 
 ## 9. Security
 

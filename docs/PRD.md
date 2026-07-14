@@ -13,7 +13,7 @@ Wooden Ships sells knit sweaters wholesale. Today, buyers order via a static PDF
 - Loads the live product catalog for a selected season/collection from **Salesforce**.
 - Auto-fills buyer details from **Salesforce** when the buyer is identified.
 - Validates order minimums automatically.
-- On submit, **stores the order in PostgreSQL**, **generates a PDF** of the completed order, and **emails it to the admin team**.
+- On submit, **stores the order in PostgreSQL** and **generates a PDF** of the completed order for the admin team. *(Emailing the PDF to admin is deferred — v1 saves the PDF server-side; see §8.)*
 
 The web form must contain **every field and section present in the Excel order form** — nothing is dropped.
 
@@ -46,7 +46,7 @@ The web form must contain **every field and section present in the Excel order f
 4. Buyer enters quantities per size; line totals, order total, and total pieces calculate automatically.
 5. System validates the **order minimum**. If not met, submission is blocked with a clear message.
 6. Buyer completes payment, tax-exemption, signature, terms acceptance, and (rep) Internal Use fields.
-7. On **Submit**: order saved to PostgreSQL (without the card number), PDF generated, PDF emailed to admin, buyer sees a confirmation page.
+7. On **Submit**: order saved to PostgreSQL (without the card number), PDF generated and saved server-side for admin *(email delivery deferred)*, buyer sees a confirmation page.
 
 _See `architecture.md` and `wooden-ships-order-flow.mermaid` / `.drawio` for the technical flow._
 
@@ -73,6 +73,10 @@ The website must reproduce all fields from the Excel form. Fields marked _auto_ 
 
 ### 5.5 Products (line items) — from Salesforce
 Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)_, Unit price $ _(from Salesforce)_, Line total $ _(auto)_. Plus grand total _(auto)_.
+
+> Decision 2026-07-14: these 3 sizes are the only orderable ones — X/L and O/S SKUs that exist in Salesforce are excluded from the web form.
+
+> Revision 2026-07-15 (Prada): the product table is **manual line entry**, not a full catalog listing. Each line has a style typeahead (suggestions by style name / code # from the season's catalog), a color dropdown for the chosen style, and auto-filled code/price; an "+ Add line" button appends lines and each line can be removed. Duplicate style+color lines are flagged. This mirrors the blank-lines layout of the original Excel form.
 
 ### 5.6 Payment
 - Credit card number, Name as it appears on card, Exp date, Security code (CVV)
@@ -103,6 +107,7 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 ## 6. Validation rules
 
 - **Order minimum:** 18 pieces total, 4 pieces per style, 2 pieces per SKU, no pre-packs. Additional singles allowed once a style reaches its 4-piece minimum.
+  > Implemented reading (2026-07-15, confirm with Prada): a size cell with quantity 1 is rejected only while its style (across colors) has fewer than 4 pieces; once the style totals ≥ 4, singles are allowed. Authority: `backend/app/validation/order_minimum.py`.
 - **Email (Ship To):** required, valid format.
 - **Quantities:** non-negative integers only.
 - **Terms acceptance:** required before submit.
@@ -121,14 +126,15 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 - Web app (frontend + backend) deployable on the existing GCP VM.
 - PostgreSQL schema + migrations.
 - Salesforce integration (products + account lookup).
-- PDF generation + email delivery to admin.
-- Admin-configurable email recipient(s).
+- PDF generation. **(Scope decision 2026-07-14: v1 stops at PDF output — the PDF is saved server-side and available for download; email delivery to admin is deferred to a follow-up.)**
+- ~~Email delivery to admin / admin-configurable recipient(s)~~ — deferred (see above).
 
 ## 9. Open items to confirm
 
 - ~~Season/collection fields~~ — **CONFIRMED 2026-07-14:** no season field exists; season is encoded in the `ProductCode` prefix (e.g. `K57` = F26; odd = Fall, even = Spring). Color/size are encoded in `Product2.Name` (`STYLE-COLOR-SIZE`). See `architecture.md` §3.2.
-- **Which `Pricebook2` record holds wholesale prices** (needed for `SF_PRICEBOOK_ID`).
-- Confirm the season-code → year formula (`year = floor(n/2) − 2`) against additional known codes.
+- ~~Wholesale price book~~ — **CONFIRMED 2026-07-14:** one active price book per season named `"<season> Wholesale"` (e.g. `F26 Wholesale`); the season selector resolves the book by name.
+- ~~Season-code year formula~~ — **VERIFIED 2026-07-14:** `F26 Wholesale` contains exactly the K57-prefixed products.
+- ~~X/L size~~ — **DECISION 2026-07-14:** the form keeps the 3 Excel size columns (X/S, S/M, M/L); X/L and O/S SKUs in Salesforce are not orderable via the web form.
 - ~~Buyer/account fields~~ — **CONFIRMED 2026-07-14:** person-account org; lookup directly on `Account`; tax ID is `Tax_ID_Number__c`. See `architecture.md` §3.2.
 - ~~Canonical email lookup field~~ — **CONFIRMED 2026-07-14:** `ContactBuyingEmail__c`.
 - ~~Account-level discounts~~ — **CONFIRMED 2026-07-14:** not applied on the form; the form shows price-book prices and discounts are handled by admin during manual processing.

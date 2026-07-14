@@ -1,0 +1,254 @@
+"""POST /api/orders — validate, render PDF, persist (NO card number), respond.
+
+Prices and Salesforce product ids are re-resolved server-side from the
+season's wholesale price book; client-sent prices are ignored. Card number
+and CVV are never persisted or logged: only card_name + last4 are stored.
+The PDF (the only artifact carrying full card details, for manual
+processing) is rendered BEFORE the DB commit — a render failure aborts the
+whole submission so the buyer can retry — and written to PDF_OUTPUT_DIR
+after the commit succeeds.
+"""
+import logging
+import uuid
+from datetime import datetime, timezone
+from decimal import Decimal
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.db.models import Order, OrderItem
+from app.db.session import get_db
+from app.pdf import render as pdf_render
+from app.salesforce import client, mapping
+from app.schemas.order import OrderSubmission
+from app.validation.order_minimum import validate_minimums
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+SHIP_WINDOW_NOTE = "Please allow 7–12 days for transit."
+
+
+def _fail(errors: list[dict]) -> None:
+    raise HTTPException(status_code=422, detail={"errors": errors})
+
+
+@router.post("/orders", status_code=201)
+def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dict:
+    errors: list[dict] = []
+
+    if not payload.terms.accepted:
+        errors.append({"code": "terms", "message": "Terms & conditions must be accepted."})
+    if not payload.terms.signature_name.strip():
+        errors.append({"code": "signature", "message": "Signature is required."})
+
+    items = [i for i in payload.items if i.pieces > 0]
+    if not items:
+        errors.append({"code": "no_items", "message": "The order has no quantities."})
+
+    errors.extend(validate_minimums(items))
+    if errors:
+        _fail(errors)
+
+    # Resolve the season's wholesale price book — authoritative prices + ids.
+    books = {
+        mapping.season_from_pricebook_name(b["Name"]): b
+        for b in client.list_wholesale_pricebooks()
+    }
+    book = books.get(payload.season)
+    if book is None:
+        _fail([{"code": "season", "message": f"Unknown season {payload.season}."}])
+    rows, _stats = mapping.group_products(client.get_pricebook_entries(book["Id"]))
+    catalog = {(r["styleName"], r["color"]): r for r in rows}
+
+    order_items: list[OrderItem] = []
+    total_qty = 0
+    total_amount = Decimal("0")
+    for item in items:
+        row = catalog.get((item.style_name, item.color))
+        if row is None:
+            errors.append(
+                {
+                    "code": "unknown_product",
+                    "style": item.style_name,
+                    "color": item.color,
+                    "message": f'"{item.style_name} — {item.color}" is not in the {payload.season} wholesale catalog.',
+                }
+            )
+            continue
+        unit_price = Decimal(str(row["unitPrice"] or 0)).quantize(Decimal("0.01"))
+        line_qty = item.pieces
+        line_total = (unit_price * line_qty).quantize(Decimal("0.01"))
+        total_qty += line_qty
+        total_amount += line_total
+        order_items.append(
+            OrderItem(
+                sf_product_id_xs=row["sizes"]["xs"] if item.qty_xs else None,
+                sf_product_id_sm=row["sizes"]["sm"] if item.qty_sm else None,
+                sf_product_id_ml=row["sizes"]["ml"] if item.qty_ml else None,
+                code=row["code"],
+                style_name=item.style_name,
+                color=item.color,
+                qty_xs=item.qty_xs,
+                qty_sm=item.qty_sm,
+                qty_ml=item.qty_ml,
+                line_qty=line_qty,
+                unit_price=unit_price,
+                line_total=line_total,
+            )
+        )
+    if errors:
+        _fail(errors)
+
+    # Card handling: derive last4, then never touch the number again here.
+    card_digits = payload.payment.card_number.get_secret_value().replace(" ", "")
+    card_last4 = card_digits[-4:] if len(card_digits) >= 4 else None
+
+    campaign = payload.internal.campaign
+    if campaign == "other" and payload.internal.campaign_other:
+        campaign = f"Other: {payload.internal.campaign_other}"
+    split_with = (
+        f"Y — {payload.internal.split_with}".strip(" —")
+        if payload.internal.split is True
+        else ("N" if payload.internal.split is False else "")
+    )
+
+    order = Order(
+        id=uuid.uuid4(),
+        season_code=payload.season,
+        order_date=payload.order_date,
+        part_ship_ok=payload.part_ship_ok,
+        ship_window_note=SHIP_WINDOW_NOTE,
+        buyer_name=payload.bill_to.buyer_name,
+        bill_street=payload.bill_to.street,
+        bill_city_state=payload.bill_to.city_state,
+        bill_zip=payload.bill_to.zip,
+        tel=payload.bill_to.tel,
+        fax=payload.bill_to.fax,
+        ship_email=str(payload.ship_to.email),
+        ship_street=payload.ship_to.street,
+        ship_city_state=payload.ship_to.city_state,
+        ship_zip=payload.ship_to.zip,
+        resale_tax_id=payload.ship_to.resale_tax_id,
+        card_name=payload.payment.card_name,
+        card_last4=card_last4,
+        cert_required_ack=payload.tax_exemption.rep_notified,
+        cert_sending_ack=payload.tax_exemption.sending_cert,
+        cert_on_file=payload.tax_exemption.cert_on_file,
+        signature_name=payload.terms.signature_name,
+        signature_date=payload.terms.signature_date,
+        terms_accepted=payload.terms.accepted,
+        new_or_reorder=payload.internal.new_or_reorder,
+        account_status=payload.internal.account_status,
+        campaign=campaign,
+        po_number=payload.internal.po_number,
+        rep=payload.internal.rep,
+        order_written_by=payload.internal.order_written_by,
+        split_with=split_with,
+        sf_account_id=payload.sf_account_id,
+        total_qty=total_qty,
+        total_amount=total_amount,
+        status="submitted",
+        items=order_items,
+    )
+    # Render the PDF BEFORE committing: card details exist only in this
+    # request, so a failed render must fail the submission (nothing persisted,
+    # buyer retries). The context dict below is the only place the full card
+    # number/CVV are read, and it goes out of scope at the end of this call.
+    created_at = datetime.now(timezone.utc)
+    pdf_context = {
+        "order": {
+            "short_id": str(order.id)[:8],
+            "season_code": order.season_code,
+            "season_label": mapping.season_label(order.season_code),
+            "order_date": order.order_date,
+            "part_ship_ok": order.part_ship_ok,
+            "ship_window_note": order.ship_window_note,
+            "created_at": created_at.strftime("%Y-%m-%d %H:%M UTC"),
+            "buyer_name": order.buyer_name,
+            "bill_street": order.bill_street,
+            "bill_city_state": order.bill_city_state,
+            "bill_zip": order.bill_zip,
+            "tel": order.tel,
+            "fax": order.fax,
+            "ship_email": order.ship_email,
+            "ship_street": order.ship_street,
+            "ship_city_state": order.ship_city_state,
+            "ship_zip": order.ship_zip,
+            "resale_tax_id": order.resale_tax_id,
+            "cert_required_ack": order.cert_required_ack,
+            "cert_sending_ack": order.cert_sending_ack,
+            "cert_on_file": order.cert_on_file,
+            "signature_name": order.signature_name,
+            "signature_date": order.signature_date,
+            "terms_accepted": order.terms_accepted,
+            "new_or_reorder": order.new_or_reorder,
+            "account_status": order.account_status,
+            "campaign": order.campaign,
+            "po_number": order.po_number,
+            "rep": order.rep,
+            "order_written_by": order.order_written_by,
+            "split_with": order.split_with,
+            "sf_account_id": order.sf_account_id,
+            "total_qty": total_qty,
+            "total_amount": total_amount,
+        },
+        "items": [
+            {
+                "code": i.code,
+                "style_name": i.style_name,
+                "color": i.color,
+                "qty_xs": i.qty_xs,
+                "qty_sm": i.qty_sm,
+                "qty_ml": i.qty_ml,
+                "line_qty": i.line_qty,
+                "unit_price": i.unit_price,
+                "line_total": i.line_total,
+            }
+            for i in order_items
+        ],
+        "payment": {
+            "card_number": payload.payment.card_number.get_secret_value(),
+            "card_name": payload.payment.card_name,
+            "exp_date": payload.payment.exp_date,
+            "cvv": payload.payment.cvv.get_secret_value(),
+        },
+    }
+    try:
+        pdf_bytes = pdf_render.render_order_pdf(pdf_context)
+    except Exception:
+        logger.exception("PDF rendering failed for order attempt (season=%s)", payload.season)
+        raise HTTPException(
+            status_code=500,
+            detail="The order could not be processed (PDF generation failed). Please try again.",
+        )
+    finally:
+        pdf_context["payment"] = None  # drop card data reference immediately
+
+    db.add(order)
+    db.commit()
+
+    filename = pdf_render.order_pdf_filename(
+        order.season_code, order.buyer_name, created_at, order.id
+    )
+    try:
+        pdf_render.save_order_pdf(pdf_bytes, filename)
+        pdf_saved = True
+    except OSError:
+        # Order is committed; card data is gone with this request. Surface
+        # loudly in logs so admin can follow up with the buyer.
+        logger.exception("CRITICAL: order %s committed but PDF could not be written", order.id)
+        pdf_saved = False
+
+    logger.info(
+        "Order %s persisted: season=%s items=%d qty=%d total=%s pdf=%s",
+        order.id, payload.season, len(order_items), total_qty, total_amount, filename,
+    )
+    return {
+        "orderId": str(order.id),
+        "status": order.status,
+        "totalQty": total_qty,
+        "totalAmount": float(total_amount),
+        "pdfGenerated": pdf_saved,
+    }

@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-woodenships}
+      POSTGRES_USER: ${POSTGRES_USER:-woodenships}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-woodenships} -d ${POSTGRES_DB:-woodenships}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      # Inside the compose network the DB host is always `db` — this overrides
+      # any host-oriented DATABASE_URL in .env.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-woodenships}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-woodenships}
+    volumes:
+      # Generated order PDFs (contain card data for manual processing) —
+      # outside the web root, never served by nginx.
+      - ./output/orders:/output/orders
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
