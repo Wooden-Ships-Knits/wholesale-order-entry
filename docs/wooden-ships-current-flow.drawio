@@ -1,0 +1,231 @@
+<mxfile host="65bd71144e">
+    <diagram id="woodenships-current-order" name="Current Order Intake Flow">
+        <mxGraphModel dx="3210" dy="1813" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="1200" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="Wooden Ships — CURRENT order intake flow (pre-migration)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" parent="1" vertex="1">
+                    <mxGeometry y="-30" width="640" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_newrep" value="NEW store places&lt;br&gt;order with its Rep" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="-10" y="85" width="180" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_existrep" value="EXISTING store places&lt;br&gt;order with its Rep" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="225" y="85" width="180" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_hand" value="At a TRADE SHOW: Rep writes&lt;br&gt;the store&#39;s order by hand" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;fontColor=#5a3b13;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="80" width="210" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_newweb" value="NEW store goes to the&lt;br&gt;wholesale website" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="80" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_existweb" value="EXISTING store logs in&lt;br&gt;to the website (rare)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1330" y="80" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="rep_ppic" value="Rep emails / hands the&lt;br&gt;order to PPIC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;fontColor=#5a3b13;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="210" width="210" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="q_new" value="New store?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="285" width="170" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="q_conf" value="Store conflicts with a&lt;br&gt;nearby store? (too close)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="430" width="190" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="rej1" value="Order rejected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
+                    <mxGeometry x="-20" y="590" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="reg1" value="PPIC registers NEW store&lt;br&gt;in Salesforce" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf1f7;strokeColor=#3b6d8a;fontColor=#1f3a4d;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="590" width="210" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="w_reg" value="Store fills wholesale&lt;br&gt;registration form" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="875" y="180" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="q_wconf" value="Conflict with a nearby store?&lt;br&gt;(checked at registration)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="275" width="210" height="105" as="geometry"/>
+                </mxCell>
+                <mxCell id="rej2" value="Registration /&lt;br&gt;order rejected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="300" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="w_reg2" value="PPIC registers store in Salesforce&lt;br&gt;+ issues login password" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf1f7;strokeColor=#3b6d8a;fontColor=#1f3a4d;" parent="1" vertex="1">
+                    <mxGeometry x="855" y="430" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="w_login" value="Store logs in&lt;br&gt;+ fills order form" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="875" y="525" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="w_submit" value="Store submits order form by Email" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="875" y="640" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="ew_login" value="Store logs in&lt;br&gt;+ fills order form" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1330" y="180" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="ew_submit" value="Store submits order form by Email" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1330" y="265" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="q_min" value="Meets order minimum?&lt;br&gt;18 total / 4 per style /&lt;br&gt;2 per SKU / no pre-pack" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="860" width="240" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="coord" value="PPIC asks the Rep to&lt;br&gt;coordinate a revision with the store" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf1f7;strokeColor=#3b6d8a;fontColor=#1f3a4d;" parent="1" vertex="1">
+                    <mxGeometry x="730" y="1060" width="230" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="input" value="PPIC inputs the order&lt;br&gt;into Salesforce" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf1f7;strokeColor=#3b6d8a;fontColor=#1f3a4d;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="1130" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="done" value="Done — order recorded in Salesforce" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;fontColor=#5a3b13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="1220" width="220" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="sf" value="Salesforce&lt;br&gt;(Accounts + Orders)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1380" y="1130" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_title" value="Legend (who does what)" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#5a3b13;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="1340" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_store" value="Store" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="1365" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_rep" value="Rep" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;fontColor=#5a3b13;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="1365" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_ppic" value="PPIC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf1f7;strokeColor=#3b6d8a;fontColor=#1f3a4d;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="1365" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_dec" value="Decision (PPIC)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="1362" width="120" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_rej" value="Rejected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="1365" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_sf" value="Salesforce" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="550" y="1365" width="100" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="e_newrep" target="rep_ppic" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="80" y="150" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="80" y="170"/>
+                            <mxPoint x="315" y="170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="e_existrep" target="rep_ppic" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="e_hand" target="rep_ppic" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="565" y="170"/>
+                            <mxPoint x="315" y="170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="rep_ppic" target="q_new" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c5" value="Yes (new)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="q_new" target="q_conf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c6" value="No (existing)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="q_new" target="q_min" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="315" y="400"/>
+                            <mxPoint x="600" y="400"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c7" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="q_conf" target="rej1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c8" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="q_conf" target="reg1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="reg1" target="q_min" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="600" y="650"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="e_newweb" target="w_reg" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="w_reg" target="q_wconf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c12" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="q_wconf" target="rej2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c13" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="q_wconf" target="w_reg2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="w_reg2" target="w_login" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="w_login" target="w_submit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c16" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="w_submit" target="q_min" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="600" y="650"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c17" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="e_existweb" target="ew_login" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c18" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="ew_login" target="ew_submit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c19" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ew_submit" target="q_min" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1425" y="720"/>
+                            <mxPoint x="600" y="720"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c20" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="q_min" target="coord" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="600" y="1010"/>
+                            <mxPoint x="845" y="1010"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c21" value="revised order" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="coord" target="q_min" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1765" y="1095"/>
+                            <mxPoint x="1765" y="915"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c22" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="q_min" target="input" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="600" y="1010"/>
+                            <mxPoint x="430" y="1010"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c23" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="input" target="done" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c24" value="create Account" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b5651d;fontColor=#5a3b13;endArrow=block;dashed=1;" parent="1" source="reg1" target="sf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c25" value="create Account" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b5651d;fontColor=#5a3b13;endArrow=block;dashed=1;" parent="1" source="w_reg2" target="sf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c26" value="create Order" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b5651d;fontColor=#5a3b13;endArrow=block;dashed=1;" parent="1" source="input" target="sf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="By Reps" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" vertex="1" parent="1">
+                    <mxGeometry x="10" y="40" width="640" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="Direct to website" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" vertex="1" parent="1">
+                    <mxGeometry x="900" y="40" width="640" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
