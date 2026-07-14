@@ -1,0 +1,74 @@
+%%{init: {"theme":"base", "themeVariables": {"primaryColor":"#f6efe6","primaryBorderColor":"#b5651d","lineColor":"#8a6d3b","fontSize":"14px"}}}%%
+flowchart TD
+
+%% ================= ACTORS / SYSTEMS =================
+subgraph SF["☁️ Salesforce (API)"]
+  direction TB
+  SF_PROD["Product2 + PricebookEntry<br/>(style, color, price)"]
+  SF_ACC["Account / Contact<br/>(data buyer)"]
+end
+
+subgraph GCP["🖥️ VM GCP - Backend (Node.js + Express)"]
+  direction TB
+  API["REST API"]
+  PDF["Generate PDF Order"]
+end
+
+DB[("🗄️ PostgreSQL<br/>simpan order")]
+MAIL["📧 Email ke Admin<br/>(lampiran PDF)"]
+
+%% ================= FRONTEND FLOW =================
+START([Pembeli buka website]) --> SEASON["Pilih kode koleksi / season<br/>contoh: FALL 2026 - F26"]
+
+SEASON --> REQ_PROD["Frontend minta produk<br/>untuk season terpilih"]
+REQ_PROD --> API
+API -->|"query by season"| SF_PROD
+SF_PROD -->|"daftar style + harga + warna"| API
+API --> SHOW_PROD["Tampilkan tabel produk<br/>CODE#, STYLE, COLOR, X/S, S/M, M/L, $"]
+
+%% ---- Buyer lookup / autofill ----
+SHOW_PROD --> BUYER_IN["Buyer masukkan email / account ID"]
+BUYER_IN --> API2["API cari akun"]
+API2 --> SF_ACC
+SF_ACC -->|"kandidat akun cocok"| API2
+API2 --> MATCH{"Akun ditemukan?"}
+MATCH -->|"Ya - >1 kandidat"| PICK["Tampilkan dropdown<br/>pilih akun yang benar"]
+MATCH -->|"Ya - 1 kandidat"| AUTOFILL
+MATCH -->|"Tidak"| MANUAL["Isi data buyer manual"]
+PICK --> AUTOFILL["Autofill Bill To / Ship To<br/>Buyer, Tel, Resale Tax ID"]
+MANUAL --> QTY
+AUTOFILL --> QTY
+
+%% ---- Order entry ----
+QTY["Isi qty per ukuran (X/S, S/M, M/L)"] --> CALC["Hitung otomatis:<br/>TTL QTY, TTL $ per baris, Grand Total"]
+CALC --> VALID{"Valid minimum order?<br/>18 pcs total • 4 pcs/style<br/>2 pcs/SKU • no pre-pack"}
+VALID -->|"Tidak"| ERR["Tampilkan pesan error<br/>tunjukkan baris bermasalah"]
+ERR --> QTY
+
+VALID -->|"Ya"| DETAILS["Lengkapi field lain:<br/>Ship window, Part Ship Y/N,<br/>Order date, Tax exemption cert"]
+DETAILS --> PAY["Isi pembayaran (kartu kredit):<br/>CC#, Name on card, Exp, CVV"]
+PAY --> SIGN["Buyer signature + tanggal<br/>+ setujui Terms & Conditions"]
+SIGN --> SUBMIT(["SUBMIT ORDER"])
+
+%% ================= BACKEND PROCESS =================
+SUBMIT --> API
+API --> SAVE["Simpan order ke database<br/>⚠️ TANPA menyimpan nomor kartu"]
+SAVE --> DB
+SAVE --> PDF
+PDF -->|"PDF berisi ringkasan order<br/>+ detail CC untuk proses manual"| MAIL
+PDF --> CONFIRM["Tampilkan halaman konfirmasi<br/>ke pembeli"]
+MAIL --> DONE([Selesai - admin proses order])
+CONFIRM --> DONE
+
+%% ================= STYLES =================
+classDef ext fill:#f3e2cf,stroke:#b5651d,stroke-width:1.5px,color:#5a3b13;
+classDef store fill:#e7f0e7,stroke:#4b7a4b,stroke-width:1.5px,color:#274427;
+classDef decision fill:#fdf6e3,stroke:#c9a227,stroke-width:1.5px,color:#6b5a12;
+classDef submit fill:#b5651d,stroke:#7a430f,stroke-width:2px,color:#ffffff;
+classDef warn fill:#fbe4e4,stroke:#b5651d,color:#7a1f1f;
+
+class SF_PROD,SF_ACC,MAIL ext;
+class DB store;
+class MATCH,VALID decision;
+class SUBMIT,SEASON submit;
+class SAVE,ERR warn;
