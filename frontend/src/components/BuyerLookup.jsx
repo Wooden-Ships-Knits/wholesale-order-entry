@@ -33,13 +33,12 @@ export default function BuyerLookup({ onSelect, onResult }) {
       <h2>Find your account</h2>
       <div className="lookup-row">
         <label>
-          Email or account ID
+          Email or Account Name
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="you@yourstore.com"
-            autoComplete="email"
+            placeholder="you@yourstore.com or your store name"
           />
         </label>
         <button type="button" onClick={search}>

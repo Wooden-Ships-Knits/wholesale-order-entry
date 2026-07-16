@@ -74,6 +74,11 @@ def soql_str(value: str) -> str:
     return value.replace("\\", "\\\\").replace("'", "\\'")
 
 
+def soql_like(value: str) -> str:
+    """Escape a string for a SOQL LIKE pattern (% and _ are wildcards)."""
+    return soql_str(value).replace("%", r"\%").replace("_", r"\_")
+
+
 def _cached(key: str, fetch: Callable[[], Any]) -> Any:
     now = time.monotonic()
     hit = _cache.get(key)
@@ -127,14 +132,60 @@ def list_reps() -> list[str]:
     return _cached("reps", fetch)
 
 
-def find_accounts(email: str | None = None, account_id: str | None = None) -> list[dict[str, Any]]:
-    """Buyer lookup on Account (person-account org). Returns all candidates."""
+def list_territories() -> list[str]:
+    """Distinct Account.SalesTerritory__c values in use, sorted.
+
+    The field is free text, so there is no picklist to read — the option list
+    is whatever is actually stored on accounts.
+    """
+    def fetch() -> list[str]:
+        soql = (
+            f"SELECT {mapping.SALES_TERRITORY} FROM {mapping.ACCOUNT} "
+            f"WHERE {mapping.SALES_TERRITORY} != null "
+            f"GROUP BY {mapping.SALES_TERRITORY}"
+        )
+        values = {
+            (r.get(mapping.SALES_TERRITORY) or "").strip()
+            for r in query_all(soql)
+        }
+        return sorted(v for v in values if v)
+
+    return _cached("territories", fetch)
+
+
+def list_order_writers() -> list[str]:
+    """Active values of the sales order's Written_By__c picklist, in picklist order."""
+    def fetch() -> list[str]:
+        for field in describe_fields(mapping.SALES_ORDER):
+            if field["name"] == mapping.WRITTEN_BY:
+                return [
+                    v["label"]
+                    for v in field["picklistValues"]
+                    if v.get("active", True)
+                ]
+        return []
+
+    return _cached("order_writers", fetch)
+
+
+def find_accounts(
+    email: str | None = None,
+    account_id: str | None = None,
+    name: str | None = None,
+) -> list[dict[str, Any]]:
+    """Buyer lookup on Account (person-account org). Returns all candidates.
+
+    Name matching is a partial, case-insensitive LIKE (store name = account
+    name), capped so a broad term cannot pull the whole org.
+    """
     fields = ", ".join(mapping.ACCOUNT_FIELDS)
     if email:
         where = f"{mapping.ACCOUNT_LOOKUP_EMAIL} = '{soql_str(email)}'"
     elif account_id:
         where = f"Id = '{soql_str(account_id)}'"
+    elif name:
+        where = f"Name LIKE '%{soql_like(name)}%'"
     else:
-        raise ValueError("email or account_id required")
-    soql = f"SELECT {fields} FROM {mapping.ACCOUNT} WHERE {where}"
+        raise ValueError("email, account_id or name required")
+    soql = f"SELECT {fields} FROM {mapping.ACCOUNT} WHERE {where} ORDER BY Name LIMIT 25"
     return query_all(soql)

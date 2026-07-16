@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getSeasons, getReps, getProducts, submitOrder } from './api'
+import { getSeasons, getReps, getOrderWriters, getProducts, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
@@ -9,6 +9,7 @@ import Payment from './components/Payment'
 import TaxExemption from './components/TaxExemption'
 import TermsSignature from './components/TermsSignature'
 import InternalUse from './components/InternalUse'
+import Notes from './components/Notes'
 import Footer from './components/Footer'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -20,10 +21,12 @@ const INITIAL_LINES = 3
 export default function App() {
   const [seasons, setSeasons] = useState([])
   const [reps, setReps] = useState([])
+  const [writers, setWriters] = useState([])
   const [season, setSeason] = useState('')
   const [rows, setRows] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [loadError, setLoadError] = useState('')
+  const [notes, setNotes] = useState('')
 
   const [lines, setLines] = useState(() => Array.from({ length: INITIAL_LINES }, makeLine))
   const [form, setForm] = useState({
@@ -70,6 +73,9 @@ export default function App() {
     getReps()
       .then((d) => setReps(d.reps))
       .catch(() => setReps([]))
+    getOrderWriters()
+      .then((d) => setWriters(d.writers))
+      .catch(() => setWriters([]))
   }, [])
 
   function onSeasonChange(code) {
@@ -181,6 +187,7 @@ export default function App() {
       taxExemption: { repNotified: tax.repNotified, sendingCert: tax.sendingCert, certOnFile },
       terms,
       internal,
+      notes,
       items,
     }
 
@@ -231,6 +238,7 @@ export default function App() {
           certOnFile={certOnFile}
           setCertOnFile={setCertOnFile}
           reps={reps}
+          writers={writers}
         />
       )}
       
@@ -264,6 +272,7 @@ export default function App() {
 
       {isNewAccount && <Payment payment={payment} setPayment={setPayment} />}
       {isNewAccount && <TaxExemption certFile={certFile} setCertFile={setCertFile} />}
+      <Notes notes={notes} setNotes={setNotes} />
       <TermsSignature terms={terms} setTerms={setTerms} />
 
       {submitNotice && <p className="submit-notice">{submitNotice}</p>}

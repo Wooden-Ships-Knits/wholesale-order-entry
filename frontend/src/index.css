@@ -488,6 +488,18 @@ tfoot td {
   margin-top: 1rem;
 }
 
+/* --------------------------------------------------------------- notes */
+.notes textarea {
+  width: 100%;
+  min-height: 6rem;
+  resize: vertical; /* drag down to grow; no sideways resize */
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+  border: 1px solid #bbb;
+  box-sizing: border-box;
+}
+
 .terms-text {
   border: 1px solid #d8d4cc;
   background: #fbfaf6;
