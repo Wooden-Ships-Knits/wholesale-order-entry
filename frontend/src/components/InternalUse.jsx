@@ -1,9 +1,19 @@
 import { useEffect } from 'react'
 
-export default function InternalUse({ internal, setInternal, certOnFile, setCertOnFile, reps = [] }) {
-  // Keep an auto-filled rep selectable even if it isn't in the picklist.
-  // const repOptions = internal.rep && !reps.includes(internal.rep) ? [internal.rep, ...reps] : reps
-  const repOptions = ['Aviva', 'Denise', 'Jason', 'Kitty', 'Michael', 'Rande', 'Vickie']
+export default function InternalUse({
+  internal,
+  setInternal,
+  certOnFile,
+  setCertOnFile,
+  reps = [],
+  writers = [],
+}) {
+  // Names from the sales order's Written_By__c picklist. Keep an auto-filled
+  // value selectable even if it isn't in the list.
+  const repOptions =
+    internal.orderWrittenBy && !writers.includes(internal.orderWrittenBy)
+      ? [internal.orderWrittenBy, ...writers]
+      : writers
   const isSplit = internal.split === true
 
   // Without a split, the credited rep is whoever wrote the order.

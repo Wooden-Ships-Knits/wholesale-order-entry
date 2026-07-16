@@ -9,10 +9,17 @@ async function get(url) {
 
 export const getSeasons = () => get('/api/seasons')
 export const getReps = () => get('/api/reps')
+export const getTerritories = () => get('/api/territories')
+export const getOrderWriters = () => get('/api/order-writers')
 export const getProducts = (season) => get(`/api/products?season=${encodeURIComponent(season)}`)
+// '@' -> email; a bare 15/18-char Salesforce id -> accountId; anything else is
+// treated as the account (store) name.
 export const lookupAccounts = (query) => {
-  const param = query.includes('@') ? 'email' : 'accountId'
-  return get(`/api/accounts?${param}=${encodeURIComponent(query.trim())}`)
+  const q = query.trim()
+  let param = 'name'
+  if (q.includes('@')) param = 'email'
+  else if (/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(q)) param = 'accountId'
+  return get(`/api/accounts?${param}=${encodeURIComponent(q)}`)
 }
 
 export async function submitOrder(payload) {

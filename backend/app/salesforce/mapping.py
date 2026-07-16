@@ -21,6 +21,15 @@ ACCOUNT_LOOKUP_EMAIL = "ContactBuyingEmail__c"
 # Sales rep on the account; also the source for the Internal Use "Rep" picklist.
 SALESPERSON = "Salesperson__c"
 
+# Territory-and-rep label, e.g. "Midwest - Aviva Landin". Free text on Account
+# (not a picklist), so the option list is the distinct values actually in use.
+SALES_TERRITORY = "SalesTerritory__c"
+
+# Who wrote the order: picklist on the (managed-package) sales order object.
+# Source for the Internal Use "Order written by" / "Split with" dropdowns.
+SALES_ORDER = "kugo2p__SalesOrder__c"
+WRITTEN_BY = "Written_By__c"
+
 ACCOUNT_FIELDS = (
     "Id",
     "Name",
