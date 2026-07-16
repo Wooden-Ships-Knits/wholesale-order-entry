@@ -59,6 +59,16 @@ def query_all(soql: str) -> list[dict[str, Any]]:
         return _client().query_all(soql)["records"]
 
 
+def describe_fields(sobject: str) -> list[dict[str, Any]]:
+    """Describe an sobject's fields, re-authenticating once on session expiry."""
+    try:
+        return getattr(_client(), sobject).describe()["fields"]
+    except SalesforceExpiredSession:
+        logger.info("Salesforce session expired — re-authenticating")
+        _reset_client()
+        return getattr(_client(), sobject).describe()["fields"]
+
+
 def soql_str(value: str) -> str:
     """Escape a string for interpolation into a SOQL literal."""
     return value.replace("\\", "\\\\").replace("'", "\\'")
@@ -100,6 +110,21 @@ def get_pricebook_entries(pricebook_id: str) -> list[dict[str, Any]]:
         return query_all(soql)
 
     return _cached(f"entries:{pricebook_id}", fetch)
+
+
+def list_reps() -> list[str]:
+    """Active sales reps = active values of the Account.Salesperson__c picklist."""
+    def fetch() -> list[str]:
+        for field in describe_fields(mapping.ACCOUNT):
+            if field["name"] == mapping.SALESPERSON:
+                return sorted(
+                    v["label"]
+                    for v in field["picklistValues"]
+                    if v.get("active", True)
+                )
+        return []
+
+    return _cached("reps", fetch)
 
 
 def find_accounts(email: str | None = None, account_id: str | None = None) -> list[dict[str, Any]]:

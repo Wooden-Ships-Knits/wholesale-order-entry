@@ -20,4 +20,5 @@ def list_seasons() -> dict:
                 }
             )
     seasons.sort(key=lambda s: mapping.season_sort_key(s["code"]), reverse=True)
-    return {"seasons": seasons}
+    return {"seasons": seasons[:2]}  # only return the two most recent seasons, 
+#discuss with other team which seasons to sale at this current of time. 

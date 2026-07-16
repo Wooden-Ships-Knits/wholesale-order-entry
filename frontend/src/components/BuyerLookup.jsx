@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { lookupAccounts } from '../api'
 
-export default function BuyerLookup({ onSelect }) {
+export default function BuyerLookup({ onSelect, onResult }) {
   const [query, setQuery] = useState('')
   const [matches, setMatches] = useState(null)
   const [status, setStatus] = useState('')
@@ -14,6 +14,7 @@ export default function BuyerLookup({ onSelect }) {
     try {
       const data = await lookupAccounts(query)
       setMatches(data.matches)
+      onResult?.(data.matches)
       if (data.matches.length === 0) {
         setStatus('No matching account — please enter your details below.')
       } else if (data.matches.length === 1) {

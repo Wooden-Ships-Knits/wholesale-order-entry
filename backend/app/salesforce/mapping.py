@@ -18,6 +18,9 @@ PRICEBOOK_ENTRY = "PricebookEntry"
 # Canonical buyer-lookup key (decision 2026-07-14).
 ACCOUNT_LOOKUP_EMAIL = "ContactBuyingEmail__c"
 
+# Sales rep on the account; also the source for the Internal Use "Rep" picklist.
+SALESPERSON = "Salesperson__c"
+
 ACCOUNT_FIELDS = (
     "Id",
     "Name",
@@ -36,7 +39,7 @@ ACCOUNT_FIELDS = (
     "Tax_ID_Number__c",
     "Tax_ID_Verified__c",
     "Tax_ID_Expires__c",
-    "Salesperson__c",
+    SALESPERSON,
 )
 
 # ------------------------------------------------------- seasons / price books

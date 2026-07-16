@@ -8,6 +8,7 @@ async function get(url) {
 }
 
 export const getSeasons = () => get('/api/seasons')
+export const getReps = () => get('/api/reps')
 export const getProducts = (season) => get(`/api/products?season=${encodeURIComponent(season)}`)
 export const lookupAccounts = (query) => {
   const param = query.includes('@') ? 'email' : 'accountId'

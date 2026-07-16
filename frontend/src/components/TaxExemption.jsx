@@ -1,27 +1,16 @@
-export default function TaxExemption({ tax, setTax, certOnFile, setCertOnFile }) {
+export default function TaxExemption({ certFile, setCertFile }) {
   return (
     <section className="section tax-exemption">
       <h2>Tax exemption certificate</h2>
-      <label className="check">
+      <label>
+        Upload certificate
         <input
-          type="checkbox"
-          checked={tax.repNotified}
-          onChange={(e) => setTax('repNotified', e.target.checked)}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          onChange={(e) => setCertFile(e.target.files[0] || null)}
         />
-        Rep has notified the account that a state-issued tax exemption certificate is required.
       </label>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={tax.sendingCert}
-          onChange={(e) => setTax('sendingCert', e.target.checked)}
-        />
-        Account confirms it is sending the certificate — orders will not be processed without it.
-      </label>
-      <label className="check internal">
-        <input type="checkbox" checked={certOnFile} onChange={(e) => setCertOnFile(e.target.checked)} />
-        Certificate on file <span className="muted">(internal)</span>
-      </label>
+      {certFile && <span className="muted">{certFile.name}</span>}
     </section>
   )
 }

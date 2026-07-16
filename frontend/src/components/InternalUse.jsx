@@ -1,10 +1,26 @@
-export default function InternalUse({ internal, setInternal, certOnFile, setCertOnFile }) {
+import { useEffect } from 'react'
+
+export default function InternalUse({ internal, setInternal, certOnFile, setCertOnFile, reps = [] }) {
+  // Keep an auto-filled rep selectable even if it isn't in the picklist.
+  // const repOptions = internal.rep && !reps.includes(internal.rep) ? [internal.rep, ...reps] : reps
+  const repOptions = ['Aviva', 'Denise', 'Jason', 'Kitty', 'Michael', 'Rande', 'Vickie']
+  const isSplit = internal.split === true
+
+  // Without a split, the credited rep is whoever wrote the order.
+  useEffect(() => {
+    if (!isSplit && internal.rep !== internal.orderWrittenBy) {
+      setInternal('rep', internal.orderWrittenBy)
+    }
+    // setInternal is intentionally omitted: it's re-created each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSplit, internal.orderWrittenBy])
+
   return (
     <section className="section internal-use">
       <h2>Internal Use</h2>
       <div className="internal-grid">
         <fieldset className="inline-radios">
-          <legend>New or reorder</legend>
+          <legend>New or reorder (optional)</legend>
           <label>
             <input
               type="radio"
@@ -26,7 +42,7 @@ export default function InternalUse({ internal, setInternal, certOnFile, setCert
         </fieldset>
 
         <fieldset className="inline-radios">
-          <legend>Account</legend>
+          <legend>Account*</legend>
           <label>
             <input
               type="radio"
@@ -48,7 +64,7 @@ export default function InternalUse({ internal, setInternal, certOnFile, setCert
         </fieldset>
 
         <fieldset className="inline-radios span2">
-          <legend>Campaign</legend>
+          <legend>Campaign (optional)</legend>
           <label>
             <input
               type="radio"
@@ -77,21 +93,40 @@ export default function InternalUse({ internal, setInternal, certOnFile, setCert
         </fieldset>
 
         <label>
-          PO #
+          PO # (optional)
           <input type="text" value={internal.poNumber} onChange={(e) => setInternal('poNumber', e.target.value)} />
         </label>
         <label>
-          Rep
-          <input type="text" value={internal.rep} onChange={(e) => setInternal('rep', e.target.value)} />
-        </label>
-        <label>
-          Order written by
-          <input
-            type="text"
+          Order written by*
+          <select
             value={internal.orderWrittenBy}
             onChange={(e) => setInternal('orderWrittenBy', e.target.value)}
-          />
+            required
+          >
+            <option value="">Select a rep…</option>
+            {repOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
         </label>
+        
+        {/* <label>
+          Rep*
+          <select
+            value={internal.rep}
+            onChange={(e) => setInternal('rep', e.target.value)}
+            disabled={!isSplit}
+          >
+            <option value="">Select a rep…</option>
+            {repOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label> */}
 
         <fieldset className="inline-radios">
           <legend>Split?</legend>
@@ -113,20 +148,21 @@ export default function InternalUse({ internal, setInternal, certOnFile, setCert
             />
             N
           </label>
-          <input
-            type="text"
+          <select
             className="split-with"
-            placeholder="with…"
             value={internal.splitWith}
             onChange={(e) => setInternal('splitWith', e.target.value)}
-            disabled={internal.split !== true}
-          />
+            disabled={!isSplit}
+          >
+            <option value="">Split with…</option>
+            {repOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
         </fieldset>
 
-        <label className="check span2">
-          <input type="checkbox" checked={certOnFile} onChange={(e) => setCertOnFile(e.target.checked)} />
-          Certificate on file
-        </label>
       </div>
     </section>
   )

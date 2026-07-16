@@ -6,7 +6,9 @@ export default defineConfig({
   server: {
     // Local dev only — in production nginx does this proxying
     proxy: {
-      '/api': 'http://localhost:8080',
+      // Local dev: the wholesale API is served by the nginx container on :80
+      // (:8080 on the host belongs to a different project).
+      '/api': 'http://localhost:80',
     },
   },
 })

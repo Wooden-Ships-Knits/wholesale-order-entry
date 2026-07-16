@@ -185,8 +185,67 @@ label.check input {
   gap: 2.5rem;
 }
 
+.address-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2rem; /* keeps both columns' headers the same height */
+  margin-bottom: 0.4rem;
+}
+.col-head h2 {
+  margin: 0;
+}
+.col-head .check {
+  margin: 0;
+}
+
 .address-col label {
   margin-bottom: 0.6rem;
+}
+
+/* ---------------------------------------------------------- address map */
+.address-map {
+  margin-bottom: 1.2rem; /* breathing room before the Street field */
+}
+.map-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.locate-btn {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+}
+.map-status {
+  font-size: 0.8rem;
+  color: #888;
+}
+.map-canvas {
+  width: 100%;
+  height: 200px;
+  background: #eee;
+  border: 1px solid #ddd;
+}
+.map-search {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.9rem;
+  border: 1px solid #bbb;
+}
+.coords {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: #555;
 }
 
 /* --------------------------------------------------------------- table */

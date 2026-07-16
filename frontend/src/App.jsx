@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getSeasons, getProducts, submitOrder } from './api'
+import { getSeasons, getReps, getProducts, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
@@ -19,6 +19,7 @@ const INITIAL_LINES = 3
 
 export default function App() {
   const [seasons, setSeasons] = useState([])
+  const [reps, setReps] = useState([])
   const [season, setSeason] = useState('')
   const [rows, setRows] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(false)
@@ -27,14 +28,25 @@ export default function App() {
   const [lines, setLines] = useState(() => Array.from({ length: INITIAL_LINES }, makeLine))
   const [form, setForm] = useState({
     orderDate: today(),
+    shipWindow: '',
     partShipOk: null,
+    representativeOk: null,
     sfAccountId: null,
   })
-  const [billTo, setBillToState] = useState({ buyerName: '', street: '', cityState: '', zip: '', tel: '', fax: '' })
-  const [shipTo, setShipToState] = useState({ email: '', street: '', cityState: '', zip: '', resaleTaxId: '' })
-  const [payment, setPaymentState] = useState({ cardNumber: '', cardName: '', expDate: '', cvv: '' })
+  const [billTo, setBillToState] = useState({ buyerName: '', street: '', cityState: '', zip: '', tel: '', fax: '', lat: null, lng: null })
+  const [shipTo, setShipToState] = useState({ email: '', street: '', cityState: '', zip: '', resaleTaxId: '', lat: null, lng: null })
+  const [payment, setPaymentState] = useState({
+    method: '',
+    approvalBeforeCharge: null,
+    cardNumber: '',
+    cardName: '',
+    expDate: '',
+    cvv: '',
+  })
   const [tax, setTaxState] = useState({ repNotified: false, sendingCert: false })
   const [certOnFile, setCertOnFile] = useState(false)
+  const [certFile, setCertFile] = useState(null)
+  const [lookupNoMatch, setLookupNoMatch] = useState(false)
   const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false })
   const [internal, setInternalState] = useState({
     newOrReorder: '',
@@ -55,6 +67,9 @@ export default function App() {
     getSeasons()
       .then((d) => setSeasons(d.seasons))
       .catch((e) => setLoadError(`Could not load collections: ${e.message}`))
+    getReps()
+      .then((d) => setReps(d.reps))
+      .catch(() => setReps([]))
   }, [])
 
   function onSeasonChange(code) {
@@ -109,6 +124,8 @@ export default function App() {
       zip: m.billTo.zip || '',
       tel: m.billTo.tel || '',
       fax: m.billTo.fax || '',
+      lat: null,
+      lng: null,
     })
     setShipToState({
       email: m.email || '',
@@ -116,10 +133,16 @@ export default function App() {
       cityState: m.shipTo.cityState || '',
       zip: m.shipTo.zip || '',
       resaleTaxId: m.resaleTaxId || '',
+      lat: null,
+      lng: null,
     })
     setCertOnFile(Boolean(m.certificateOnFile))
     if (m.rep) setInternalState((p) => ({ ...p, rep: m.rep }))
   }
+
+  // Payment + tax exemption only apply to accounts we don't already have on
+  // file: either the rep marked it new, or the lookup found nothing.
+  const isNewAccount = internal.accountStatus === 'new' || lookupNoMatch
 
   const { totalPieces, totalAmount, perLine } = useMemo(() => computeTotals(resolved), [resolved])
   const minimums = useMemo(() => validateMinimums(resolved), [resolved])
@@ -128,6 +151,7 @@ export default function App() {
     e.preventDefault()
     const problems = [...minimums.errors]
     if (totalPieces === 0) problems.unshift('No items entered yet.')
+    if (form.representativeOk === null) problems.push('Please select who is filling in this form.')
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!terms.signatureName) problems.push('Signature is required.')
     if (!terms.accepted) problems.push('You must accept the terms & conditions.')
@@ -200,7 +224,17 @@ export default function App() {
       />
       {loadError && <p className="error-banner">{loadError}</p>}
 
-      <BuyerLookup onSelect={applyAccount} />
+      {form.representativeOk === true && (
+        <InternalUse
+          internal={internal}
+          setInternal={setInternal}
+          certOnFile={certOnFile}
+          setCertOnFile={setCertOnFile}
+          reps={reps}
+        />
+      )}
+      
+      <BuyerLookup onSelect={applyAccount} onResult={(m) => setLookupNoMatch(m.length === 0)} />
       <Addresses billTo={billTo} shipTo={shipTo} setBillTo={setBillTo} setShipTo={setShipTo} />
 
       <ProductLines
@@ -228,15 +262,9 @@ export default function App() {
         </div>
       )}
 
-      <Payment payment={payment} setPayment={setPayment} />
-      <TaxExemption tax={tax} setTax={setTax} certOnFile={certOnFile} setCertOnFile={setCertOnFile} />
+      {isNewAccount && <Payment payment={payment} setPayment={setPayment} />}
+      {isNewAccount && <TaxExemption certFile={certFile} setCertFile={setCertFile} />}
       <TermsSignature terms={terms} setTerms={setTerms} />
-      <InternalUse
-        internal={internal}
-        setInternal={setInternal}
-        certOnFile={certOnFile}
-        setCertOnFile={setCertOnFile}
-      />
 
       {submitNotice && <p className="submit-notice">{submitNotice}</p>}
       <div className="submit-row">
