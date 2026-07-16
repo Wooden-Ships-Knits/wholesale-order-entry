@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="woodenships-order" name="Wooden Ships Order Flow">
-        <mxGraphModel dx="1374" dy="413" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1900" math="0" shadow="0">
+        <mxGraphModel dx="1666" dy="571" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1900" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -59,7 +59,7 @@
                     <mxGeometry x="370" y="1890" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="done" value="Done - admin processes order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="1980" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="370" y="2070" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="pick" value="Show dropdown&lt;br&gt;pick correct account" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
                     <mxGeometry x="730" y="740" width="190" height="60" as="geometry"/>
@@ -79,8 +79,8 @@
                 <mxCell id="db" value="PostgreSQL&lt;br&gt;store order" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#e7f0e7;strokeColor=#4b7a4b;fontColor=#274427;" parent="1" vertex="1">
                     <mxGeometry x="790" y="1700" width="180" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="mail" value="Email to Admin&lt;br&gt;(PDF attachment)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="840" y="1975" width="180" height="60" as="geometry"/>
+                <mxCell id="mail" value="Email to PPIC&lt;br&gt;(PDF attachment)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="2065" width="180" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="e0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="start" target="season" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -104,10 +104,17 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e7" value="candidates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="sfacc" target="match" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="480" y="560"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e8" value="Yes - multiple" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="match" target="pick" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry x="0.0028" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e9" value="Yes - single" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="match" target="autofill" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -170,8 +177,16 @@
                 <mxCell id="e27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="mail" target="done" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="confirm" target="done" edge="1">
+                <mxCell id="e28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" target="2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="480" y="1940" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="3" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="done">
                     <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="Email to buyer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="370" y="1970" width="220" height="50" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

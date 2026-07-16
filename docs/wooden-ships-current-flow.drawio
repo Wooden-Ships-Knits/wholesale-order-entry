@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="woodenships-current-order" name="Current Order Intake Flow">
-        <mxGraphModel dx="3210" dy="1813" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="1200" math="0" shadow="0">
+        <mxGraphModel dx="2135" dy="1621" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="1200" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -29,13 +29,13 @@
                     <mxGeometry x="230" y="285" width="170" height="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="q_conf" value="Store conflicts with a&lt;br&gt;nearby store? (too close)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="430" width="190" height="100" as="geometry"/>
+                    <mxGeometry x="60" y="425" width="190" height="100" as="geometry"/>
                 </mxCell>
                 <mxCell id="rej1" value="Order rejected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
-                    <mxGeometry x="-20" y="590" width="160" height="50" as="geometry"/>
+                    <mxGeometry x="-20" y="575" width="160" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="reg1" value="PPIC registers NEW store&lt;br&gt;in Salesforce" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf1f7;strokeColor=#3b6d8a;fontColor=#1f3a4d;" parent="1" vertex="1">
-                    <mxGeometry x="200" y="590" width="210" height="60" as="geometry"/>
+                    <mxGeometry x="170" y="570" width="210" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="w_reg" value="Store fills wholesale&lt;br&gt;registration form" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
                     <mxGeometry x="875" y="180" width="200" height="50" as="geometry"/>
@@ -44,7 +44,7 @@
                     <mxGeometry x="870" y="275" width="210" height="105" as="geometry"/>
                 </mxCell>
                 <mxCell id="rej2" value="Registration /&lt;br&gt;order rejected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
-                    <mxGeometry x="1120" y="300" width="170" height="60" as="geometry"/>
+                    <mxGeometry x="1135" y="300" width="170" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="w_reg2" value="PPIC registers store in Salesforce&lt;br&gt;+ issues login password" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf1f7;strokeColor=#3b6d8a;fontColor=#1f3a4d;" parent="1" vertex="1">
                     <mxGeometry x="855" y="430" width="240" height="60" as="geometry"/>
@@ -178,8 +178,8 @@
                 <mxCell id="c19" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ew_submit" target="q_min" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="1425" y="720"/>
-                            <mxPoint x="600" y="720"/>
+                            <mxPoint x="1425" y="760"/>
+                            <mxPoint x="600" y="760"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -219,11 +219,14 @@
                 <mxCell id="c26" value="create Order" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b5651d;fontColor=#5a3b13;endArrow=block;dashed=1;" parent="1" source="input" target="sf" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="3" value="By Reps" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" vertex="1" parent="1">
+                <mxCell id="3" value="By Reps" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" parent="1" vertex="1">
                     <mxGeometry x="10" y="40" width="640" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="Direct to website" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" vertex="1" parent="1">
+                <mxCell id="4" value="Direct to website" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" parent="1" vertex="1">
                     <mxGeometry x="900" y="40" width="640" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="Status checking?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" vertex="1" parent="1">
+                    <mxGeometry x="515" y="490" width="170" height="90" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
