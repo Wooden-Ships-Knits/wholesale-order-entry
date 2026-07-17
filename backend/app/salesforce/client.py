@@ -168,6 +168,21 @@ def list_order_writers() -> list[str]:
     return _cached("order_writers", fetch)
 
 
+def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
+    """Wholesale accounts with shipping geocodes — the conflict-check candidate set."""
+    def fetch() -> list[dict[str, Any]]:
+        fields = ", ".join(mapping.NEARBY_ACCOUNT_FIELDS)
+        soql = (
+            f"SELECT {fields} FROM {mapping.ACCOUNT} "
+            f"WHERE {mapping.ACCOUNT_TYPE} = '{mapping.WHOLESALE_TYPE}' "
+            f"AND {mapping.SHIPPING_LAT} != null "
+            f"AND {mapping.SHIPPING_LNG} != null"
+        )
+        return query_all(soql)
+
+    return _cached("geocoded_accounts", fetch)
+
+
 def find_accounts(
     email: str | None = None,
     account_id: str | None = None,
