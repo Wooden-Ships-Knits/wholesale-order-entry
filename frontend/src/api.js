@@ -24,6 +24,11 @@ export const lookupAccounts = (query) => {
   return get(`/api/accounts?${param}=${encodeURIComponent(q)}`)
 }
 
+// New-customer stockist conflict check (see docs/conflict-checker.md).
+// Server defaults apply: k=5 neighbors, 20-minute drive threshold.
+export const getNearbyAccounts = (lat, lng) =>
+  get(`/api/accounts/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
+
 export async function submitOrder(payload) {
   const res = await fetch('/api/orders', {
     method: 'POST',
