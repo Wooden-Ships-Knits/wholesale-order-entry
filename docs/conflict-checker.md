@@ -17,7 +17,16 @@ Drive time is used instead of straight-line distance on purpose — two stores 2
 
 ## The standalone tool page
 
-`https://<site>/conflict.html` is an independent internal page (not linked from the order form): type a location in the Google search box, pick a suggestion, and it shows the verdict banner plus the nearest-stockists table. The drive-time threshold and how many neighbors to show are adjustable on the page. It is a second Vite entry (`frontend/src/conflict/`), so it reuses the same Google Maps browser key and deploys with the normal frontend build — nothing extra to configure. Note: the page has no login (same as the rest of the site); don't share the URL outside the team.
+`https://<site>/conflict.html` is an independent internal page (not linked from the order form): type a location in the Google search box, pick a suggestion, and it shows the verdict banner plus the nearest-stockists table. The drive-time threshold and how many neighbors to show are adjustable on the page. It is a second Vite entry (`frontend/src/conflict/`), so it reuses the same Google Maps browser key and deploys with the normal frontend build — nothing extra to configure.
+
+**Protecting the page:** it has no login by default and exposes the stockist list, so before (or right after) exposing it on the public VM, enable the prepared basic-auth block:
+
+1. On the VM, create the password file (prompts for the password):
+   `mkdir -p secrets && printf "admin:$(openssl passwd -apr1)\n" > secrets/htpasswd`
+2. In `docker-compose.yml`, add to the nginx service volumes: `- ./secrets/htpasswd:/etc/nginx/htpasswd:ro`
+3. Uncomment the `location = /conflict.html` block in `frontend/nginx.conf`, then `docker compose build nginx && docker compose up -d nginx`.
+
+The `secrets/` directory must never be committed (add it to `.gitignore` if it isn't).
 
 ## How to call it
 
