@@ -1,0 +1,29 @@
+// Admin API. Every call sends the session cookie.
+async function request(url, options = {}) {
+  const res = await fetch(url, { credentials: 'same-origin', ...options })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    const err = new Error(body.detail || `Request failed (${res.status})`)
+    err.status = res.status
+    throw err
+  }
+  return res.json()
+}
+
+const post = (url, payload) =>
+  request(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+  })
+
+export const getSession = () => request('/api/admin/session')
+export const login = (password) => post('/api/admin/login', { password })
+export const logout = () => post('/api/admin/logout')
+export const getOrders = (statusFilter) =>
+  request(`/api/admin/orders${statusFilter ? `?status_filter=${encodeURIComponent(statusFilter)}` : ''}`)
+export const setOrderStatus = (id, status, reason = '') =>
+  post(`/api/admin/orders/${id}/status`, { status, reason })
+
+export const pdfUrl = (id) => `/api/admin/orders/${id}/pdf`
+export const certUrl = (id) => `/api/admin/orders/${id}/certificate`

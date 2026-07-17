@@ -106,7 +106,7 @@
     </tfoot>
   </table>
 
-  <h2>Payment — for manual processing only</h2>
+  <h2>Payment</h2>
   <table class="meta">
     <tr>
       <td><span class="label">Payment by</span>
@@ -117,22 +117,8 @@
       </td>
     </tr>
   </table>
-  {% if order.payment_method != "link" %}
-  <table class="meta">
-    <tr>
-      <td><span class="label">Card number</span> {{ payment.card_number or "—" }}</td>
-      <td><span class="label">Name on card</span> {{ payment.card_name or "—" }}</td>
-      <td><span class="label">Exp</span> {{ payment.exp_date or "—" }}</td>
-      <td><span class="label">CVV</span> {{ payment.cvv or "—" }}</td>
-    </tr>
-  </table>
-  <p class="warn">Contains card data — handle per policy, do not forward, destroy after processing.</p>
-  {% endif %}
 
   <h2>Tax Exemption Certificate</h2>
-  <div class="ack">{{ "☑" if order.cert_required_ack else "☐" }} Rep has notified the account that a state-issued certificate is required.</div>
-  <div class="ack">{{ "☑" if order.cert_sending_ack else "☐" }} Account confirms sending the certificate (orders will not process without it).</div>
-  <div class="ack">{{ "☑" if order.cert_on_file else "☐" }} Certificate on file <em>(internal)</em>.</div>
   <div class="ack">Uploaded certificate: {{ order.cert_filename or "—" }}</div>
 
   <h2>Notes</h2>
@@ -140,11 +126,28 @@
 
   <h2>Terms &amp; Conditions</h2>
   <div class="box">
-    All Wooden Ships sweaters are made to order. Quantities may be adjusted to meet production minimums;
-    the buyer is contacted before any adjustment. Claims for damages or shortages must be reported within
-    10 days of receipt. Returns require prior authorization and are subject to a restocking fee. All sale
-    items are final sale. Orders ship via DHL unless otherwise arranged; freight payable by buyer.
-    <!-- TODO: replace with the exact wording from the Excel form once provided -->
+      <ul>
+        <li>
+          All Wooden Ships are <strong>made to order</strong>.
+        </li>
+        <li>
+          Changes to your order may be requested within <strong>10 days of order confirmation</strong>.
+        </li>
+        <li>
+          Claims for shipping damage or shortages must be reported within
+          <strong>10 days of receiving your order</strong>.
+        </li>
+        <li>
+          Cancelled orders are subject to a <strong>15% restocking fee</strong>.
+        </li>
+        <li>
+          Custom and special orders are <strong>final sale</strong> and are not eligible for
+          cancellation, return, or refund once production has begun.
+        </li>
+      </ul>
+      <p>
+        All Orders are always Net Due prior to shipment. We do not offer net terms. Please let us know within 10 days if you do not agree to these terms. If we don't hear from you, we'll understand this as an acceptance of the terms and will proceed to purchase the yarn. Cancelled orders incur a 15% Restocking Fee.
+      </p>
   </div>
   <table class="meta" style="margin-top: 8pt;">
     <tr>

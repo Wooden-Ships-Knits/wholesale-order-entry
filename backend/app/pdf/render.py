@@ -1,8 +1,8 @@
 """Order PDF rendering (WeasyPrint) and saving.
 
-The rendered PDF is the ONLY artifact that contains the full card number/CVV
-(for manual processing). It is written to PDF_OUTPUT_DIR — a bind-mounted
-directory outside the web root, never served by nginx.
+The PDF shows only the card name and last 4 — the full number and CVV are
+never rendered and never leave the submit request. Output is written to
+PDF_OUTPUT_DIR, a bind-mounted directory outside the web root.
 """
 import logging
 import re

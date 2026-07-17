@@ -579,3 +579,152 @@ button:hover {
     grid-column: auto;
   }
 }
+
+/* ============================================================ admin page */
+.admin {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+.admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid #d8d4cc;
+  padding-bottom: 0.8rem;
+  margin-bottom: 1rem;
+}
+.admin-head h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.chip {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  background: #fff;
+  border: 1px solid #bbb;
+  cursor: pointer;
+}
+.chip.active {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #1a1a1a;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: #555;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.admin-table th {
+  background: #efece6;
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid #d8d4cc;
+  padding: 0.4rem 0.5rem;
+}
+.admin-table td {
+  border: 1px solid #e2ded6;
+  padding: 0.45rem 0.5rem;
+  vertical-align: top;
+}
+.admin-table .sub {
+  color: #888;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+.notes-cell {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.unknown {
+  color: #aaa;
+}
+.decide {
+  display: flex;
+  gap: 0.3rem;
+}
+.decide button {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: 1px solid #bbb;
+  background: #fff;
+}
+.decide .accept:hover {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #fff;
+}
+.decide .decline:hover {
+  background: #7a281f;
+  border-color: #7a281f;
+  color: #fff;
+}
+.status {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+.status.accepted {
+  color: #2e7d32;
+}
+.status.declined {
+  color: #7a281f;
+}
+.admin-error {
+  background: #fdf3f2;
+  border: 1px solid #7a281f;
+  color: #7a281f;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+}
+.admin-empty {
+  color: #888;
+  text-align: center;
+  padding: 2rem;
+}
+.admin-login {
+  max-width: 320px;
+  margin: 6rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.admin-login h1 {
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+}
+.admin-login button {
+  padding: 0.5rem;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+.admin-login button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

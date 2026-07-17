@@ -2,11 +2,10 @@
 
 Prices and Salesforce product ids are re-resolved server-side from the
 season's wholesale price book; client-sent prices are ignored. Card number
-and CVV are never persisted or logged: only card_name + last4 are stored.
-The PDF (the only artifact carrying full card details, for manual
-processing) is rendered BEFORE the DB commit — a render failure aborts the
-whole submission so the buyer can retry — and written to PDF_OUTPUT_DIR
-after the commit succeeds.
+and CVV are never persisted, logged, or rendered: only card_name + last4
+are stored, and the PDF shows just those. The PDF is rendered BEFORE the DB
+commit — a render failure aborts the whole submission so the buyer can
+retry — and written to PDF_OUTPUT_DIR after the commit succeeds.
 """
 import logging
 import uuid
@@ -167,6 +166,15 @@ def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dic
         terms_accepted=payload.terms.accepted,
         new_or_reorder=payload.internal.new_or_reorder,
         account_status=payload.internal.account_status,
+        # Admin-list flag: the rep's radio is the source of truth. Left null
+        # when unanswered, so the admin page shows "—" rather than a false "No".
+        is_new_account=(
+            True
+            if payload.internal.account_status == "new"
+            else False
+            if payload.internal.account_status == "existing"
+            else None
+        ),
         campaign=campaign,
         po_number=payload.internal.po_number,
         rep=payload.internal.rep,
@@ -239,12 +247,8 @@ def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dic
             }
             for i in order_items
         ],
-        "payment": {
-            "card_number": payload.payment.card_number.get_secret_value(),
-            "card_name": payload.payment.card_name,
-            "exp_date": payload.payment.exp_date,
-            "cvv": payload.payment.cvv.get_secret_value(),
-        },
+        # No card data reaches the template: the PDF shows the payment method
+        # only, so the number/name/CVV never leave this request.
     }
     try:
         pdf_bytes = pdf_render.render_order_pdf(pdf_context)

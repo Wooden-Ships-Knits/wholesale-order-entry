@@ -75,10 +75,20 @@ class Order(Base):
     # salesforce link
     sf_account_id: Mapped[str | None] = mapped_column(Text)
 
+    # is this a new account? set from the rep's Internal Use radio
+    is_new_account: Mapped[bool | None] = mapped_column(Boolean)
+
+    # nearby-stockist conflict verdict — populated by the conflict-check API
+    # (feat/nearby-conflict-api); null means "not yet checked", NOT "no conflict".
+    has_conflict: Mapped[bool | None] = mapped_column(Boolean)
+
     # totals / status
     total_qty: Mapped[int] = mapped_column(Integer)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    # submitted | accepted | declined
     status: Mapped[str] = mapped_column(Text, server_default="submitted")
+    status_reason: Mapped[str | None] = mapped_column(Text)
+    status_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
