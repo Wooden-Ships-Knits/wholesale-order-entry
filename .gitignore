@@ -15,4 +15,4 @@ output/
 
 # OS / editor
 .DS_Store
-secrets/
+backend/credentials/*

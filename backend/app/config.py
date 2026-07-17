@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     # No price book id setting: wholesale price books are resolved per season
     # by name ("<season> Wholesale") — see app/salesforce/mapping.py.
 
+    # Ship windows come from a Google Sheet: one worksheet per season code,
+    # read live via a service account (share the sheet with its client_email).
+    shipping_window_sheet_id: str = ""
+    google_credentials_path: str = "/credentials/service-account.json"
+
     pdf_output_dir: str = "/output/orders"
 
     # Nearby-stockist conflict check. Server-side Google key (Distance Matrix)
