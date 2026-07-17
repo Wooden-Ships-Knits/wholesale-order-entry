@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import accounts, health, orders, products, reps, seasons
+from app.routers import accounts, health, orders, products, reps, seasons, ship_windows
 
 app = FastAPI(title="Wooden Ships Wholesale Order Form")
 
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api")
 app.include_router(seasons.router, prefix="/api")
+app.include_router(ship_windows.router, prefix="/api")
 app.include_router(products.router, prefix="/api")
 app.include_router(accounts.router, prefix="/api")
 app.include_router(reps.router, prefix="/api")
