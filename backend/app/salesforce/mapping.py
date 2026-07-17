@@ -38,6 +38,16 @@ WRITTEN_BY = "Written_By__c"
 SALES_ORDER_ACCOUNT = "kugo2p__Account__c"
 SALES_ORDER_DATE = "kugo2p__OrderDate__c"
 ACCOUNT_TYPE = "Type"
+# Accounts with these Rank__c values are not active stockists and never
+# count as conflicts (decision 2026-07-18). Accounts with no rank still count.
+RANK = "Rank__c"
+EXCLUDED_RANKS = (
+    "ZZ - No Booking",
+    "Z - Inactive",
+    "E - No Marketing",
+    "X - Conflict",
+    "OOB - Out of Business",
+)
 WHOLESALE_TYPE = "Wholesale"
 SHIPPING_LAT = "ShippingLatitude"
 SHIPPING_LNG = "ShippingLongitude"
