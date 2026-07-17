@@ -610,8 +610,14 @@ button:hover {
   padding: 0.3rem 0.75rem;
   font-size: 0.85rem;
   background: #fff;
+  /* the global `button` rule sets white text for the dark form buttons —
+     light-background buttons must set their own colour or they vanish */
+  color: #1d1d1b;
   border: 1px solid #bbb;
   cursor: pointer;
+}
+.chip:hover {
+  background: #efece6;
 }
 .chip.active {
   background: #1a1a1a;
@@ -670,6 +676,7 @@ button:hover {
   cursor: pointer;
   border: 1px solid #bbb;
   background: #fff;
+  color: #1d1d1b; /* see .chip — the global button rule would make this white */
 }
 .decide .accept:hover {
   background: #2e7d32;
