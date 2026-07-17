@@ -115,6 +115,10 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 ### 5.11 Notes (new — 2026-07-16)
 - Free-text notes textarea, saved with the order and shown on the PDF
 
+### 5.12 New-customer conflict check (new — 2026-07-17, backend API only)
+- `GET /api/accounts/nearby` — given the new customer's Ship To lat/lng (from the Google Maps search), returns the k nearest existing wholesale stockists and a conflict verdict: **conflict if an existing store is under a 20-minute drive away** (threshold configurable/overridable).
+- Backend-only for now — where the check surfaces (order form, admin review, elsewhere) is not yet decided. Design: `docs/superpowers/specs/2026-07-17-nearby-conflict-check-design.md`.
+
 ## 6. Validation rules
 
 - **Order minimum:** 18 pieces total, 4 pieces per style, 2 pieces per SKU, no pre-packs. Additional singles allowed once a style reaches its 4-piece minimum.
@@ -155,3 +159,4 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 - **Which seasons to sell right now** — the seasons endpoint currently returns only the two most recent wholesale price books (interim code decision 2026-07-16); confirm with the team.
 - **Uploaded tax-cert retention** — certs are saved beside the order PDFs; confirm retention period and who may access them.
 - **Address lat/lng** — captured by the Google Maps search and stored with the order; confirm whether/how they should sync to Salesforce.
+- **Conflict check UI** — the nearby-stockist API (§5.12) exists; decide where it surfaces (on the form at submit, an admin review screen, or a rep tool) and whether a conflict blocks submission or just warns.
