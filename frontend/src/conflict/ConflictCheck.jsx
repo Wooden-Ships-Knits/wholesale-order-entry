@@ -134,6 +134,7 @@ export default function ConflictCheck() {
               <tr>
                 <th>Store</th>
                 <th>Location</th>
+                <th>Last order</th>
                 <th className="num">Miles</th>
                 <th className="num">Drive (min)</th>
               </tr>
@@ -154,13 +155,14 @@ export default function ConflictCheck() {
                 >
                   <td>{n.name}</td>
                   <td>{n.cityState}</td>
+                  <td>{n.lastOrder ?? '—'}</td>
                   <td className="num">{n.distanceMiles}</td>
                   <td className="num">{n.driveMinutes ?? '—'}</td>
                 </tr>
               ))}
               {result.neighbors.length === 0 && (
                 <tr>
-                  <td colSpan="4">No geocoded wholesale accounts found.</td>
+                  <td colSpan="5">No geocoded wholesale accounts found.</td>
                 </tr>
               )}
             </tbody>

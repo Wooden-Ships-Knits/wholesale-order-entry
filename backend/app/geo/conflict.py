@@ -48,7 +48,12 @@ def find_nearby(lat: float, lng: float, k: int, max_minutes: int) -> dict:
             a["driveMinutes"] = None  # already sorted by distanceMiles
 
     neighbors = [
-        {key: a[key] for key in ("accountId", "name", "cityState", "distanceMiles", "driveMinutes")}
+        {
+            key: a[key]
+            for key in (
+                "accountId", "name", "cityState", "lastOrder", "distanceMiles", "driveMinutes",
+            )
+        }
         for a in pool[:k]
     ]
     if mode == "drive-time":

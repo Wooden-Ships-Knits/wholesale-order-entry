@@ -25,7 +25,10 @@ def test_haversine_short_hop():
 
 
 def _acct(name, lat, lng):
-    return {"accountId": name, "name": name, "cityState": "", "lat": lat, "lng": lng}
+    return {
+        "accountId": name, "name": name, "cityState": "",
+        "lastOrder": "2026-01-15", "lat": lat, "lng": lng,
+    }
 
 
 def test_nearest_candidates_sorted_and_limited():
@@ -44,11 +47,13 @@ def test_map_nearby_account():
         "ShippingState": "IL",
         "ShippingLatitude": 41.9,
         "ShippingLongitude": -87.6,
+        "lastOrderDate": "2026-03-02",
     }
     assert map_nearby_account(rec) == {
         "accountId": "001x",
         "name": "Lakeview Knits",
         "cityState": "Chicago, IL",
+        "lastOrder": "2026-03-02",
         "lat": 41.9,
         "lng": -87.6,
     }

@@ -52,18 +52,20 @@ The `lat`/`lng` come free from the order form: when the buyer picks their addres
   "maxMinutes": 20,
   "neighbors": [
     {
-      "accountId": "0019000000Kw0XfAAJ",
-      "name": "A'NIES ACCENTS",
+      "accountId": "001GC00003jfHTNYA2",
+      "name": "A PIED",
       "cityState": "Chicago, IL",
-      "distanceMiles": 0.8,
-      "driveMinutes": 6
+      "lastOrder": "2024-11-08",
+      "distanceMiles": 3.6,
+      "driveMinutes": 10
     },
     {
-      "accountId": "00190000004JaVqAAK",
-      "name": "EAST BANK CLUB",
+      "accountId": "00190000009HHnXAAW",
+      "name": "CINNAMON BOUTIQUE",
       "cityState": "Chicago, IL",
-      "distanceMiles": 1.0,
-      "driveMinutes": 9
+      "lastOrder": "2023-09-15",
+      "distanceMiles": 5.2,
+      "driveMinutes": 16
     }
   ]
 }
@@ -76,6 +78,7 @@ The `lat`/`lng` come free from the order form: when the buyer picks their addres
 | `maxMinutes` | The threshold that was applied |
 | `neighbors` | The k nearest existing wholesale stores, closest first — the **evidence** behind the verdict, ready to show in any future review UI |
 | `driveMinutes` | Real driving time from Google; `null` if Google couldn't route it (or in fallback mode) |
+| `lastOrder` | Date of that store's most recent sales order (what qualifies it as an active stockist) |
 
 Bad input (latitude 123, missing `lng`, `k` = 0 …) returns a standard `422` validation error.
 

@@ -159,6 +159,7 @@ def map_nearby_account(rec: dict[str, Any]) -> dict[str, Any]:
         "accountId": rec["Id"],
         "name": rec.get("Name"),
         "cityState": _city_state(rec.get("ShippingCity"), rec.get("ShippingState")),
+        "lastOrder": rec.get("lastOrderDate"),
         "lat": rec[SHIPPING_LAT],
         "lng": rec[SHIPPING_LNG],
     }
