@@ -4,9 +4,12 @@ Card number and CVV are SecretStr: excluded from repr/str and never logged.
 They are read exactly once (card_last4 derivation now; PDF rendering in
 Phase 4) and never persisted.
 """
+import base64
+import binascii
 from datetime import date
+from pathlib import PurePosixPath
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -21,6 +24,9 @@ class BillTo(CamelModel):
     zip: str = ""
     tel: str = ""
     fax: str = ""
+    # Captured by the Google Places address search (optional).
+    lat: float | None = Field(None, ge=-90, le=90)
+    lng: float | None = Field(None, ge=-180, le=180)
 
 
 class ShipTo(CamelModel):
@@ -29,6 +35,8 @@ class ShipTo(CamelModel):
     city_state: str = ""
     zip: str = ""
     resale_tax_id: str = ""
+    lat: float | None = Field(None, ge=-90, le=90)
+    lng: float | None = Field(None, ge=-180, le=180)
 
 
 class Payment(CamelModel):
@@ -38,12 +46,46 @@ class Payment(CamelModel):
     card_name: str = ""
     exp_date: str = ""
     cvv: SecretStr = SecretStr("")
+    method: str = ""  # "link" | "card" | ""
+    approval_before_charge: bool | None = None
+
+
+# Tax-exemption certificate upload (base64 inside the JSON payload).
+CERT_ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
+CERT_MAX_BYTES = 10 * 1024 * 1024  # decoded size
+
+
+class CertFile(CamelModel):
+    name: str = Field(min_length=1, max_length=255)
+    content_base64: str
+
+    @field_validator("name")
+    @classmethod
+    def _allowed_extension(cls, v: str) -> str:
+        if PurePosixPath(v.replace("\\", "/")).suffix.lower() not in CERT_ALLOWED_EXTENSIONS:
+            raise ValueError("Certificate must be a PDF, JPG or PNG file.")
+        return v
+
+    @field_validator("content_base64")
+    @classmethod
+    def _valid_and_small_enough(cls, v: str) -> str:
+        try:
+            decoded = base64.b64decode(v, validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError("Certificate file content is not valid base64.")
+        if len(decoded) > CERT_MAX_BYTES:
+            raise ValueError("Certificate file is larger than 10 MB.")
+        return v
+
+    def decoded(self) -> bytes:
+        return base64.b64decode(self.content_base64, validate=True)
 
 
 class TaxExemption(CamelModel):
     rep_notified: bool = False
     sending_cert: bool = False
     cert_on_file: bool = False
+    cert_file: CertFile | None = None
 
 
 class Terms(CamelModel):
@@ -80,6 +122,9 @@ class OrderSubmission(CamelModel):
     season: str = Field(pattern=r"^[FS]\d{2}$")
     order_date: date | None = None
     part_ship_ok: bool | None = None
+    ship_window: str = ""
+    filled_by: str = ""  # "rep" | "customer" | ""
+    notes: str = ""
     sf_account_id: str | None = None
     bill_to: BillTo = BillTo()
     ship_to: ShipTo

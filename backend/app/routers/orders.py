@@ -114,28 +114,54 @@ def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dic
         else ("N" if payload.internal.split is False else "")
     )
 
+    # Uploaded tax-exemption certificate: decode now (schema already validated
+    # extension, base64 and size) so a bad file fails before anything persists.
+    order_id = uuid.uuid4()
+    created_at = datetime.now(timezone.utc)
+    cert_bytes: bytes | None = None
+    cert_name: str | None = None
+    if payload.tax_exemption.cert_file is not None:
+        cert_bytes = payload.tax_exemption.cert_file.decoded()
+        cert_name = pdf_render.cert_filename(
+            payload.season,
+            payload.bill_to.buyer_name,
+            created_at,
+            order_id,
+            payload.tax_exemption.cert_file.name,
+        )
+
     order = Order(
-        id=uuid.uuid4(),
+        id=order_id,
         season_code=payload.season,
         order_date=payload.order_date,
         part_ship_ok=payload.part_ship_ok,
         ship_window_note=SHIP_WINDOW_NOTE,
+        ship_window=payload.ship_window,
+        filled_by=payload.filled_by,
+        notes=payload.notes,
         buyer_name=payload.bill_to.buyer_name,
         bill_street=payload.bill_to.street,
         bill_city_state=payload.bill_to.city_state,
         bill_zip=payload.bill_to.zip,
         tel=payload.bill_to.tel,
         fax=payload.bill_to.fax,
+        bill_lat=payload.bill_to.lat,
+        bill_lng=payload.bill_to.lng,
         ship_email=str(payload.ship_to.email),
         ship_street=payload.ship_to.street,
         ship_city_state=payload.ship_to.city_state,
         ship_zip=payload.ship_to.zip,
         resale_tax_id=payload.ship_to.resale_tax_id,
+        ship_lat=payload.ship_to.lat,
+        ship_lng=payload.ship_to.lng,
+        payment_method=payload.payment.method,
+        approval_before_charge=payload.payment.approval_before_charge,
         card_name=payload.payment.card_name,
         card_last4=card_last4,
         cert_required_ack=payload.tax_exemption.rep_notified,
         cert_sending_ack=payload.tax_exemption.sending_cert,
         cert_on_file=payload.tax_exemption.cert_on_file,
+        cert_filename=cert_name,
         signature_name=payload.terms.signature_name,
         signature_date=payload.terms.signature_date,
         terms_accepted=payload.terms.accepted,
@@ -156,7 +182,6 @@ def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dic
     # request, so a failed render must fail the submission (nothing persisted,
     # buyer retries). The context dict below is the only place the full card
     # number/CVV are read, and it goes out of scope at the end of this call.
-    created_at = datetime.now(timezone.utc)
     pdf_context = {
         "order": {
             "short_id": str(order.id)[:8],
@@ -165,6 +190,12 @@ def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dic
             "order_date": order.order_date,
             "part_ship_ok": order.part_ship_ok,
             "ship_window_note": order.ship_window_note,
+            "ship_window": order.ship_window,
+            "filled_by": order.filled_by,
+            "notes": order.notes,
+            "payment_method": order.payment_method,
+            "approval_before_charge": order.approval_before_charge,
+            "cert_filename": order.cert_filename,
             "created_at": created_at.strftime("%Y-%m-%d %H:%M UTC"),
             "buyer_name": order.buyer_name,
             "bill_street": order.bill_street,
@@ -240,6 +271,15 @@ def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dic
         # loudly in logs so admin can follow up with the buyer.
         logger.exception("CRITICAL: order %s committed but PDF could not be written", order.id)
         pdf_saved = False
+
+    if cert_bytes is not None and cert_name is not None:
+        try:
+            pdf_render.save_output_file(cert_bytes, cert_name)
+        except OSError:
+            logger.exception(
+                "CRITICAL: order %s committed but tax cert %s could not be written",
+                order.id, cert_name,
+            )
 
     logger.info(
         "Order %s persisted: season=%s items=%d qty=%d total=%s pdf=%s",

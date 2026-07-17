@@ -1,6 +1,6 @@
 # Architecture — Wooden Ships Wholesale Order Form
 
-**Version:** 0.1 (draft) · **Last updated:** 2026-07-13
+**Version:** 0.3 · **Last updated:** 2026-07-17 *(0.3: new reps/territories/order-writers endpoints, store-name lookup, Google Maps Places on the frontend, new order columns for the 2026-07-16 form fields)*
 Companion to `PRD.md`. This document describes the technical design.
 
 ---
@@ -44,6 +44,7 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
 | PDF | WeasyPrint (HTML template → PDF) | high visual fidelity; pure-Python, container-friendly |
 | Email | `fastapi-mail` (SMTP) | configurable recipients |
 | Config | `.env` (pydantic-settings) | secrets never committed |
+| Address search | **Google Maps JS SDK (Places autocomplete)** | browser-side only; key in `frontend/.env` as `VITE_GOOGLE_MAPS_API_KEY` (referrer-restricted) |
 | Containerization | **Docker + Docker Compose** | one container per service |
 
 > Everything runs in containers via Docker Compose (see §10). Frontend is still React/JS — only the backend is Python.
@@ -85,6 +86,10 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
     | Internal Use: Rep | `Salesperson__c` (picklist); also `Internal_Rep__c` (reference) |
     | Internal Use: certificate on file | derive from `Tax_ID_Verified__c` (+ `Tax_ID_Expires__c` not past) |
 
+  - **Picklists / option sources (added 2026-07-16):**
+    - `Account.Salesperson__c` — picklist; active values feed `GET /api/reps`.
+    - `Account.SalesTerritory__c` — free text ("Midwest - Aviva Landin", …); the option list for `GET /api/territories` is the distinct values in use (`GROUP BY`), not a picklist describe.
+    - `kugo2p__SalesOrder__c.Written_By__c` — picklist on the managed-package sales order object; active values feed `GET /api/order-writers` and the Internal Use "Order written by" / "Split with" dropdowns.
   - Other potentially relevant fields (not used in v1): `Terms__c` (payment terms picklist), `Discount_Sweaters__c` / `Discount_Accessories__c` (% discounts — **CONFIRMED: not applied on the form; discounts are handled by admin during manual processing. The form always shows price-book prices.**), `Deposit_Required__c` (%), `Season__c` (multipicklist on Account), `ContactBuying__c` (reference to buying contact).
 
 ### 3.3 Queries (SOQL, illustrative)
@@ -111,7 +116,10 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
   WHERE ContactBuyingEmail__c = :email
   ```
   Lookup by account ID uses the same SELECT with `WHERE Id = :accountId`.
+- **Lookup by store name (added 2026-07-16):** same SELECT with
+  `WHERE Name LIKE '%:name%' ORDER BY Name LIMIT 25` — partial, case-insensitive; `%`/`_` in user input are escaped; capped so a broad term cannot pull the whole org. The frontend routes a query containing `@` to email, a bare 15/18-char id to accountId, anything else to name.
 - Return all candidates so the frontend can show the "matching account" dropdown.
+- `GET /api/seasons` currently returns only the **two most recent** wholesale books (interim decision 2026-07-16 — confirm which seasons should be on sale).
 
 ### 3.4 Field-mapping layer
 All object/field names live in one config module (`backend/app/salesforce/mapping.py`) so renaming to match the real org is a one-file change, not a code hunt.
@@ -123,8 +131,11 @@ orders
   id                 uuid pk
   season_code        text
   order_date         date
-  part_ship_ok       boolean
+  part_ship_ok       boolean         -- legacy; UI field replaced by filled_by 2026-07-16
   ship_window_note   text
+  ship_window        text            -- buyer-selected calendar-month window
+  filled_by          text            -- rep | customer
+  notes              text            -- free-text Notes section
   -- bill to
   buyer_name         text
   bill_street        text
@@ -132,19 +143,26 @@ orders
   bill_zip           text
   tel                text
   fax                text
+  bill_lat           numeric(9,6)    -- from Google Places search (optional)
+  bill_lng           numeric(9,6)
   -- ship to
   ship_email         text not null
   ship_street        text
   ship_city_state    text
   ship_zip           text
   resale_tax_id      text
+  ship_lat           numeric(9,6)
+  ship_lng           numeric(9,6)
   -- payment (NO card number / CVV stored)
+  payment_method     text            -- link | card
+  approval_before_charge boolean     -- card only
   card_name          text            -- name on card only
   card_last4         text            -- optional, never full PAN
   -- tax exemption
   cert_required_ack  boolean
   cert_sending_ack   boolean
   cert_on_file       boolean
+  cert_filename      text            -- uploaded cert, saved beside the order PDF
   -- signature / terms
   signature_name     text
   signature_date     date
@@ -189,10 +207,13 @@ order_items
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/seasons` | List available collection/season codes |
+| GET | `/api/seasons` | Collection/season codes (currently the 2 most recent) |
 | GET | `/api/products?season=F26` | Products + price + color for a season (from Salesforce) |
-| GET | `/api/accounts?email=...` or `?accountId=...` | Buyer lookup candidates (from Salesforce) |
-| POST | `/api/orders` | Validate, persist order, generate PDF, email admin |
+| GET | `/api/accounts?email=...` / `?accountId=...` / `?name=...` | Buyer lookup candidates (from Salesforce; `name` = partial store-name match) |
+| GET | `/api/reps` | Active sales reps (`Account.Salesperson__c` picklist) |
+| GET | `/api/territories` | Distinct `Account.SalesTerritory__c` values in use |
+| GET | `/api/order-writers` | `Written_By__c` picklist (Internal Use dropdowns) |
+| POST | `/api/orders` | Validate, persist order, generate PDF (+ save uploaded tax cert), email admin *(email deferred)* |
 | GET | `/api/health` | Health check |
 
 `POST /api/orders` request includes card fields; server-side it: (1) re-validates minimums, (2) inserts order + items (no card number), (3) renders PDF including card details, (4) emails PDF to admin, (5) returns `{ orderId, status }`. Card fields are held only in memory for step 3.
@@ -209,8 +230,9 @@ Return a structured error listing offending styles/rows.
 ## 7. PDF generation
 
 - An HTML template (Jinja2) mirroring the approved mockup is rendered to PDF via **WeasyPrint** inside the backend container. WeasyPrint's native deps (Pango, Cairo, GDK-Pixbuf) are installed in the backend image.
-- PDF includes: header, bill/ship to, full line-item table with totals, payment details (for manual processing), tax-exemption acknowledgements, signature, and internal-use fields.
+- PDF includes: header (incl. filled-by and buyer-selected ship window), bill/ship to, full line-item table with totals, payment method + details (card fields only when paying by card), tax-exemption acknowledgements + uploaded-cert filename, notes, signature, and internal-use fields.
 - Filename convention: `WS-order-{season}-{buyerName}-{YYYYMMDD}-{shortId}.pdf`.
+- An uploaded tax-exemption certificate (PDF/JPG/PNG ≤ 10 MB, base64 in the submit payload) is written to the same output directory as `WS-cert-{season}-{buyerName}-{YYYYMMDD}-{shortId}.{ext}` and referenced from `orders.cert_filename`.
 
 ## 8. Email delivery — DEFERRED (2026-07-14)
 
@@ -229,6 +251,8 @@ Return a structured error listing offending styles/rows.
 - Input validation + parameterized SQL (no string-built queries).
 - Rate-limit `POST /api/orders` and the lookup endpoints.
 - CORS locked to the site origin.
+- Google Maps: the browser key (`VITE_GOOGLE_MAPS_API_KEY`) is public by design — restrict it by HTTP referrer and to the Maps JavaScript + Places APIs in the Google Cloud console. Only user-typed address text goes to Google; no Salesforce or order data does.
+- Uploaded tax certs: type whitelist (PDF/JPG/PNG), 10 MB cap, stored filename is server-generated (user filename discarded except its extension); stored outside the web root, never served by nginx.
 - Future: migrate card capture to Stripe Elements to eliminate PCI scope.
 
 ## 10. Deployment — Docker (GCP VM)

@@ -29,16 +29,33 @@ def render_order_pdf(context: dict) -> bytes:
     return HTML(string=html).write_pdf()
 
 
+def _buyer_slug(buyer_name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]+", "-", buyer_name or "unknown").strip("-")[:40] or "unknown"
+
+
 def order_pdf_filename(season: str, buyer_name: str, created, order_id) -> str:
     """WS-order-{season}-{buyerName}-{YYYYMMDD}-{shortId}.pdf"""
-    slug = re.sub(r"[^A-Za-z0-9]+", "-", buyer_name or "unknown").strip("-")[:40] or "unknown"
-    return f"WS-order-{season}-{slug}-{created:%Y%m%d}-{str(order_id)[:8]}.pdf"
+    return f"WS-order-{season}-{_buyer_slug(buyer_name)}-{created:%Y%m%d}-{str(order_id)[:8]}.pdf"
 
 
-def save_order_pdf(pdf_bytes: bytes, filename: str) -> str:
+def cert_filename(season: str, buyer_name: str, created, order_id, original_name: str) -> str:
+    """WS-cert-{season}-{buyerName}-{YYYYMMDD}-{shortId}{ext}
+
+    The extension comes from the uploaded name, already whitelist-validated
+    by the CertFile schema; everything else in the name is discarded.
+    """
+    ext = Path(original_name).suffix.lower()
+    return f"WS-cert-{season}-{_buyer_slug(buyer_name)}-{created:%Y%m%d}-{str(order_id)[:8]}{ext}"
+
+
+def save_output_file(data: bytes, filename: str) -> str:
     out_dir = Path(settings.pdf_output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / filename
-    path.write_bytes(pdf_bytes)
-    logger.info("Order PDF written: %s (%d bytes)", filename, len(pdf_bytes))
+    path.write_bytes(data)
+    logger.info("Output file written: %s (%d bytes)", filename, len(data))
     return str(path)
+
+
+def save_order_pdf(pdf_bytes: bytes, filename: str) -> str:
+    return save_output_file(pdf_bytes, filename)
