@@ -28,9 +28,13 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo }) {
     setShipTo('street', billTo.street)
     setShipTo('cityState', billTo.cityState)
     setShipTo('zip', billTo.zip)
+    // Coordinates too, so the conflict check works when the address was
+    // searched in the Bill To box.
+    setShipTo('lat', billTo.lat)
+    setShipTo('lng', billTo.lng)
     // setShipTo is intentionally omitted: it's re-created each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sameAsBilling, billTo.street, billTo.cityState, billTo.zip])
+  }, [sameAsBilling, billTo.street, billTo.cityState, billTo.zip, billTo.lat, billTo.lng])
 
   return (
     <section className="section addresses">

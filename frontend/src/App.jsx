@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, submitOrder } from './api'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, getNearbyAccounts, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
@@ -10,6 +10,7 @@ import TaxExemption from './components/TaxExemption'
 import TermsSignature from './components/TermsSignature'
 import InternalUse from './components/InternalUse'
 import Notes from './components/Notes'
+import ConflictWarning from './components/ConflictWarning'
 import Footer from './components/Footer'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -172,6 +173,34 @@ export default function App() {
       ? form.firstOrder === true
       : internal.accountStatus === 'new' || lookupNoMatch
 
+  // Stockist conflict check (docs/conflict-checker.md): when a rep marks the
+  // account New and the Ship To store address has coordinates from the map
+  // search, ask the backend whether an existing stockist is too close. Each
+  // coordinate pair is checked once, so dismissing the warning doesn't bring
+  // it back for the same address. Warning only — never blocks submission.
+  const [conflictResult, setConflictResult] = useState(null)
+  const checkedCoords = useRef(new Set())
+  const shouldCheckConflict =
+    form.representativeOk === true &&
+    internal.accountStatus === 'new' &&
+    shipTo.lat != null &&
+    shipTo.lng != null
+  useEffect(() => {
+    if (!shouldCheckConflict) return
+    const key = `${shipTo.lat},${shipTo.lng}`
+    if (checkedCoords.current.has(key)) return
+    checkedCoords.current.add(key)
+    let stale = false
+    getNearbyAccounts(shipTo.lat, shipTo.lng)
+      .then((r) => {
+        if (!stale && r.conflict) setConflictResult(r)
+      })
+      .catch((e) => console.error('Conflict check failed:', e))
+    return () => {
+      stale = true
+    }
+  }, [shouldCheckConflict, shipTo.lat, shipTo.lng])
+
   const { totalPieces, totalAmount, perLine } = useMemo(() => computeTotals(resolved), [resolved])
   const minimums = useMemo(() => validateMinimums(resolved), [resolved])
 
@@ -320,6 +349,10 @@ export default function App() {
       {isNewAccount && <TaxExemption certFile={certFile} setCertFile={setCertFile} />}
       <Notes notes={notes} setNotes={setNotes} />
       <TermsSignature terms={terms} setTerms={setTerms} />
+
+      {conflictResult && (
+        <ConflictWarning result={conflictResult} onDismiss={() => setConflictResult(null)} />
+      )}
 
       {submitNotice && <p className="submit-notice">{submitNotice}</p>}
       <div className="submit-row">

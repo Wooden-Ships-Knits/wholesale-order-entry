@@ -109,7 +109,7 @@ flowchart LR
 
 The endpoint **never fails because Google is down** — it degrades to straight-line mode and says so in `mode`, so a caller can always distinguish an approximate verdict from a real one.
 
-> **Current state:** the server key is not configured yet, so the API runs in straight-line mode today. See setup below.
+> **Current state:** the server key is configured — the API returns real drive times (`mode: "drive-time"`, verified 2026-07-17).
 
 ## Setup: enabling real drive times
 
@@ -139,6 +139,6 @@ The endpoint **never fails because Google is down** — it degrades to straight-
 ## Known limitations / open decisions
 
 - ~~Closed stores count as stockists~~ — **RESOLVED 2026-07-17** by the order-history filter: candidates must have ordered within the last 3 years, and none of the 267 "(CLOSED)"-named accounts have (verified against the org). Tune the window with `CONFLICT_ORDER_YEARS`.
-- **Where the check surfaces is undecided** — on the form at submit time, an admin review screen, or a rep tool; and whether a conflict *blocks* the order or just *warns*. The API deliberately returns both the verdict and the evidence so any of these work.
+- ~~Where the check surfaces is undecided~~ — **RESOLVED 2026-07-17**: the check is wired into the order form. When "Filled by" = Sales Representative, Internal Use → Account = New, and the Ship To address has coordinates from the map search, the form calls this endpoint and shows a dismissible warning modal on `conflict: true` (`frontend/src/components/ConflictWarning.jsx`). Warning only — it never blocks submission, and customers filling the form never see it (the response exposes stockist names). Design: [`superpowers/specs/2026-07-17-in-form-conflict-warning-design.md`](superpowers/specs/2026-07-17-in-form-conflict-warning-design.md).
 - **New-customer coordinates are required.** If a buyer types their address by hand instead of using the map search, there are no coordinates to check. A future improvement could geocode the typed address server-side.
 - Salesforce data is cached for 5 minutes, so an account created seconds ago may not appear immediately.
