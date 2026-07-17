@@ -6,17 +6,23 @@ and CVV are never persisted, logged, or rendered: only card_name + last4
 are stored, and the PDF shows just those. The PDF is rendered BEFORE the DB
 commit — a render failure aborts the whole submission so the buyer can
 retry — and written to PDF_OUTPUT_DIR after the commit succeeds.
+
+For new accounts with Ship To coordinates, the nearby-stockist conflict check
+runs as a background task once the response is out; its boolean verdict lands
+on orders.has_conflict for the admin page.
 """
 import logging
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db.models import Order, OrderItem
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
+from app.geo import conflict
 from app.pdf import render as pdf_render
 from app.salesforce import client, mapping
 from app.schemas.order import OrderSubmission
@@ -28,13 +34,53 @@ router = APIRouter()
 
 SHIP_WINDOW_NOTE = "Please allow 7–12 days for transit."
 
+# How many neighbours the conflict check looks at (matches the endpoint default).
+CONFLICT_NEIGHBOURS = 5
+
 
 def _fail(errors: list[dict]) -> None:
     raise HTTPException(status_code=422, detail={"errors": errors})
 
 
+def _run_conflict_check(order_id: uuid.UUID, lat: float, lng: float) -> None:
+    """Background: store the nearby-stockist verdict on the order.
+
+    Runs after the response is sent, with its own session — the request's is
+    already closed. Failures leave has_conflict null ("not checked"), never
+    False: a wrong "no conflict" would silently approve a competing stockist.
+    """
+    try:
+        result = conflict.find_nearby(lat, lng, CONFLICT_NEIGHBOURS, settings.conflict_max_minutes)
+    except Exception:
+        logger.exception("Conflict check failed for order %s", str(order_id)[:8])
+        return
+
+    db = SessionLocal()
+    try:
+        order = db.get(Order, order_id)
+        if order is None:
+            return
+        order.has_conflict = result["conflict"]
+        db.commit()
+        logger.info(
+            "Conflict check for order %s: %s (%s)",
+            str(order_id)[:8],
+            result["conflict"],
+            result["mode"],
+        )
+    except Exception:
+        logger.exception("Could not store conflict verdict for order %s", str(order_id)[:8])
+        db.rollback()
+    finally:
+        db.close()
+
+
 @router.post("/orders", status_code=201)
-def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dict:
+def submit_order(
+    payload: OrderSubmission,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> dict:
     errors: list[dict] = []
 
     if not payload.terms.accepted:
@@ -284,6 +330,21 @@ def submit_order(payload: OrderSubmission, db: Session = Depends(get_db)) -> dic
                 "CRITICAL: order %s committed but tax cert %s could not be written",
                 order.id, cert_name,
             )
+
+    # New accounts only: check whether an existing stockist is too close, so
+    # /admin can flag it. Runs in the background — a slow Google/Salesforce
+    # round-trip must not hold up the buyer's confirmation. Needs the Ship To
+    # coordinates from the form's Places search; without them the verdict
+    # stays null ("not checked") rather than a misleading "no conflict".
+    if order.is_new_account and order.ship_lat is not None and order.ship_lng is not None:
+        background.add_task(
+            _run_conflict_check, order.id, float(order.ship_lat), float(order.ship_lng)
+        )
+    elif order.is_new_account:
+        logger.info(
+            "Order %s is a new account but has no Ship To coordinates — conflict unchecked",
+            str(order.id)[:8],
+        )
 
     logger.info(
         "Order %s persisted: season=%s items=%d qty=%d total=%s pdf=%s",
