@@ -11,6 +11,8 @@ export const getSeasons = () => get('/api/seasons')
 export const getReps = () => get('/api/reps')
 export const getTerritories = () => get('/api/territories')
 export const getOrderWriters = () => get('/api/order-writers')
+export const getShipWindows = (season) =>
+  get(`/api/ship-windows?season=${encodeURIComponent(season)}`)
 export const getProducts = (season) => get(`/api/products?season=${encodeURIComponent(season)}`)
 // '@' -> email; a bare 15/18-char Salesforce id -> accountId; anything else is
 // treated as the account (store) name.
@@ -21,6 +23,11 @@ export const lookupAccounts = (query) => {
   else if (/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(q)) param = 'accountId'
   return get(`/api/accounts?${param}=${encodeURIComponent(q)}`)
 }
+
+// New-customer stockist conflict check (see docs/conflict-checker.md).
+// Server defaults apply: k=5 neighbors, 20-minute drive threshold.
+export const getNearbyAccounts = (lat, lng) =>
+  get(`/api/accounts/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
 
 export async function submitOrder(payload) {
   const res = await fetch('/api/orders', {

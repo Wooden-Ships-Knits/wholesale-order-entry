@@ -1,32 +1,38 @@
 <mxfile host="65bd71144e">
     <diagram id="woodenships-order" name="Wooden Ships Order Flow">
-        <mxGraphModel dx="1666" dy="571" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1900" math="0" shadow="0">
+        <mxGraphModel dx="1341" dy="539" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="2750" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="start" value="Buyer opens website" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="20" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="370" y="10" width="220" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="season" value="Select collection / season code&lt;br&gt;(e.g. FALL 2026 - F26)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5651d;strokeColor=#7a430f;fontColor=#ffffff;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="110" width="220" height="50" as="geometry"/>
+                <mxCell id="filledby" value="Filled by?&lt;br&gt;(required)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="70" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="internaluse" value="Internal Use section shown&lt;br&gt;(New/reorder, Account, Campaign, PO#,&lt;br&gt;Order written by, Split — rep-only fields)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f7f5f1;strokeColor=#8a6d3b;fontColor=#4c4a45;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="70" width="230" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="season" value="Select collection / season code&lt;br&gt;(2 most recent, e.g. FALL 2026 - F26)&lt;br&gt;+ Ship Window (calendar month)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5651d;strokeColor=#7a430f;fontColor=#ffffff;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="180" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="req" value="Frontend requests products&lt;br&gt;for selected season" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="200" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="370" y="260" width="220" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="show" value="Show product table&lt;br&gt;CODE#, STYLE, COLOR, X/S, S/M, M/L, $" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="290" width="220" height="60" as="geometry"/>
+                <mxCell id="show" value="Product lines (typeahead + Add line)&lt;br&gt;CODE#, STYLE, COLOR, X/S, S/M, M/L, $" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="335" width="220" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="buyer" value="Buyer enters email / account ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="390" width="220" height="50" as="geometry"/>
+                <mxCell id="buyer" value="Buyer enters email /&lt;br&gt;store name / account ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="430" width="220" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="api2" value="API searches account" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="480" width="220" height="50" as="geometry"/>
+                <mxCell id="api2" value="API searches account&lt;br&gt;(email exact · name partial · id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="505" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="match" value="Account found?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
-                    <mxGeometry x="390" y="600" width="180" height="80" as="geometry"/>
+                    <mxGeometry x="390" y="620" width="180" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="autofill" value="Autofill Bill To / Ship To&lt;br&gt;Buyer, Tel, Resale Tax ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="740" width="220" height="60" as="geometry"/>
+                <mxCell id="autofill" value="Autofill Bill To / Ship To&lt;br&gt;Buyer, Tel, Resale Tax ID&lt;br&gt;(Google Maps search can fill addresses)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="740" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="qty" value="Enter qty per size&lt;br&gt;(X/S, S/M, M/L)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
                     <mxGeometry x="370" y="850" width="220" height="50" as="geometry"/>
@@ -37,13 +43,13 @@
                 <mxCell id="valid" value="Meets order minimum?&lt;br&gt;18 total / 4 per style /&lt;br&gt;2 per SKU / no pre-pack" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
                     <mxGeometry x="380" y="1130" width="200" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="details" value="Complete other fields:&lt;br&gt;Ship window, Part Ship Y/N,&lt;br&gt;Order date, Tax exemption cert" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="1300" width="220" height="70" as="geometry"/>
+                <mxCell id="details" value="Complete other fields:&lt;br&gt;Order date, Notes&lt;br&gt;NEW accounts: tax cert upload&lt;br&gt;(PDF/JPG/PNG, max 10 MB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="1295" width="220" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="pay" value="Enter payment (credit card):&lt;br&gt;CC#, Name on card, Exp, CVV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="1410" width="220" height="60" as="geometry"/>
+                <mxCell id="pay" value="NEW accounts — Payment by:&lt;br&gt;Payment link (no card fields), or&lt;br&gt;Credit card: charge approval +&lt;br&gt;CC#, Name on card, Exp, CVV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="1405" width="220" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="sign" value="Buyer signature + date&lt;br&gt;+ accept Terms &amp; Conditions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                <mxCell id="sign" value="Buyer signature (typed name)&lt;br&gt;+ accept ORDER POLICIES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
                     <mxGeometry x="370" y="1510" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="submit" value="SUBMIT ORDER" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5651d;strokeColor=#7a430f;fontColor=#ffffff;fontStyle=1;" parent="1" vertex="1">
@@ -52,37 +58,64 @@
                 <mxCell id="save" value="Save order to database&lt;br&gt;(WITHOUT storing card number)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
                     <mxGeometry x="370" y="1700" width="220" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="pdf" value="Generate Order PDF" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="1800" width="220" height="50" as="geometry"/>
+                <mxCell id="pdf" value="Generate Order PDF + save&lt;br&gt;uploaded tax cert (server-side)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="1800" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="confirm" value="Show confirmation page to buyer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
                     <mxGeometry x="370" y="1890" width="220" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="done" value="Done - admin processes order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="2070" width="220" height="50" as="geometry"/>
+                <mxCell id="ppic" value="PPIC checks the order&lt;br&gt;(PDF + record: items, minimums,&lt;br&gt;account, payment/tax status)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f7f5f1;strokeColor=#8a6d3b;fontColor=#4c4a45;" parent="1" vertex="1">
+                    <mxGeometry x="840" y="2170" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="newcust" value="New&lt;br&gt;customer?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="2280" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="conflictcheck" value="Run conflict check (/conflict.html):&lt;br&gt;existing active stockist within a&lt;br&gt;20-min drive of the new store?&lt;br&gt;&lt;i&gt;(details: “Conflict Checker” page tab)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1280" y="2275" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="ppicok" value="Order&lt;br&gt;confirmed?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="855" y="2420" width="190" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="ppicfix" value="Contact buyer / rep:&lt;br&gt;revise or cancel the order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="2420" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="sfentry" value="PPIC enters the confirmed order&lt;br&gt;into Salesforce (sales order created)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="830" y="2695" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="done" value="Done — order confirmed&lt;br&gt;&amp;amp; in Salesforce" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="2700" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="pick" value="Show dropdown&lt;br&gt;pick correct account" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="730" y="740" width="190" height="60" as="geometry"/>
+                    <mxGeometry x="730" y="745" width="190" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="manual" value="Enter buyer data manually" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="850" width="190" height="50" as="geometry"/>
+                <mxCell id="manual" value="Enter buyer data manually&lt;br&gt;(Google Maps address search)&lt;br&gt;→ treated as NEW account:&lt;br&gt;Payment + Tax cert sections shown" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="835" width="190" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="err" value="Show error message&lt;br&gt;highlight problem rows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
                     <mxGeometry x="850" y="990" width="190" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="sfprod" value="Salesforce: Product2 +&lt;br&gt;PricebookEntry (style, color, price)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="790" y="240" width="220" height="60" as="geometry"/>
+                    <mxGeometry x="810" y="290" width="220" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="sfacc" value="Salesforce: Account / Contact&lt;br&gt;(buyer data)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="790" y="530" width="220" height="60" as="geometry"/>
+                <mxCell id="sfacc" value="Salesforce: Account (person accounts)&lt;br&gt;buyer data + picklists&lt;br&gt;(reps / territories / order writers)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="495" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="db" value="PostgreSQL&lt;br&gt;store order" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#e7f0e7;strokeColor=#4b7a4b;fontColor=#274427;" parent="1" vertex="1">
                     <mxGeometry x="790" y="1700" width="180" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="mail" value="Email to PPIC&lt;br&gt;(PDF attachment)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="860" y="2065" width="180" height="60" as="geometry"/>
+                <mxCell id="mail" value="Email to PPIC (PDF attachment)&lt;br&gt;— DEFERRED in v1: PDF + cert&lt;br&gt;saved server-side (output/orders)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="2060" width="180" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="e0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="start" target="season" edge="1">
+                <mxCell id="e0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="start" target="filledby" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="efb1" value="Sales Rep" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="filledby" target="internaluse" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="efb2" value="Customer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="filledby" target="season" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="efb3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="internaluse" target="season" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="season" target="req" edge="1">
@@ -106,7 +139,8 @@
                 <mxCell id="e7" value="candidates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="sfacc" target="match" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="480" y="560"/>
+                            <mxPoint x="970" y="590"/>
+                            <mxPoint x="480" y="590"/>
                         </Array>
                         <mxPoint as="offset"/>
                     </mxGeometry>
@@ -174,7 +208,31 @@
                 <mxCell id="e26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="pdf" target="confirm" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="mail" target="done" edge="1">
+                <mxCell id="e27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mail" target="ppic" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ep1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ppic" target="newcust" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="en1" value="Yes — new customer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="newcust" target="conflictcheck" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="en2" value="result informs decision" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="conflictcheck" target="ppicok" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="en3" value="Existing account" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="newcust" target="ppicok" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ep2" value="Yes — confirmed" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ppicok" target="sfentry" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ep3" value="No / issues" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="ppicok" target="ppicfix" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ep4" value="revised" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="ppicfix" target="ppic" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ep5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="sfentry" target="done" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" target="2" edge="1">
@@ -182,11 +240,127 @@
                         <mxPoint x="480" y="1940" as="sourcePoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="3" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="done">
+                <mxCell id="3" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="2" target="done" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="2" value="Email to buyer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" vertex="1" parent="1">
-                    <mxGeometry x="370" y="1970" width="220" height="50" as="geometry"/>
+                <mxCell id="2" value="Email to buyer&lt;br&gt;— DEFERRED in v1&lt;br&gt;(buyer sees on-page confirmation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="1965" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-3" value="New store location&lt;br&gt;(lat / lng from the Google Maps search box)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" vertex="1" parent="1">
+                    <mxGeometry x="1510" y="30" width="300" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-4" value="Salesforce candidates (cached 5 min):&lt;br&gt;Type = Wholesale, shipping geocode present,&lt;br&gt;≥ 1 sales order in the last 3 years (~900 stores)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" vertex="1" parent="1">
+                    <mxGeometry x="1510" y="130" width="300" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-5" value="Straight-line (haversine) distance to every&lt;br&gt;candidate — keep the nearest 10–25" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="1510" y="240" width="300" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-6" value="Google server key&lt;br&gt;configured &amp;amp; reachable?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" vertex="1" parent="1">
+                    <mxGeometry x="1530" y="340" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-7" value="Google Distance Matrix (1 request,&lt;br&gt;coordinates only): driving minutes&lt;br&gt;to each finalist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" vertex="1" parent="1">
+                    <mxGeometry x="1350" y="480" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-8" value="Fallback — straight-line mode:&lt;br&gt;distance only, threshold ≈ maxMinutes × 0.5 mi&lt;br&gt;(response says mode = straight-line)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" vertex="1" parent="1">
+                    <mxGeometry x="1710" y="480" width="300" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-9" value="Any active stockist closer&lt;br&gt;than maxMinutes&lt;br&gt;(default 20 min drive)?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" vertex="1" parent="1">
+                    <mxGeometry x="1530" y="600" width="260" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-10" value="CONFLICT (verdict: true)&lt;br&gt;nearest stockists listed as evidence:&lt;br&gt;miles, drive minutes, last order date" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" vertex="1" parent="1">
+                    <mxGeometry x="1350" y="750" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-11" value="NO CONFLICT (verdict: false)&lt;br&gt;nearest stockists still listed&lt;br&gt;for PPIC to review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f0e7;strokeColor=#4b7a4b;fontColor=#274427;" vertex="1" parent="1">
+                    <mxGeometry x="1710" y="750" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-3" target="Hh1_HbILnipfF6ywL9yE-4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-4" target="Hh1_HbILnipfF6ywL9yE-5">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-5" target="Hh1_HbILnipfF6ywL9yE-6">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-15" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-6" target="Hh1_HbILnipfF6ywL9yE-7">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-16" value="No key / Google error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-6" target="Hh1_HbILnipfF6ywL9yE-8">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-7" target="Hh1_HbILnipfF6ywL9yE-9">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-8" target="Hh1_HbILnipfF6ywL9yE-9">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-19" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-9" target="Hh1_HbILnipfF6ywL9yE-10">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-20" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-9" target="Hh1_HbILnipfF6ywL9yE-11">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="conflict-checker" name="Conflict Checker">
+        <mxGraphModel dx="1341" dy="306" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="c_start" value="New store location&lt;br&gt;(lat / lng from the Google Maps search box)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="20" width="300" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_sf" value="Salesforce candidates (cached 5 min):&lt;br&gt;Type = Wholesale, shipping geocode present,&lt;br&gt;≥ 1 sales order in the last 3 years (~900 stores)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="120" width="300" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_knn" value="Straight-line (haversine) distance to every&lt;br&gt;candidate — keep the nearest 10–25" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="230" width="300" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_key" value="Google server key&lt;br&gt;configured &amp;amp; reachable?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="330" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_google" value="Google Distance Matrix (1 request,&lt;br&gt;coordinates only): driving minutes&lt;br&gt;to each finalist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="470" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_fallback" value="Fallback — straight-line mode:&lt;br&gt;distance only, threshold ≈ maxMinutes × 0.5 mi&lt;br&gt;(response says mode = straight-line)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="470" width="300" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_verdict" value="Any active stockist closer&lt;br&gt;than maxMinutes&lt;br&gt;(default 20 min drive)?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="590" width="260" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_yes" value="CONFLICT (verdict: true)&lt;br&gt;nearest stockists listed as evidence:&lt;br&gt;miles, drive minutes, last order date" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="740" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_no" value="NO CONFLICT (verdict: false)&lt;br&gt;nearest stockists still listed&lt;br&gt;for PPIC to review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f0e7;strokeColor=#4b7a4b;fontColor=#274427;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="740" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="c_start" target="c_sf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="c_sf" target="c_knn" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="c_knn" target="c_key" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="c_key" target="c_google" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce5" value="No key / Google error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="c_key" target="c_fallback" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="c_google" target="c_verdict" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="c_fallback" target="c_verdict" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce8" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="c_verdict" target="c_yes" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce9" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="c_verdict" target="c_no" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

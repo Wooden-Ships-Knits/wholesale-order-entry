@@ -7,7 +7,7 @@ A web-based wholesale order form for Wooden Ships knit sweaters: products and bu
 
 ## Golden rules (do not violate)
 1. **Never store or log full credit card numbers or CVV.** They may only live in memory transiently to render the order PDF, then must be discarded. No card/CVV columns in the DB, ever. `card_last4` and `card_name` are the only card-related data that may persist.
-2. **The web form must contain every field/section from the original Excel form** (`F26 - WS PDF Order Form.xlsx`). See PRD §5. Do not silently drop fields. The Internal Use section IS shown on the form.
+2. **The web form must contain every field/section from the original Excel form** (`F26 - WS PDF Order Form.xlsx`). See PRD §5. Do not silently drop fields. The Internal Use section IS shown on the form — since 2026-07-16 only when "Filled by" = Sales Representative; Payment and Tax-exemption show only for new accounts (see PRD §5.6–5.9).
 3. **All Salesforce calls happen on the backend only.** No Salesforce credentials or tokens reach the browser.
 4. **Salesforce object/field names are assumptions** until confirmed. Keep them in one mapping module (`backend/app/salesforce/mapping.py`) so a rename is a one-file change.
 5. **Order minimums are validated server-side** as the authority, mirrored on the client for UX. Rules: 18 pcs total, 4 per style, 2 per SKU, no pre-packs.
@@ -16,6 +16,7 @@ A web-based wholesale order form for Wooden Ships knit sweaters: products and bu
 ## Stack
 - Runtime: **Python 3.11**.
 - Frontend: React + Vite, plain CSS. Match the approved mockup (`docs/mockup`).
+- Address search: Google Maps JS SDK (Places autocomplete), browser-side only; key in `frontend/.env` (`VITE_GOOGLE_MAPS_API_KEY`, referrer-restricted). See `frontend/src/lib/googleMaps.js` + `components/AddressMap.jsx`.
 - Backend: **FastAPI + Uvicorn**, REST under `/api`. Pydantic v2 for models.
 - Salesforce: `simple-salesforce` with username + password + security token auth (re-auth on session expiry).
 - DB: PostgreSQL (own container); SQLAlchemy 2.0 + `psycopg` v3, Alembic migrations.
@@ -43,10 +44,14 @@ docker-compose.yml
 ```
 
 ## API surface (see architecture.md §5)
-- `GET /api/seasons`
+- `GET /api/seasons` (currently returns the 2 most recent — interim decision 2026-07-16)
 - `GET /api/products?season=F26`
-- `GET /api/accounts?email=...` | `?accountId=...`
-- `POST /api/orders`  → validate, persist (no card#), render PDF, email admin
+- `GET /api/accounts?email=...` | `?accountId=...` | `?name=...` (partial store-name match)
+- `GET /api/reps` — active `Account.Salesperson__c` picklist values
+- `GET /api/territories` — distinct `Account.SalesTerritory__c` values
+- `GET /api/order-writers` — `kugo2p__SalesOrder__c.Written_By__c` picklist values
+- `GET /api/accounts/nearby?lat&lng&k&maxMinutes` — new-customer conflict check (k nearest wholesale stockists; conflict = drive < 20 min default; straight-line fallback without a Google server key). Standalone tool page at `/conflict.html` (`frontend/src/conflict/`); also wired into the order form as a rep-only warning modal (rep + new account + Ship To coords → dismissible popup, never blocks; stockist names hidden from customers). See docs/conflict-checker.md.
+- `POST /api/orders`  → validate, persist (no card#), render PDF + save uploaded tax cert, email admin
 - `GET /api/health`
 
 ## Environment variables (.env.example)
@@ -78,6 +83,15 @@ SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
 ADMIN_EMAIL=orders@wooden-ships.com
+
+# Conflict check (server-side Google key — NOT the browser key; IP-restrict it)
+GOOGLE_MAPS_SERVER_API_KEY=
+CONFLICT_MAX_MINUTES=20
+```
+
+Frontend env (`frontend/.env`, see `frontend/.env.example`):
+```
+VITE_GOOGLE_MAPS_API_KEY=        # browser key, referrer-restricted (Places autocomplete)
 ```
 
 ## Coding conventions
@@ -120,7 +134,7 @@ uvicorn app.main:app --reload --port 8080
 - HTTPS, secrets in `.env`, deployable on the GCP VM.
 
 ## Things to confirm with Prada before finalizing
-- ~~Salesforce objects/fields~~ — confirmed 2026-07-14: Account (person-account org, tax id = `Tax_ID_Number__c`, lookup via `ContactBuyingEmail__c`); Product2 (`Name` = STYLE-COLOR-SIZE, one record per SKU); season = `ProductCode` prefix (odd = Fall, even = Spring). See architecture.md §3.2.
+- ~~Salesforce objects/fields~~ — confirmed 2026-07-14: Account (person-account org, tax id = `Tax_ID_Number__c`, lookup via `ContactBuyingEmail__c`); Product2 (`Name` = STYLE-COLOR-SIZE, one record per SKU); season = `ProductCode` prefix (odd = Fall, even = Spring). Added 2026-07-16: `Account.Salesperson__c` (picklist → /api/reps), `Account.SalesTerritory__c` (free text → /api/territories), `kugo2p__SalesOrder__c.Written_By__c` (picklist → /api/order-writers). See architecture.md §3.2.
 - ~~Price book~~ — confirmed 2026-07-14: per-season books named "<season> Wholesale"; no env var needed.
 - ~~Season-year formula~~ — verified 2026-07-14: F26 Wholesale contains exactly the K57 products.
 - ~~X/L size~~ — decision 2026-07-14: form keeps 3 size columns; X/L SKUs are not orderable on the web form.
@@ -129,4 +143,7 @@ uvicorn app.main:app --reload --port 8080
 - Admin email recipient(s).
 - SKU definition for the "2 pcs per SKU" rule.
 - SMTP provider.
+- Which seasons to sell right now — `GET /api/seasons` is hardcoded to the 2 most recent (2026-07-16).
+- Uploaded tax-cert retention/access policy (files land beside the order PDFs in `output/orders`).
+- Whether stored address lat/lng should sync to Salesforce.
 ```

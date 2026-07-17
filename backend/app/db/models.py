@@ -23,6 +23,9 @@ class Order(Base):
     order_date: Mapped[date | None] = mapped_column(Date)
     part_ship_ok: Mapped[bool | None] = mapped_column(Boolean)
     ship_window_note: Mapped[str | None] = mapped_column(Text)
+    ship_window: Mapped[str | None] = mapped_column(Text)  # buyer-selected window
+    filled_by: Mapped[str | None] = mapped_column(Text)  # rep | customer
+    notes: Mapped[str | None] = mapped_column(Text)
 
     # bill to
     buyer_name: Mapped[str | None] = mapped_column(Text)
@@ -31,6 +34,8 @@ class Order(Base):
     bill_zip: Mapped[str | None] = mapped_column(Text)
     tel: Mapped[str | None] = mapped_column(Text)
     fax: Mapped[str | None] = mapped_column(Text)
+    bill_lat: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    bill_lng: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
 
     # ship to
     ship_email: Mapped[str] = mapped_column(Text)
@@ -38,15 +43,20 @@ class Order(Base):
     ship_city_state: Mapped[str | None] = mapped_column(Text)
     ship_zip: Mapped[str | None] = mapped_column(Text)
     resale_tax_id: Mapped[str | None] = mapped_column(Text)
+    ship_lat: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    ship_lng: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
 
     # payment (NO card number / CVV columns)
+    payment_method: Mapped[str | None] = mapped_column(Text)  # link | card
+    approval_before_charge: Mapped[bool | None] = mapped_column(Boolean)
     card_name: Mapped[str | None] = mapped_column(Text)
     card_last4: Mapped[str | None] = mapped_column(Text)
 
-    # tax exemption acknowledgements
+    # tax exemption acknowledgements + uploaded certificate
     cert_required_ack: Mapped[bool | None] = mapped_column(Boolean)
     cert_sending_ack: Mapped[bool | None] = mapped_column(Boolean)
     cert_on_file: Mapped[bool | None] = mapped_column(Boolean)
+    cert_filename: Mapped[str | None] = mapped_column(Text)
 
     # signature / terms
     signature_name: Mapped[str | None] = mapped_column(Text)
@@ -65,10 +75,20 @@ class Order(Base):
     # salesforce link
     sf_account_id: Mapped[str | None] = mapped_column(Text)
 
+    # is this a new account? set from the rep's Internal Use radio
+    is_new_account: Mapped[bool | None] = mapped_column(Boolean)
+
+    # nearby-stockist conflict verdict — populated by the conflict-check API
+    # (feat/nearby-conflict-api); null means "not yet checked", NOT "no conflict".
+    has_conflict: Mapped[bool | None] = mapped_column(Boolean)
+
     # totals / status
     total_qty: Mapped[int] = mapped_column(Integer)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    # submitted | accepted | declined
     status: Mapped[str] = mapped_column(Text, server_default="submitted")
+    status_reason: Mapped[str | None] = mapped_column(Text)
+    status_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

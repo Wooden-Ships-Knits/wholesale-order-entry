@@ -1,18 +1,12 @@
-// Rolling calendar-month ship windows starting this month, e.g. "07/01 - 07/31  2026".
-function shipWindows(count = 12) {
-  const now = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return Array.from({ length: count }, (_, i) => {
-    const start = new Date(now.getFullYear(), now.getMonth() + i, 1)
-    const end = new Date(now.getFullYear(), now.getMonth() + i + 1, 0) // last day of the month
-    const mm = pad(start.getMonth() + 1)
-    const label = `${mm}/${pad(start.getDate())} - ${mm}/${pad(end.getDate())}  ${start.getFullYear()}`
-    return { value: label, label }
-  })
-}
-
-export default function OrderHeader({ seasons, season, onSeasonChange, form, setField, totalAmount }) {
-  const windows = shipWindows()
+export default function OrderHeader({
+  seasons,
+  season,
+  onSeasonChange,
+  form,
+  setField,
+  totalAmount,
+  shipWindows = [],
+}) {
   return (
     <section className="section order-header">
       <div className="brand">
@@ -68,13 +62,50 @@ export default function OrderHeader({ seasons, season, onSeasonChange, form, set
             Customer
           </label>
         </fieldset>
+
+        {form.representativeOk === false && (
+          <fieldset className="inline-radios">
+            <legend>
+              Is this your first order? <span className="req">*</span>
+            </legend>
+            <label>
+              <input
+                type="radio"
+                name="firstOrder"
+                checked={form.firstOrder === true}
+                onChange={() => setField('firstOrder', true)}
+              />
+              Yes
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="firstOrder"
+                checked={form.firstOrder === false}
+                onChange={() => setField('firstOrder', false)}
+              />
+              No
+            </label>
+          </fieldset>
+        )}
+
         <label>
           Ship Window
-          <select value={form.shipWindow} onChange={(e) => setField('shipWindow', e.target.value)}>
-            <option value="">Select a ship window…</option>
-            {windows.map((w) => (
-              <option key={w.value} value={w.value}>
-                {w.label}
+          <select
+            value={form.shipWindow}
+            onChange={(e) => setField('shipWindow', e.target.value)}
+            disabled={!season}
+          >
+            <option value="">
+              {!season
+                ? 'Select a collection first…'
+                : shipWindows.length
+                  ? 'Select a ship window…'
+                  : 'No ship windows for this collection'}
+            </option>
+            {shipWindows.map((w) => (
+              <option key={w} value={w}>
+                {w}
               </option>
             ))}
           </select>

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { getSeasons, getReps, getOrderWriters, getProducts, submitOrder } from './api'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, getNearbyAccounts, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
@@ -10,9 +10,20 @@ import TaxExemption from './components/TaxExemption'
 import TermsSignature from './components/TermsSignature'
 import InternalUse from './components/InternalUse'
 import Notes from './components/Notes'
+import ConflictWarning from './components/ConflictWarning'
 import Footer from './components/Footer'
 
 const today = () => new Date().toISOString().slice(0, 10)
+
+const MAX_CERT_BYTES = 10 * 1024 * 1024 // keep in sync with backend CERT_MAX_BYTES
+
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result).split(',')[1])
+    reader.onerror = () => reject(new Error('Could not read the certificate file.'))
+    reader.readAsDataURL(file)
+  })
 
 let lineSeq = 0
 const makeLine = () => ({ id: ++lineSeq, query: '', styleName: '', color: '', qty: {} })
@@ -22,6 +33,7 @@ export default function App() {
   const [seasons, setSeasons] = useState([])
   const [reps, setReps] = useState([])
   const [writers, setWriters] = useState([])
+  const [shipWindows, setShipWindows] = useState([])
   const [season, setSeason] = useState('')
   const [rows, setRows] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(false)
@@ -34,6 +46,7 @@ export default function App() {
     shipWindow: '',
     partShipOk: null,
     representativeOk: null,
+    firstOrder: null,
     sfAccountId: null,
   })
   const [billTo, setBillToState] = useState({ buyerName: '', street: '', cityState: '', zip: '', tel: '', fax: '', lat: null, lng: null })
@@ -82,7 +95,13 @@ export default function App() {
     setSeason(code)
     setRows([])
     setLines(Array.from({ length: INITIAL_LINES }, makeLine))
+    // Ship windows are per-season: clear the old list and selection.
+    setShipWindows([])
+    setField('shipWindow', '')
     if (!code) return
+    getShipWindows(code)
+      .then((d) => setShipWindows(d.shipWindows))
+      .catch(() => setShipWindows([]))
     setLoadingProducts(true)
     setLoadError('')
     getProducts(code)
@@ -147,8 +166,40 @@ export default function App() {
   }
 
   // Payment + tax exemption only apply to accounts we don't already have on
-  // file: either the rep marked it new, or the lookup found nothing.
-  const isNewAccount = internal.accountStatus === 'new' || lookupNoMatch
+  // file. A customer answers "is this your first order?" directly; for a rep
+  // it's the Internal Use radio, or a buyer lookup that found nothing.
+  const isNewAccount =
+    form.representativeOk === false
+      ? form.firstOrder === true
+      : internal.accountStatus === 'new' || lookupNoMatch
+
+  // Stockist conflict check (docs/conflict-checker.md): when a rep marks the
+  // account New and the Ship To store address has coordinates from the map
+  // search, ask the backend whether an existing stockist is too close. Each
+  // coordinate pair is checked once, so dismissing the warning doesn't bring
+  // it back for the same address. Warning only — never blocks submission.
+  const [conflictResult, setConflictResult] = useState(null)
+  const checkedCoords = useRef(new Set())
+  const shouldCheckConflict =
+    form.representativeOk === true &&
+    internal.accountStatus === 'new' &&
+    shipTo.lat != null &&
+    shipTo.lng != null
+  useEffect(() => {
+    if (!shouldCheckConflict) return
+    const key = `${shipTo.lat},${shipTo.lng}`
+    if (checkedCoords.current.has(key)) return
+    checkedCoords.current.add(key)
+    let stale = false
+    getNearbyAccounts(shipTo.lat, shipTo.lng)
+      .then((r) => {
+        if (!stale && r.conflict) setConflictResult(r)
+      })
+      .catch((e) => console.error('Conflict check failed:', e))
+    return () => {
+      stale = true
+    }
+  }, [shouldCheckConflict, shipTo.lat, shipTo.lng])
 
   const { totalPieces, totalAmount, perLine } = useMemo(() => computeTotals(resolved), [resolved])
   const minimums = useMemo(() => validateMinimums(resolved), [resolved])
@@ -158,12 +209,28 @@ export default function App() {
     const problems = [...minimums.errors]
     if (totalPieces === 0) problems.unshift('No items entered yet.')
     if (form.representativeOk === null) problems.push('Please select who is filling in this form.')
+    if (form.representativeOk === false && form.firstOrder === null)
+      problems.push('Please tell us whether this is your first order.')
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!terms.signatureName) problems.push('Signature is required.')
     if (!terms.accepted) problems.push('You must accept the terms & conditions.')
+    if (certFile && certFile.size > MAX_CERT_BYTES) {
+      problems.push('The tax exemption certificate must be 10 MB or smaller.')
+    }
     if (problems.length) {
       setSubmitNotice(problems.join(' '))
       return
+    }
+
+    // Attach the uploaded tax cert as base64 (backend re-validates type/size).
+    let certFilePayload = null
+    if (certFile) {
+      try {
+        certFilePayload = { name: certFile.name, contentBase64: await fileToBase64(certFile) }
+      } catch (err) {
+        setSubmitNotice(err.message)
+        return
+      }
     }
 
     const items = resolved
@@ -180,11 +247,18 @@ export default function App() {
       season,
       orderDate: form.orderDate,
       partShipOk: form.partShipOk,
+      shipWindow: form.shipWindow,
+      filledBy: form.representativeOk === true ? 'rep' : form.representativeOk === false ? 'customer' : '',
       sfAccountId: form.sfAccountId,
       billTo,
       shipTo,
       payment,
-      taxExemption: { repNotified: tax.repNotified, sendingCert: tax.sendingCert, certOnFile },
+      taxExemption: {
+        repNotified: tax.repNotified,
+        sendingCert: tax.sendingCert,
+        certOnFile,
+        certFile: certFilePayload,
+      },
       terms,
       internal,
       notes,
@@ -228,6 +302,7 @@ export default function App() {
         form={form}
         setField={setField}
         totalAmount={totalAmount}
+        shipWindows={shipWindows}
       />
       {loadError && <p className="error-banner">{loadError}</p>}
 
@@ -274,6 +349,10 @@ export default function App() {
       {isNewAccount && <TaxExemption certFile={certFile} setCertFile={setCertFile} />}
       <Notes notes={notes} setNotes={setNotes} />
       <TermsSignature terms={terms} setTerms={setTerms} />
+
+      {conflictResult && (
+        <ConflictWarning result={conflictResult} onDismiss={() => setConflictResult(null)} />
+      )}
 
       {submitNotice && <p className="submit-notice">{submitNotice}</p>}
       <div className="submit-row">
