@@ -44,9 +44,10 @@
       <td><span class="label">Order ref</span> {{ order.short_id }}</td>
       <td><span class="label">Collection</span> {{ order.season_code }} — {{ order.season_label }}</td>
       <td><span class="label">Order date</span> {{ order.order_date or "—" }}</td>
-      <td><span class="label">Part ship OK</span>
-        {% if order.part_ship_ok is none %}—{% elif order.part_ship_ok %}Yes{% else %}No{% endif %}
+      <td><span class="label">Filled by</span>
+        {% if order.filled_by == "rep" %}Sales rep{% elif order.filled_by == "customer" %}Customer{% else %}—{% endif %}
       </td>
+      <td><span class="label">Ship window</span> {{ order.ship_window or "—" }}</td>
       <td><span class="label">Submitted</span> {{ order.created_at }}</td>
     </tr>
   </table>
@@ -108,6 +109,17 @@
   <h2>Payment — for manual processing only</h2>
   <table class="meta">
     <tr>
+      <td><span class="label">Payment by</span>
+        {% if order.payment_method == "link" %}Payment link{% elif order.payment_method == "card" %}Credit card{% else %}—{% endif %}
+      </td>
+      <td><span class="label">Charge approval</span>
+        {% if order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Get approval first{% else %}Charge without approval{% endif %}
+      </td>
+    </tr>
+  </table>
+  {% if order.payment_method != "link" %}
+  <table class="meta">
+    <tr>
       <td><span class="label">Card number</span> {{ payment.card_number or "—" }}</td>
       <td><span class="label">Name on card</span> {{ payment.card_name or "—" }}</td>
       <td><span class="label">Exp</span> {{ payment.exp_date or "—" }}</td>
@@ -115,11 +127,16 @@
     </tr>
   </table>
   <p class="warn">Contains card data — handle per policy, do not forward, destroy after processing.</p>
+  {% endif %}
 
   <h2>Tax Exemption Certificate</h2>
   <div class="ack">{{ "☑" if order.cert_required_ack else "☐" }} Rep has notified the account that a state-issued certificate is required.</div>
   <div class="ack">{{ "☑" if order.cert_sending_ack else "☐" }} Account confirms sending the certificate (orders will not process without it).</div>
   <div class="ack">{{ "☑" if order.cert_on_file else "☐" }} Certificate on file <em>(internal)</em>.</div>
+  <div class="ack">Uploaded certificate: {{ order.cert_filename or "—" }}</div>
+
+  <h2>Notes</h2>
+  <div class="box">{{ order.notes or "—" }}</div>
 
   <h2>Terms &amp; Conditions</h2>
   <div class="box">
