@@ -213,8 +213,11 @@ order_items
 | GET | `/api/reps` | Active sales reps (`Account.Salesperson__c` picklist) |
 | GET | `/api/territories` | Distinct `Account.SalesTerritory__c` values in use |
 | GET | `/api/order-writers` | `Written_By__c` picklist (Internal Use dropdowns) |
+| GET | `/api/accounts/nearby?lat=..&lng=..&k=5&maxMinutes=20` | New-customer conflict check: k nearest wholesale stockists + drive-time verdict (backend-only; consuming UI TBD) |
 | POST | `/api/orders` | Validate, persist order, generate PDF (+ save uploaded tax cert), email admin *(email deferred)* |
 | GET | `/api/health` | Health check |
+
+**`GET /api/accounts/nearby`** (added 2026-07-17, spec: `docs/superpowers/specs/2026-07-17-nearby-conflict-check-design.md`): flags a new customer whose Ship To point is within a **20-minute drive** (default; `maxMinutes` overridable, env default `CONFLICT_MAX_MINUTES`) of an existing `Type='Wholesale'` account. Flow: cached Salesforce query of geocoded wholesale accounts (`ShippingLatitude/Longitude`, Salesforce-populated) → pure-Python haversine KNN pre-filter (≤ 25 candidates) → one Google Distance Matrix call (server key `GOOGLE_MAPS_SERVER_API_KEY`) → `{conflict, mode, maxMinutes, neighbors[{accountId, name, cityState, distanceMiles, driveMinutes}]}`. If the key is unset or Google fails, the endpoint degrades to `mode: "straight-line"` (conflict at `maxMinutes × 0.5` miles ≈ 30 mph) instead of erroring. Modules: `app/geo/{distance,drive_time,conflict}.py`.
 
 `POST /api/orders` request includes card fields; server-side it: (1) re-validates minimums, (2) inserts order + items (no card number), (3) renders PDF including card details, (4) emails PDF to admin, (5) returns `{ orderId, status }`. Card fields are held only in memory for step 3.
 
@@ -252,6 +255,7 @@ Return a structured error listing offending styles/rows.
 - Rate-limit `POST /api/orders` and the lookup endpoints.
 - CORS locked to the site origin.
 - Google Maps: the browser key (`VITE_GOOGLE_MAPS_API_KEY`) is public by design — restrict it by HTTP referrer and to the Maps JavaScript + Places APIs in the Google Cloud console. Only user-typed address text goes to Google; no Salesforce or order data does.
+- Google Maps server key (`GOOGLE_MAPS_SERVER_API_KEY`, conflict check): separate key, IP-restricted to the VM, Distance Matrix API only. The conflict check sends Google **raw coordinates only** — never account names or Salesforce ids.
 - Uploaded tax certs: type whitelist (PDF/JPG/PNG), 10 MB cap, stored filename is server-generated (user filename discarded except its extension); stored outside the web root, never served by nginx.
 - Future: migrate card capture to Stripe Elements to eliminate PCI scope.
 
