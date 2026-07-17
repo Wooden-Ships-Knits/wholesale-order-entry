@@ -33,6 +33,10 @@ WRITTEN_BY = "Written_By__c"
 # Nearby-stockist conflict check (GET /api/accounts/nearby). Shipping geocodes
 # are Salesforce-populated (verified 2026-07-17: 4,930/6,467 accounts, accuracy
 # Address/NearAddress); BillingLatitude is unpopulated org-wide.
+# Candidates are limited to accounts with recent order history via the
+# sales order object's account lookup + business order date.
+SALES_ORDER_ACCOUNT = "kugo2p__Account__c"
+SALES_ORDER_DATE = "kugo2p__OrderDate__c"
 ACCOUNT_TYPE = "Type"
 WHOLESALE_TYPE = "Wholesale"
 SHIPPING_LAT = "ShippingLatitude"
