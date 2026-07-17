@@ -62,6 +62,33 @@ export default function OrderHeader({
             Customer
           </label>
         </fieldset>
+
+        {form.representativeOk === false && (
+          <fieldset className="inline-radios">
+            <legend>
+              Is this your first order? <span className="req">*</span>
+            </legend>
+            <label>
+              <input
+                type="radio"
+                name="firstOrder"
+                checked={form.firstOrder === true}
+                onChange={() => setField('firstOrder', true)}
+              />
+              Yes
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="firstOrder"
+                checked={form.firstOrder === false}
+                onChange={() => setField('firstOrder', false)}
+              />
+              No
+            </label>
+          </fieldset>
+        )}
+
         <label>
           Ship Window
           <select

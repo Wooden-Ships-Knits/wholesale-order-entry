@@ -45,6 +45,7 @@ export default function App() {
     shipWindow: '',
     partShipOk: null,
     representativeOk: null,
+    firstOrder: null,
     sfAccountId: null,
   })
   const [billTo, setBillToState] = useState({ buyerName: '', street: '', cityState: '', zip: '', tel: '', fax: '', lat: null, lng: null })
@@ -164,8 +165,12 @@ export default function App() {
   }
 
   // Payment + tax exemption only apply to accounts we don't already have on
-  // file: either the rep marked it new, or the lookup found nothing.
-  const isNewAccount = internal.accountStatus === 'new' || lookupNoMatch
+  // file. A customer answers "is this your first order?" directly; for a rep
+  // it's the Internal Use radio, or a buyer lookup that found nothing.
+  const isNewAccount =
+    form.representativeOk === false
+      ? form.firstOrder === true
+      : internal.accountStatus === 'new' || lookupNoMatch
 
   const { totalPieces, totalAmount, perLine } = useMemo(() => computeTotals(resolved), [resolved])
   const minimums = useMemo(() => validateMinimums(resolved), [resolved])
@@ -175,6 +180,8 @@ export default function App() {
     const problems = [...minimums.errors]
     if (totalPieces === 0) problems.unshift('No items entered yet.')
     if (form.representativeOk === null) problems.push('Please select who is filling in this form.')
+    if (form.representativeOk === false && form.firstOrder === null)
+      problems.push('Please tell us whether this is your first order.')
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!terms.signatureName) problems.push('Signature is required.')
     if (!terms.accepted) problems.push('You must accept the terms & conditions.')

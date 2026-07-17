@@ -25,5 +25,14 @@ class Settings(BaseSettings):
 
     pdf_output_dir: str = "/output/orders"
 
+    # Admin monitoring page. Generate the hash with:
+    #   docker compose exec backend python -m app.admin.security "your-password"
+    # Empty hash disables sign-in entirely (no admin access).
+    admin_password_hash: str = ""
+    # Signs the session cookie. Rotating it logs everyone out.
+    session_secret: str = ""
+    # Set false only for local http dev; cookies are Secure in production.
+    session_cookie_secure: bool = True
+
 
 settings = Settings()
