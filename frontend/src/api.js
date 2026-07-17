@@ -11,6 +11,8 @@ export const getSeasons = () => get('/api/seasons')
 export const getReps = () => get('/api/reps')
 export const getTerritories = () => get('/api/territories')
 export const getOrderWriters = () => get('/api/order-writers')
+export const getShipWindows = (season) =>
+  get(`/api/ship-windows?season=${encodeURIComponent(season)}`)
 export const getProducts = (season) => get(`/api/products?season=${encodeURIComponent(season)}`)
 // '@' -> email; a bare 15/18-char Salesforce id -> accountId; anything else is
 // treated as the account (store) name.

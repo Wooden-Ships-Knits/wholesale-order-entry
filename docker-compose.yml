@@ -24,6 +24,8 @@ services:
       # Generated order PDFs (contain card data for manual processing) —
       # outside the web root, never served by nginx.
       - ./output/orders:/output/orders
+      # Google service-account key (read-only) for the ship-window sheet.
+      - ./backend/credentials/dialy-report-automation-e20c53e67542.json:/credentials/service-account.json:ro
     depends_on:
       db:
         condition: service_healthy

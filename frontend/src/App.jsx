@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getSeasons, getReps, getOrderWriters, getProducts, submitOrder } from './api'
+import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
@@ -22,6 +22,7 @@ export default function App() {
   const [seasons, setSeasons] = useState([])
   const [reps, setReps] = useState([])
   const [writers, setWriters] = useState([])
+  const [shipWindows, setShipWindows] = useState([])
   const [season, setSeason] = useState('')
   const [rows, setRows] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(false)
@@ -82,7 +83,13 @@ export default function App() {
     setSeason(code)
     setRows([])
     setLines(Array.from({ length: INITIAL_LINES }, makeLine))
+    // Ship windows are per-season: clear the old list and selection.
+    setShipWindows([])
+    setField('shipWindow', '')
     if (!code) return
+    getShipWindows(code)
+      .then((d) => setShipWindows(d.shipWindows))
+      .catch(() => setShipWindows([]))
     setLoadingProducts(true)
     setLoadError('')
     getProducts(code)
@@ -228,6 +235,7 @@ export default function App() {
         form={form}
         setField={setField}
         totalAmount={totalAmount}
+        shipWindows={shipWindows}
       />
       {loadError && <p className="error-banner">{loadError}</p>}
 
