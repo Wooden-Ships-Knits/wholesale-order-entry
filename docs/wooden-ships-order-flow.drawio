@@ -65,16 +65,16 @@
                     <mxGeometry x="370" y="1890" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="ppic" value="PPIC checks the order&lt;br&gt;(PDF + record: items, minimums,&lt;br&gt;account, payment/tax status)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f7f5f1;strokeColor=#8a6d3b;fontColor=#4c4a45;" parent="1" vertex="1">
-                    <mxGeometry x="830" y="2170" width="220" height="70" as="geometry"/>
+                    <mxGeometry x="840" y="2170" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="ppicok" value="Order&lt;br&gt;confirmed?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
-                    <mxGeometry x="845" y="2280" width="190" height="80" as="geometry"/>
+                    <mxGeometry x="855" y="2280" width="190" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="ppicfix" value="Contact buyer / rep:&lt;br&gt;revise or cancel the order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
                     <mxGeometry x="580" y="2285" width="200" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="sfentry" value="PPIC enters the confirmed order&lt;br&gt;into Salesforce (sales order created)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="820" y="2420" width="240" height="60" as="geometry"/>
+                    <mxGeometry x="830" y="2420" width="240" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="done" value="Done — order confirmed&lt;br&gt;&amp;amp; in Salesforce" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
                     <mxGeometry x="370" y="2425" width="220" height="50" as="geometry"/>
