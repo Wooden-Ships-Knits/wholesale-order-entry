@@ -20,5 +20,11 @@ class Settings(BaseSettings):
 
     pdf_output_dir: str = "/output/orders"
 
+    # Nearby-stockist conflict check. Server-side Google key (Distance Matrix)
+    # — NOT the browser key in frontend/.env; IP-restrict it. Empty = the
+    # endpoint degrades to straight-line distances.
+    google_maps_server_api_key: str = ""
+    conflict_max_minutes: int = 20
+
 
 settings = Settings()
