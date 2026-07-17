@@ -94,7 +94,7 @@ flowchart LR
     E -->|no| G[conflict: false]
 ```
 
-1. **Candidate set** — Salesforce accounts with `Type = 'Wholesale'`, a shipping geocode, **and at least one sales order in the last 3 years** (`CONFLICT_ORDER_YEARS`, decision 2026-07-17 — a store that hasn't ordered in 3 years isn't an active stockist). That's ~900 accounts, out of ~4,400 geocoded wholesale accounts. Salesforce geocodes shipping addresses automatically, so we maintain no coordinates ourselves. The list is cached for 5 minutes like the other Salesforce lookups.
+1. **Candidate set** — Salesforce accounts with `Type = 'Wholesale'`, a shipping geocode, **at least one sales order in the last 3 years** (`CONFLICT_ORDER_YEARS`, decision 2026-07-17 — a store that hasn't ordered in 3 years isn't an active stockist), **and a `Rank__c` that isn't excluded** (decision 2026-07-18: `ZZ - No Booking`, `Z - Inactive`, `E - No Marketing`, `X - Conflict`, `OOB - Out of Business` never count; accounts with no rank still do). That's ~820 accounts, out of ~4,400 geocoded wholesale accounts. Salesforce geocodes shipping addresses automatically, so we maintain no coordinates ourselves. The list is cached for 5 minutes like the other Salesforce lookups.
 2. **Pre-filter** — straight-line (haversine) distance to every candidate, keep the nearest 10–25. This is exact math over a few thousand points; it takes milliseconds and costs nothing.
 3. **Drive times** — one Google Distance Matrix request for just those finalists (25 is Google's per-request limit — which is why the pre-filter exists). Only raw coordinates are sent to Google, never store names or Salesforce ids.
 4. **Verdict** — sort by drive time, return the top `k`, and flag `conflict` if anything is under the threshold.

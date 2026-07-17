@@ -170,21 +170,25 @@ def list_order_writers() -> list[str]:
 
 
 def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
-    """Conflict-check candidate set: wholesale accounts with shipping geocodes
-    AND at least one sales order in the last CONFLICT_ORDER_YEARS years.
+    """Conflict-check candidate set: wholesale accounts with shipping geocodes,
+    at least one sales order in the last CONFLICT_ORDER_YEARS years, and a
+    Rank__c outside EXCLUDED_RANKS (inactive / no-booking / conflict / OOB).
 
     The order-history filter (decision 2026-07-17) keeps only active
     stockists — it also drops all "(CLOSED)"-named accounts, which have no
-    recent orders (verified against the org: 4,395 -> 897 candidates).
+    recent orders. Verified against the org: 4,395 -> 897 -> 824 candidates
+    after the rank exclusion (decision 2026-07-18).
     """
     def fetch() -> list[dict[str, Any]]:
         since = date.today() - timedelta(days=365 * settings.conflict_order_years)
         fields = ", ".join(mapping.NEARBY_ACCOUNT_FIELDS)
+        excluded_ranks = ", ".join(f"'{soql_str(r)}'" for r in mapping.EXCLUDED_RANKS)
         soql = (
             f"SELECT {fields} FROM {mapping.ACCOUNT} "
             f"WHERE {mapping.ACCOUNT_TYPE} = '{mapping.WHOLESALE_TYPE}' "
             f"AND {mapping.SHIPPING_LAT} != null "
             f"AND {mapping.SHIPPING_LNG} != null "
+            f"AND ({mapping.RANK} = null OR {mapping.RANK} NOT IN ({excluded_ranks})) "
             f"AND Id IN (SELECT {mapping.SALES_ORDER_ACCOUNT} FROM {mapping.SALES_ORDER} "
             f"WHERE {mapping.SALES_ORDER_DATE} >= {since.isoformat()})"
         )
