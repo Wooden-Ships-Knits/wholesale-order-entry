@@ -188,7 +188,20 @@ def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
             f"AND Id IN (SELECT {mapping.SALES_ORDER_ACCOUNT} FROM {mapping.SALES_ORDER} "
             f"WHERE {mapping.SALES_ORDER_DATE} >= {since.isoformat()})"
         )
-        return query_all(soql)
+        accounts = query_all(soql)
+
+        # Most recent order date per candidate, attached as lastOrderDate.
+        # NB: "last" is a reserved word in SOQL — don't use it as the alias.
+        agg = query_all(
+            f"SELECT {mapping.SALES_ORDER_ACCOUNT} acc, MAX({mapping.SALES_ORDER_DATE}) latest "
+            f"FROM {mapping.SALES_ORDER} "
+            f"WHERE {mapping.SALES_ORDER_DATE} >= {since.isoformat()} "
+            f"GROUP BY {mapping.SALES_ORDER_ACCOUNT}"
+        )
+        last_by_account = {r["acc"]: r["latest"] for r in agg}
+        for a in accounts:
+            a["lastOrderDate"] = last_by_account.get(a["Id"])
+        return accounts
 
     return _cached("geocoded_accounts", fetch)
 
