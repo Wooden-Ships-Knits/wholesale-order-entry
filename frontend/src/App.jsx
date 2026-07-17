@@ -249,6 +249,9 @@ export default function App() {
       partShipOk: form.partShipOk,
       shipWindow: form.shipWindow,
       filledBy: form.representativeOk === true ? 'rep' : form.representativeOk === false ? 'customer' : '',
+      // Customer's own "is this your first order?" answer — the customer-side
+      // equivalent of the rep's Internal Use "New account" radio.
+      firstOrder: form.firstOrder,
       sfAccountId: form.sfAccountId,
       billTo,
       shipTo,

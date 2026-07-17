@@ -42,6 +42,36 @@ def _fail(errors: list[dict]) -> None:
     raise HTTPException(status_code=422, detail={"errors": errors})
 
 
+def _is_new_account(payload: OrderSubmission) -> bool | None:
+    """Is this a new account? Depends on who filled the form.
+
+    A rep answers the Internal Use "New account / Existing" radio; a customer
+    answers "is this your first order?" (the Internal Use section isn't shown
+    to them). None when unanswered, so the admin page shows "—" rather than a
+    misleading "No".
+    """
+    if payload.filled_by == "customer":
+        return payload.first_order
+    if payload.internal.account_status == "new":
+        return True
+    if payload.internal.account_status == "existing":
+        return False
+    return None
+
+
+def _conflict_point(order: Order) -> tuple[float, float] | None:
+    """Coordinates to run the conflict check from.
+
+    Ship To is the store location and what the spec calls for; fall back to
+    Bill To so a buyer who only searched the billing map still gets checked.
+    """
+    if order.ship_lat is not None and order.ship_lng is not None:
+        return float(order.ship_lat), float(order.ship_lng)
+    if order.bill_lat is not None and order.bill_lng is not None:
+        return float(order.bill_lat), float(order.bill_lng)
+    return None
+
+
 def _run_conflict_check(order_id: uuid.UUID, lat: float, lng: float) -> None:
     """Background: store the nearby-stockist verdict on the order.
 
@@ -212,15 +242,7 @@ def submit_order(
         terms_accepted=payload.terms.accepted,
         new_or_reorder=payload.internal.new_or_reorder,
         account_status=payload.internal.account_status,
-        # Admin-list flag: the rep's radio is the source of truth. Left null
-        # when unanswered, so the admin page shows "—" rather than a false "No".
-        is_new_account=(
-            True
-            if payload.internal.account_status == "new"
-            else False
-            if payload.internal.account_status == "existing"
-            else None
-        ),
+        is_new_account=_is_new_account(payload),
         campaign=campaign,
         po_number=payload.internal.po_number,
         rep=payload.internal.rep,
@@ -336,15 +358,15 @@ def submit_order(
     # round-trip must not hold up the buyer's confirmation. Needs the Ship To
     # coordinates from the form's Places search; without them the verdict
     # stays null ("not checked") rather than a misleading "no conflict".
-    if order.is_new_account and order.ship_lat is not None and order.ship_lng is not None:
-        background.add_task(
-            _run_conflict_check, order.id, float(order.ship_lat), float(order.ship_lng)
-        )
-    elif order.is_new_account:
-        logger.info(
-            "Order %s is a new account but has no Ship To coordinates — conflict unchecked",
-            str(order.id)[:8],
-        )
+    if order.is_new_account:
+        point = _conflict_point(order)
+        if point is None:
+            logger.info(
+                "Order %s is a new account but has no coordinates — conflict unchecked",
+                str(order.id)[:8],
+            )
+        else:
+            background.add_task(_run_conflict_check, order.id, *point)
 
     logger.info(
         "Order %s persisted: season=%s items=%d qty=%d total=%s pdf=%s",

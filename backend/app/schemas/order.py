@@ -124,6 +124,8 @@ class OrderSubmission(CamelModel):
     part_ship_ok: bool | None = None
     ship_window: str = ""
     filled_by: str = ""  # "rep" | "customer" | ""
+    # Customer-filled forms only: "is this your first order?". None = unanswered.
+    first_order: bool | None = None
     notes: str = ""
     sf_account_id: str | None = None
     bill_to: BillTo = BillTo()
