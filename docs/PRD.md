@@ -115,9 +115,9 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 ### 5.11 Notes (new — 2026-07-16)
 - Free-text notes textarea, saved with the order and shown on the PDF
 
-### 5.12 New-customer conflict check (new — 2026-07-17, backend API only)
+### 5.12 New-customer conflict check (new — 2026-07-17)
 - `GET /api/accounts/nearby` — given the new customer's Ship To lat/lng (from the Google Maps search), returns the k nearest existing wholesale stockists and a conflict verdict: **conflict if an existing store is under a 20-minute drive away** (threshold configurable/overridable).
-- Backend-only for now — where the check surfaces (order form, admin review, elsewhere) is not yet decided. Design: `docs/superpowers/specs/2026-07-17-nearby-conflict-check-design.md`.
+- **Standalone internal tool page at `/conflict.html`** (location search box → verdict + nearest-stockists table), not linked from the order form. Integration into the order flow itself is still undecided. Design: `docs/superpowers/specs/2026-07-17-nearby-conflict-check-design.md`; explainer: `docs/conflict-checker.md`.
 
 ## 6. Validation rules
 

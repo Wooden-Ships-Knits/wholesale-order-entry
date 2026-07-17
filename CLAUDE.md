@@ -50,7 +50,7 @@ docker-compose.yml
 - `GET /api/reps` — active `Account.Salesperson__c` picklist values
 - `GET /api/territories` — distinct `Account.SalesTerritory__c` values
 - `GET /api/order-writers` — `kugo2p__SalesOrder__c.Written_By__c` picklist values
-- `GET /api/accounts/nearby?lat&lng&k&maxMinutes` — new-customer conflict check (k nearest wholesale stockists; conflict = drive < 20 min default; straight-line fallback without a Google server key). Backend-only; consuming UI undecided.
+- `GET /api/accounts/nearby?lat&lng&k&maxMinutes` — new-customer conflict check (k nearest wholesale stockists; conflict = drive < 20 min default; straight-line fallback without a Google server key). Standalone tool page at `/conflict.html` (`frontend/src/conflict/`); order-flow integration undecided. See docs/conflict-checker.md.
 - `POST /api/orders`  → validate, persist (no card#), render PDF + save uploaded tax cert, email admin
 - `GET /api/health`
 

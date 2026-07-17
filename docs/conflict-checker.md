@@ -1,6 +1,6 @@
 # Conflict Checker — Nearby-Stockist Check for New Customers
 
-**Endpoint:** `GET /api/accounts/nearby` · **Added:** 2026-07-17 · **Status:** backend only (no UI yet)
+**Endpoint:** `GET /api/accounts/nearby` · **Added:** 2026-07-17 · **Standalone tool page:** `/conflict.html`
 Design spec: [`superpowers/specs/2026-07-17-nearby-conflict-check-design.md`](superpowers/specs/2026-07-17-nearby-conflict-check-design.md)
 
 ## What it does
@@ -14,6 +14,10 @@ This is brand protection: two stockists on the same street compete for the same 
 **The rule: a conflict exists when an existing wholesale account is less than a 20-minute drive from the new customer's store.**
 
 Drive time is used instead of straight-line distance on purpose — two stores 2 miles apart across a river can be a 40-minute drive from each other, while 10 miles down one highway can be 12 minutes. Twenty minutes of driving is what "same shopping area" actually means to a customer.
+
+## The standalone tool page
+
+`https://<site>/conflict.html` is an independent internal page (not linked from the order form): type a location in the Google search box, pick a suggestion, and it shows the verdict banner plus the nearest-stockists table. The drive-time threshold and how many neighbors to show are adjustable on the page. It is a second Vite entry (`frontend/src/conflict/`), so it reuses the same Google Maps browser key and deploys with the normal frontend build — nothing extra to configure. Note: the page has no login (same as the rest of the site); don't share the URL outside the team.
 
 ## How to call it
 
