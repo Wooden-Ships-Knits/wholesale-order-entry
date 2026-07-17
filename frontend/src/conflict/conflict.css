@@ -1,0 +1,91 @@
+/* Conflict-check internal tool — extends the order-form look. */
+.conflict-page {
+  max-width: 860px;
+}
+
+.conflict-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+}
+
+.conflict-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #4c4a45;
+}
+
+.conflict-controls .grow {
+  flex: 1;
+}
+
+.conflict-controls input,
+.conflict-controls select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #b9b4aa;
+  background: #fff;
+  font: inherit;
+}
+
+.checked-place {
+  margin: 0.75rem 0 0;
+}
+
+.muted {
+  color: #6d6a63;
+}
+
+.verdict {
+  padding: 0.8rem 1rem;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+
+.verdict-conflict {
+  background: #fbe4e4;
+  border: 1px solid #b5651d;
+  color: #7a1f1f;
+}
+
+.verdict-clear {
+  background: #e7f0e7;
+  border: 1px solid #4b7a4b;
+  color: #274427;
+}
+
+.mode-note {
+  font-size: 0.85rem;
+  color: #6d6a63;
+  font-style: italic;
+}
+
+table.neighbors {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.neighbors th,
+table.neighbors td {
+  border: 1px solid #d8d4cc;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+table.neighbors th {
+  background: #efece6;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+table.neighbors .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+table.neighbors .row-conflict td {
+  background: #fbe4e4;
+}

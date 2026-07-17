@@ -6,6 +6,7 @@ The session is created lazily and re-created automatically on expiry.
 import logging
 import threading
 import time
+from datetime import date, timedelta
 from typing import Any, Callable
 
 from simple_salesforce import Salesforce
@@ -166,6 +167,47 @@ def list_order_writers() -> list[str]:
         return []
 
     return _cached("order_writers", fetch)
+
+
+def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
+    """Conflict-check candidate set: wholesale accounts with shipping geocodes,
+    at least one sales order in the last CONFLICT_ORDER_YEARS years, and a
+    Rank__c outside EXCLUDED_RANKS (inactive / no-booking / conflict / OOB).
+
+    The order-history filter (decision 2026-07-17) keeps only active
+    stockists — it also drops all "(CLOSED)"-named accounts, which have no
+    recent orders. Verified against the org: 4,395 -> 897 -> 824 candidates
+    after the rank exclusion (decision 2026-07-18).
+    """
+    def fetch() -> list[dict[str, Any]]:
+        since = date.today() - timedelta(days=365 * settings.conflict_order_years)
+        fields = ", ".join(mapping.NEARBY_ACCOUNT_FIELDS)
+        excluded_ranks = ", ".join(f"'{soql_str(r)}'" for r in mapping.EXCLUDED_RANKS)
+        soql = (
+            f"SELECT {fields} FROM {mapping.ACCOUNT} "
+            f"WHERE {mapping.ACCOUNT_TYPE} = '{mapping.WHOLESALE_TYPE}' "
+            f"AND {mapping.SHIPPING_LAT} != null "
+            f"AND {mapping.SHIPPING_LNG} != null "
+            f"AND ({mapping.RANK} = null OR {mapping.RANK} NOT IN ({excluded_ranks})) "
+            f"AND Id IN (SELECT {mapping.SALES_ORDER_ACCOUNT} FROM {mapping.SALES_ORDER} "
+            f"WHERE {mapping.SALES_ORDER_DATE} >= {since.isoformat()})"
+        )
+        accounts = query_all(soql)
+
+        # Most recent order date per candidate, attached as lastOrderDate.
+        # NB: "last" is a reserved word in SOQL — don't use it as the alias.
+        agg = query_all(
+            f"SELECT {mapping.SALES_ORDER_ACCOUNT} acc, MAX({mapping.SALES_ORDER_DATE}) latest "
+            f"FROM {mapping.SALES_ORDER} "
+            f"WHERE {mapping.SALES_ORDER_DATE} >= {since.isoformat()} "
+            f"GROUP BY {mapping.SALES_ORDER_ACCOUNT}"
+        )
+        last_by_account = {r["acc"]: r["latest"] for r in agg}
+        for a in accounts:
+            a["lastOrderDate"] = last_by_account.get(a["Id"])
+        return accounts
+
+    return _cached("geocoded_accounts", fetch)
 
 
 def find_accounts(

@@ -30,6 +30,29 @@ SALES_TERRITORY = "SalesTerritory__c"
 SALES_ORDER = "kugo2p__SalesOrder__c"
 WRITTEN_BY = "Written_By__c"
 
+# Nearby-stockist conflict check (GET /api/accounts/nearby). Shipping geocodes
+# are Salesforce-populated (verified 2026-07-17: 4,930/6,467 accounts, accuracy
+# Address/NearAddress); BillingLatitude is unpopulated org-wide.
+# Candidates are limited to accounts with recent order history via the
+# sales order object's account lookup + business order date.
+SALES_ORDER_ACCOUNT = "kugo2p__Account__c"
+SALES_ORDER_DATE = "kugo2p__OrderDate__c"
+ACCOUNT_TYPE = "Type"
+# Accounts with these Rank__c values are not active stockists and never
+# count as conflicts (decision 2026-07-18). Accounts with no rank still count.
+RANK = "Rank__c"
+EXCLUDED_RANKS = (
+    "ZZ - No Booking",
+    "Z - Inactive",
+    "E - No Marketing",
+    "X - Conflict",
+    "OOB - Out of Business",
+)
+WHOLESALE_TYPE = "Wholesale"
+SHIPPING_LAT = "ShippingLatitude"
+SHIPPING_LNG = "ShippingLongitude"
+NEARBY_ACCOUNT_FIELDS = ("Id", "Name", "ShippingCity", "ShippingState", SHIPPING_LAT, SHIPPING_LNG)
+
 ACCOUNT_FIELDS = (
     "Id",
     "Name",
@@ -138,6 +161,18 @@ def _certificate_on_file(rec: dict[str, Any]) -> bool:
         except ValueError:
             pass
     return True
+
+
+def map_nearby_account(rec: dict[str, Any]) -> dict[str, Any]:
+    """Salesforce Account record -> conflict-check candidate."""
+    return {
+        "accountId": rec["Id"],
+        "name": rec.get("Name"),
+        "cityState": _city_state(rec.get("ShippingCity"), rec.get("ShippingState")),
+        "lastOrder": rec.get("lastOrderDate"),
+        "lat": rec[SHIPPING_LAT],
+        "lng": rec[SHIPPING_LNG],
+    }
 
 
 def map_account(rec: dict[str, Any]) -> dict[str, Any]:

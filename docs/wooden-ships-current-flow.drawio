@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="woodenships-current-order" name="Current Order Intake Flow">
-        <mxGraphModel dx="2135" dy="1621" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="1200" math="0" shadow="0">
+        <mxGraphModel dx="3173" dy="1824" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="1200" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -123,7 +123,7 @@
                 <mxCell id="c5" value="Yes (new)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="q_new" target="q_conf" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="c6" value="No (existing)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="q_new" target="q_min" edge="1">
+                <mxCell id="c6" value="No (existing)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="q_new" target="6" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
                             <mxPoint x="315" y="400"/>
@@ -225,8 +225,11 @@
                 <mxCell id="4" value="Direct to website" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#5a3b13;" parent="1" vertex="1">
                     <mxGeometry x="900" y="40" width="640" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="6" value="Status checking?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" vertex="1" parent="1">
-                    <mxGeometry x="515" y="490" width="170" height="90" as="geometry"/>
+                <mxCell id="8" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="6" target="q_min">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="Status checking?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="515" y="435" width="170" height="90" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
