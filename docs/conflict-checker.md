@@ -83,7 +83,7 @@ Bad input (latitude 123, missing `lng`, `k` = 0 …) returns a standard `422` va
 
 ```mermaid
 flowchart LR
-    A[lat / lng of new store] --> B[Salesforce:\nwholesale accounts with\nshipping geocodes ~4,400\ncached 5 min]
+    A[lat / lng of new store] --> B[Salesforce:\nwholesale accounts, geocoded,\nordered in last 3 years ~900\ncached 5 min]
     B --> C[Haversine distance\nin Python — keep\nnearest 10–25]
     C --> D[Google Distance Matrix\n1 request → driving minutes]
     D --> E{any neighbor\n< maxMinutes?}
@@ -91,7 +91,7 @@ flowchart LR
     E -->|no| G[conflict: false]
 ```
 
-1. **Candidate set** — Salesforce accounts with `Type = 'Wholesale'` and a shipping geocode. Salesforce geocodes shipping addresses automatically, so ~4,400 of the org's accounts already have address-accurate coordinates; we maintain nothing. The list is cached for 5 minutes like the other Salesforce lookups.
+1. **Candidate set** — Salesforce accounts with `Type = 'Wholesale'`, a shipping geocode, **and at least one sales order in the last 3 years** (`CONFLICT_ORDER_YEARS`, decision 2026-07-17 — a store that hasn't ordered in 3 years isn't an active stockist). That's ~900 accounts, out of ~4,400 geocoded wholesale accounts. Salesforce geocodes shipping addresses automatically, so we maintain no coordinates ourselves. The list is cached for 5 minutes like the other Salesforce lookups.
 2. **Pre-filter** — straight-line (haversine) distance to every candidate, keep the nearest 10–25. This is exact math over a few thousand points; it takes milliseconds and costs nothing.
 3. **Drive times** — one Google Distance Matrix request for just those finalists (25 is Google's per-request limit — which is why the pre-filter exists). Only raw coordinates are sent to Google, never store names or Salesforce ids.
 4. **Verdict** — sort by drive time, return the top `k`, and flag `conflict` if anything is under the threshold.
@@ -135,7 +135,7 @@ The endpoint **never fails because Google is down** — it degrades to straight-
 
 ## Known limitations / open decisions
 
-- **Closed stores count as stockists.** 267 of the ~4,400 candidates have "(CLOSED)" in their account name but still have `Type = 'Wholesale'`, so a closed store can trigger a conflict (a Chicago test hit `SHOOZ ON MADISON (CLOSED)` as the nearest match). Options: filter `Name LIKE '%CLOSED%'` in the query (one-line change), or clean up `Type` in Salesforce. **Needs a business decision.**
+- ~~Closed stores count as stockists~~ — **RESOLVED 2026-07-17** by the order-history filter: candidates must have ordered within the last 3 years, and none of the 267 "(CLOSED)"-named accounts have (verified against the org). Tune the window with `CONFLICT_ORDER_YEARS`.
 - **Where the check surfaces is undecided** — on the form at submit time, an admin review screen, or a rep tool; and whether a conflict *blocks* the order or just *warns*. The API deliberately returns both the verdict and the evidence so any of these work.
 - **New-customer coordinates are required.** If a buyer types their address by hand instead of using the map search, there are no coordinates to check. A future improvement could geocode the typed address server-side.
 - Salesforce data is cached for 5 minutes, so an account created seconds ago may not appear immediately.

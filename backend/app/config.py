@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # endpoint degrades to straight-line distances.
     google_maps_server_api_key: str = ""
     conflict_max_minutes: int = 20
+    # Only accounts with a sales order in the last N years count as stockists.
+    conflict_order_years: int = 3
 
 
 settings = Settings()

@@ -6,6 +6,7 @@ The session is created lazily and re-created automatically on expiry.
 import logging
 import threading
 import time
+from datetime import date, timedelta
 from typing import Any, Callable
 
 from simple_salesforce import Salesforce
@@ -169,14 +170,23 @@ def list_order_writers() -> list[str]:
 
 
 def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
-    """Wholesale accounts with shipping geocodes — the conflict-check candidate set."""
+    """Conflict-check candidate set: wholesale accounts with shipping geocodes
+    AND at least one sales order in the last CONFLICT_ORDER_YEARS years.
+
+    The order-history filter (decision 2026-07-17) keeps only active
+    stockists — it also drops all "(CLOSED)"-named accounts, which have no
+    recent orders (verified against the org: 4,395 -> 897 candidates).
+    """
     def fetch() -> list[dict[str, Any]]:
+        since = date.today() - timedelta(days=365 * settings.conflict_order_years)
         fields = ", ".join(mapping.NEARBY_ACCOUNT_FIELDS)
         soql = (
             f"SELECT {fields} FROM {mapping.ACCOUNT} "
             f"WHERE {mapping.ACCOUNT_TYPE} = '{mapping.WHOLESALE_TYPE}' "
             f"AND {mapping.SHIPPING_LAT} != null "
-            f"AND {mapping.SHIPPING_LNG} != null"
+            f"AND {mapping.SHIPPING_LNG} != null "
+            f"AND Id IN (SELECT {mapping.SALES_ORDER_ACCOUNT} FROM {mapping.SALES_ORDER} "
+            f"WHERE {mapping.SALES_ORDER_DATE} >= {since.isoformat()})"
         )
         return query_all(soql)
 
