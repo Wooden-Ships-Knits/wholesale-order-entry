@@ -14,6 +14,16 @@ import Footer from './components/Footer'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
+const MAX_CERT_BYTES = 10 * 1024 * 1024 // keep in sync with backend CERT_MAX_BYTES
+
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result).split(',')[1])
+    reader.onerror = () => reject(new Error('Could not read the certificate file.'))
+    reader.readAsDataURL(file)
+  })
+
 let lineSeq = 0
 const makeLine = () => ({ id: ++lineSeq, query: '', styleName: '', color: '', qty: {} })
 const INITIAL_LINES = 3
@@ -161,9 +171,23 @@ export default function App() {
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!terms.signatureName) problems.push('Signature is required.')
     if (!terms.accepted) problems.push('You must accept the terms & conditions.')
+    if (certFile && certFile.size > MAX_CERT_BYTES) {
+      problems.push('The tax exemption certificate must be 10 MB or smaller.')
+    }
     if (problems.length) {
       setSubmitNotice(problems.join(' '))
       return
+    }
+
+    // Attach the uploaded tax cert as base64 (backend re-validates type/size).
+    let certFilePayload = null
+    if (certFile) {
+      try {
+        certFilePayload = { name: certFile.name, contentBase64: await fileToBase64(certFile) }
+      } catch (err) {
+        setSubmitNotice(err.message)
+        return
+      }
     }
 
     const items = resolved
@@ -180,11 +204,18 @@ export default function App() {
       season,
       orderDate: form.orderDate,
       partShipOk: form.partShipOk,
+      shipWindow: form.shipWindow,
+      filledBy: form.representativeOk === true ? 'rep' : form.representativeOk === false ? 'customer' : '',
       sfAccountId: form.sfAccountId,
       billTo,
       shipTo,
       payment,
-      taxExemption: { repNotified: tax.repNotified, sendingCert: tax.sendingCert, certOnFile },
+      taxExemption: {
+        repNotified: tax.repNotified,
+        sendingCert: tax.sendingCert,
+        certOnFile,
+        certFile: certFilePayload,
+      },
       terms,
       internal,
       notes,
