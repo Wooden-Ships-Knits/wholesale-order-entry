@@ -4,23 +4,29 @@
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="start" value="Buyer opens website&lt;br&gt;picks &quot;Filled by&quot;: Sales Rep / Customer&lt;br&gt;(Sales Rep reveals Internal Use section)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="10" width="220" height="70" as="geometry"/>
+                <mxCell id="start" value="Buyer opens website" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="10" width="220" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="filledby" value="Filled by?&lt;br&gt;(required)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="70" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="internaluse" value="Internal Use section shown&lt;br&gt;(New/reorder, Account, Campaign, PO#,&lt;br&gt;Order written by, Split — rep-only fields)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f7f5f1;strokeColor=#8a6d3b;fontColor=#4c4a45;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="70" width="230" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="season" value="Select collection / season code&lt;br&gt;(2 most recent, e.g. FALL 2026 - F26)&lt;br&gt;+ Ship Window (calendar month)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5651d;strokeColor=#7a430f;fontColor=#ffffff;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="105" width="220" height="60" as="geometry"/>
+                    <mxGeometry x="360" y="160" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="req" value="Frontend requests products&lt;br&gt;for selected season" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="200" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="360" y="255" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="show" value="Product lines (typeahead + Add line)&lt;br&gt;CODE#, STYLE, COLOR, X/S, S/M, M/L, $" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="290" width="220" height="60" as="geometry"/>
+                    <mxGeometry x="360" y="335" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="buyer" value="Buyer enters email /&lt;br&gt;store name / account ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="390" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="360" y="425" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="api2" value="API searches account&lt;br&gt;(email exact · name partial · id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="480" width="220" height="50" as="geometry"/>
+                    <mxGeometry x="360" y="505" width="220" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="match" value="Account found?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
                     <mxGeometry x="390" y="600" width="180" height="80" as="geometry"/>
@@ -82,7 +88,16 @@
                 <mxCell id="mail" value="Email to PPIC (PDF attachment)&lt;br&gt;— DEFERRED in v1: PDF + cert&lt;br&gt;saved server-side (output/orders)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="860" y="2060" width="180" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="e0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="start" target="season" edge="1">
+                <mxCell id="e0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="start" target="filledby" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="efb1" value="Sales Rep" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="filledby" target="internaluse" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="efb2" value="Customer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="filledby" target="season" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="efb3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="internaluse" target="season" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="season" target="req" edge="1">
