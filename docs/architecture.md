@@ -210,16 +210,23 @@ order_items
 | GET | `/api/seasons` | Collection/season codes (currently the 2 most recent) |
 | GET | `/api/products?season=F26` | Products + price + color for a season (from Salesforce) |
 | GET | `/api/accounts?email=...` / `?accountId=...` / `?name=...` | Buyer lookup candidates (from Salesforce; `name` = partial store-name match) |
+| GET | `/api/ship-windows?season=F26` | Per-season ship windows from the planning Google Sheet |
 | GET | `/api/reps` | Active sales reps (`Account.Salesperson__c` picklist) |
 | GET | `/api/territories` | Distinct `Account.SalesTerritory__c` values in use |
 | GET | `/api/order-writers` | `Written_By__c` picklist (Internal Use dropdowns) |
-| GET | `/api/accounts/nearby?lat=..&lng=..&k=5&maxMinutes=20` | New-customer conflict check: k nearest wholesale stockists + drive-time verdict (backend-only; consuming UI TBD) |
+| GET | `/api/accounts/nearby?lat=..&lng=..&k=5&maxMinutes=20` | New-customer conflict check: k nearest wholesale stockists + drive-time verdict |
 | POST | `/api/orders` | Validate, persist order, generate PDF (+ save uploaded tax cert), email admin *(email deferred)* |
 | GET | `/api/health` | Health check |
+| POST | `/api/admin/login` · `/api/admin/logout` · GET `/api/admin/session` | Admin auth (shared password → signed session cookie) |
+| GET | `/api/admin/orders` | Order list for the monitoring page (auth) |
+| POST | `/api/admin/orders/{id}/status` | Accept / decline an order (auth) |
+| GET | `/api/admin/orders/{id}/pdf` · `/certificate` | Stream the order PDF / tax cert inline (auth) |
+
+The `/api/accounts/nearby` verdict is consumed two ways: a live `ConflictWarning` popup for reps in the order form, and a background check on `POST /api/orders` that stores `orders.has_conflict` for the admin monitoring page. `/api/admin/*` routes are gated by a session cookie (see `docs/superpowers/specs/2026-07-18-admin-order-monitoring.md`); files are streamed through the app, never served statically.
 
 **`GET /api/accounts/nearby`** (added 2026-07-17, spec: `docs/superpowers/specs/2026-07-17-nearby-conflict-check-design.md`): flags a new customer whose Ship To point is within a **20-minute drive** (default; `maxMinutes` overridable, env default `CONFLICT_MAX_MINUTES`) of an existing `Type='Wholesale'` account. Flow: cached Salesforce query of geocoded wholesale accounts (`ShippingLatitude/Longitude`, Salesforce-populated) → pure-Python haversine KNN pre-filter (≤ 25 candidates) → one Google Distance Matrix call (server key `GOOGLE_MAPS_SERVER_API_KEY`) → `{conflict, mode, maxMinutes, neighbors[{accountId, name, cityState, distanceMiles, driveMinutes}]}`. If the key is unset or Google fails, the endpoint degrades to `mode: "straight-line"` (conflict at `maxMinutes × 0.5` miles ≈ 30 mph) instead of erroring. Modules: `app/geo/{distance,drive_time,conflict}.py`.
 
-`POST /api/orders` request includes card fields; server-side it: (1) re-validates minimums, (2) inserts order + items (no card number), (3) renders PDF including card details, (4) emails PDF to admin, (5) returns `{ orderId, status }`. Card fields are held only in memory for step 3.
+`POST /api/orders` request includes card fields; server-side it: (1) re-validates minimums, (2) inserts order + items (no card number — only `card_name` + `card_last4`), (3) renders the PDF (payment **method** and last-4 only; **never** the full number or CVV), (4) saves any uploaded tax certificate beside the PDF, (5) for a new account with coordinates, schedules the background conflict check, (6) returns `{ orderId, status }`. The full card number and CVV are read once (to derive last-4) and discarded with the request; admin email is deferred. **Update 2026-07-18: the PDF no longer renders the full card number/CVV** — collect-to-charge is being reworked toward the payment-link flow.
 
 ## 6. Order-minimum validation (server + client)
 
