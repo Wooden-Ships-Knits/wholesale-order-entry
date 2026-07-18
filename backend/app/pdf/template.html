@@ -5,80 +5,241 @@
 <style>
   @page {
     size: letter;
-    margin: 1.4cm 1.4cm 1.8cm;
+    margin: 0.9cm 0.9cm 1.3cm;
     @bottom-center {
-      content: "www.wooden-ships.com · woodenshipsknits.com · @woodenshipsknits";
-      font-size: 8pt;
-      color: #6d6a63;
+      content: "Visit us at www.wooden-ships.com  ·  www.woodenships-wholesale.com  ·  Follow us! @woodenshipsknits";
+      font-size: 7.5pt;
+      color: #4c4a45;
     }
   }
-  body { font-family: Georgia, serif; font-size: 9.5pt; color: #1d1d1b; }
-  h1 { font-size: 16pt; letter-spacing: 0.3em; text-align: center; font-weight: normal; margin: 0; }
-  .subtitle { text-align: center; letter-spacing: 0.2em; text-transform: uppercase; font-size: 8pt; color: #6d6a63; margin-bottom: 10pt; }
-  h2 { font-size: 8.5pt; letter-spacing: 0.12em; text-transform: uppercase; color: #4c4a45;
-       border-bottom: 0.5pt solid #b9b4aa; padding-bottom: 2pt; margin: 12pt 0 5pt; }
+  body { font-family: Georgia, serif; font-size: 8pt; color: #1d1d1b; }
+
   table { width: 100%; border-collapse: collapse; }
-  .meta td { padding: 1.5pt 6pt 1.5pt 0; }
-  .label { color: #6d6a63; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.06em; }
-  .cols { width: 100%; }
-  .cols td { vertical-align: top; width: 50%; padding-right: 12pt; }
-  .items th { background: #efece6; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.06em;
-              border: 0.5pt solid #b9b4aa; padding: 3pt 4pt; text-align: left; }
-  .items td { border: 0.5pt solid #c9c4ba; padding: 2.5pt 4pt; }
+  .grid td, .grid th { border: 0.75pt solid #1d1d1b; padding: 3pt 5pt; vertical-align: top; }
+
+  /* label above value, as on the printed form */
+  .lbl {
+    display: block;
+    font-size: 6.5pt;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #4c4a45;
+    font-weight: bold;
+  }
+  .val { font-size: 9pt; }
+  .ctr { text-align: center; }
+
+  /* masthead — the logo art is square with generous padding, so crop it to a
+     rectangular band (object-fit: cover) instead of letterboxing the cell. */
+  /* The cell spans both masthead rows, so it is taller than the art; centring
+     it vertically puts the wordmark in the middle of the dark block instead of
+     pinning it to the top (the matching background hides where the art ends). */
+  .logo-cell { background: #4a4a4a; width: 21%; padding: 0; vertical-align: middle; }
+  .logo-cell img { display: block; width: 100%; height: 40pt; object-fit: cover; }
+  /* vertical-align beats the .grid td default of top, centring SEASON/YEAR
+     against the two-row masthead. */
+  .season-cell { background: #b8b5ae; text-align: right; width: 13%; vertical-align: middle; }
+  .season-cell .season { font-size: 14pt; font-weight: bold; line-height: 1.05; }
+
+  /* info panel */
+  .panel td { border: 0.75pt solid #1d1d1b; padding: 5pt 7pt; vertical-align: top; }
+  .panel h3 {
+    font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.05em;
+    text-align: center; text-decoration: underline; margin: 0 0 4pt;
+  }
+  .panel ul { margin: 0; padding-left: 10pt; }
+  .panel li { margin-bottom: 3pt; }
+  .panel .tight { text-align: center; margin: 0; }
+  .banner { text-align: center; padding: 4pt 5pt; }
+  .banner .big { font-weight: bold; text-decoration: underline; font-size: 8.5pt; }
+  .ack { margin-bottom: 3pt; }
+  .hl { background: #d9ead3; }
+
+  /* items */
+  .items th {
+    background: #ddd9d1; font-size: 6.5pt; text-transform: uppercase;
+    letter-spacing: 0.05em; text-align: left; padding: 3pt 4pt;
+    border: 0.75pt solid #1d1d1b;
+  }
+  .items td { border: 0.75pt solid #1d1d1b; padding: 2.5pt 4pt; }
   .items .num { text-align: right; white-space: nowrap; }
-  .items tfoot td { background: #efece6; font-weight: bold; }
-  .ack { margin: 2pt 0; }
-  .box { border: 0.5pt solid #b9b4aa; background: #fbfaf6; padding: 5pt 7pt; font-size: 8pt; }
-  .sig-line { border-bottom: 0.5pt solid #1d1d1b; display: inline-block; min-width: 200pt; padding: 0 4pt 1pt; }
-  .internal { background: #f7f5f1; border: 0.5pt solid #d8d4cc; padding: 6pt 8pt; }
-  .internal table td { padding: 1.5pt 10pt 1.5pt 0; }
-  .warn { color: #7a281f; font-size: 8pt; }
+  .items tfoot td { background: #ddd9d1; font-weight: bold; }
+  .items .empty td { height: 11pt; }
+
+  .sig-row td { border: 0.75pt solid #1d1d1b; padding: 5pt; }
+  .internal-bar { background: #efece6; }
+  .spacer { height: 6pt; }
+  .note-box { border: 0.75pt solid #1d1d1b; padding: 4pt 6pt; }
 </style>
 </head>
 <body>
-  <h1>WOODEN SHIPS</h1>
-  <div class="subtitle">Wholesale Order Form</div>
 
-  <table class="meta">
+  <!-- ══════════════════════════ masthead ══════════════════════════ -->
+  <table class="grid">
     <tr>
-      <td><span class="label">Order ref</span> {{ order.short_id }}</td>
-      <td><span class="label">Collection</span> {{ order.season_code }} — {{ order.season_label }}</td>
-      <td><span class="label">Order date</span> {{ order.order_date or "—" }}</td>
-      <td><span class="label">Filled by</span>
+      <td class="logo-cell" rowspan="2">
+        <img src="WS%20LOGO%20Rect.png" alt="Wooden Ships — Paola Buendia">
+      </td>
+      <td class="ctr">
+        <span class="lbl">Contact</span>
+        <span class="val">wholesale@wooden-ships.com</span>
+      </td>
+      <td class="ctr">
+        <span class="lbl">Ship window</span>
+        <span class="val">{{ order.ship_window or "—" }}</span>
+        <div style="font-size:6.5pt; color:#4c4a45;">{{ order.ship_window_note }}</div>
+      </td>
+      <td class="ctr">
+        <span class="lbl">Order date</span>
+        <span class="val">{{ order.order_date or "—" }}</span>
+      </td>
+      <td class="ctr">
+        <span class="lbl">Order total $$</span>
+        <span class="val"><strong>{{ "%.2f" % order.total_amount }}</strong></span>
+      </td>
+      {# split defensively: mapping.season_label() falls back to the bare code
+         (one word) if the regex misses, and an IndexError here would fail the
+         whole submission — the PDF renders before the DB commit. #}
+      {% set season_parts = (order.season_label or order.season_code or "").split() %}
+      <td class="season-cell" rowspan="2">
+        <div class="season">{{ season_parts[0] if season_parts else order.season_code }}</div>
+        {% if season_parts | length > 1 %}<div class="season">{{ season_parts[1] }}</div>{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td><span class="lbl">Order ref</span><span class="val">{{ order.short_id }}</span></td>
+      <td><span class="lbl">Filled by</span><span class="val">
         {% if order.filled_by == "rep" %}Sales rep{% elif order.filled_by == "customer" %}Customer{% else %}—{% endif %}
-      </td>
-      <td><span class="label">Ship window</span> {{ order.ship_window or "—" }}</td>
-      <td><span class="label">Submitted</span> {{ order.created_at }}</td>
+      </span></td>
+      <td><span class="lbl">Payment by</span><span class="val">
+        {% if order.payment_method == "link" %}Payment link{% elif order.payment_method == "card" %}Credit card{% else %}—{% endif %}
+      </span></td>
+      <td><span class="lbl">Charge approval</span><span class="val">
+        {% if order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
+      </span></td>
     </tr>
   </table>
-  <p style="font-style: italic; color:#6d6a63; margin: 4pt 0 0;">{{ order.ship_window_note }}</p>
 
-  <table class="cols">
+  <!-- ══════════════════════ bill to / ship to ══════════════════════ -->
+  <table class="grid">
     <tr>
-      <td>
-        <h2>Bill To</h2>
-        <div>{{ order.buyer_name or "—" }}</div>
-        <div>{{ order.bill_street or "" }}</div>
-        <div>{{ order.bill_city_state or "" }} {{ order.bill_zip or "" }}</div>
-        <div>Tel: {{ order.tel or "—" }} &nbsp; Fax: {{ order.fax or "—" }}</div>
+      <td style="width:50%"><span class="lbl">Bill to</span><span class="val">{{ order.buyer_name or "—" }}</span></td>
+      <td style="width:50%"><span class="lbl">Ship to</span><span class="val">{{ order.buyer_name or "—" }}</span></td>
+    </tr>
+    <tr>
+      <td><span class="lbl">Street</span><span class="val">{{ order.bill_street or "—" }}</span></td>
+      <td><span class="lbl">Street</span><span class="val">{{ order.ship_street or "—" }}</span></td>
+    </tr>
+    <tr>
+      <td><span class="lbl">City / St &nbsp;·&nbsp; Zip</span>
+        <span class="val">{{ order.bill_city_state or "—" }} &nbsp; {{ order.bill_zip or "" }}</span></td>
+      <td><span class="lbl">City / St &nbsp;·&nbsp; Zip</span>
+        <span class="val">{{ order.ship_city_state or "—" }} &nbsp; {{ order.ship_zip or "" }}</span></td>
+    </tr>
+    <tr>
+      <td><span class="lbl">Tel &nbsp;·&nbsp; Fax</span>
+        <span class="val">{{ order.tel or "—" }} &nbsp; · &nbsp; {{ order.fax or "—" }}</span></td>
+      <td><span class="lbl">Email <em>(required)</em></span><span class="val">{{ order.ship_email }}</span></td>
+    </tr>
+    <tr>
+      <td><span class="lbl">Buyer</span><span class="val">{{ order.buyer_name or "—" }}</span></td>
+      <td><span class="lbl">Resale tax ID</span><span class="val">{{ order.resale_tax_id or "—" }}</span></td>
+    </tr>
+  </table>
+
+  <div class="spacer"></div>
+
+  <!-- ═════════════════════ thank-you + policies ════════════════════ -->
+  <table class="grid panel">
+    <tr>
+      <td colspan="3" class="banner">
+        <div class="big">THANK YOU FOR YOUR ORDER! YOU WILL RECEIVE AN ORDER CONFIRMATION BY EMAIL.</div>
+        <div style="font-size:7pt; margin-top:2pt;">
+          Shipping is subject to change at the time of charging orders based on current rates from DHL.<br>
+          To ensure on-time shipping, orders may be charged up to two weeks before the start ship date.
+        </div>
       </td>
-      <td>
-        <h2>Ship To</h2>
-        <div>{{ order.ship_email }}</div>
-        <div>{{ order.ship_street or "" }}</div>
-        <div>{{ order.ship_city_state or "" }} {{ order.ship_zip or "" }}</div>
-        <div>Resale tax ID: {{ order.resale_tax_id or "—" }}</div>
+    </tr>
+    <tr>
+      <td style="width:26%">
+        <h3>Minimum order</h3>
+        <p class="tight"><strong>18 pieces total</strong></p>
+        <p class="tight">4 pcs per style</p>
+        <p class="tight">2 pcs per SKU</p>
+        <p class="tight" style="margin-top:4pt;"><strong>NO PRE-PACKS</strong></p>
+        <p class="tight" style="font-size:7pt; margin-top:4pt;">
+          Additional singles are allowed once you hit minimum 4 per style.
+        </p>
+      </td>
+      <td style="width:44%">
+        <h3>Wooden Ships is made to order</h3>
+        <ul>
+          <li>Upon receipt of the SO confirmation, you have <strong>10 days to adjust</strong>.</li>
+          <li>Claims for shipping damage or shortages must be reported within
+              <strong>10 days of receiving your order</strong>. No exceptions.</li>
+          <li>Cancelled orders <span class="hl">are subject to a restocking fee of 15%</span>.</li>
+          <li><span class="hl">Custom / special orders are final sale, non-refundable</span>
+              once production has begun.</li>
+        </ul>
+      </td>
+      <td style="width:30%">
+        <h3>Tax exemption certificate</h3>
+        <div class="ack">{{ "☑" if order.cert_required_ack else "☐" }}
+          <span class="hl">Rep has notified account that a copy of state-issued tax exemption certificate is required</span></div>
+        <div class="ack">{{ "☑" if order.cert_sending_ack else "☐" }}
+          <span class="hl">Account confirms sending certificate</span> <em>(orders will not be processed without this)</em></div>
+        <div class="ack">{{ "☑" if order.cert_on_file else "☐" }} <strong>Certificate on file</strong>
+          <em>(internal use only)</em></div>
+        {% if order.cert_filename %}
+        <div style="font-size:7pt; margin-top:3pt;">Uploaded: {{ order.cert_filename }}</div>
+        {% endif %}
       </td>
     </tr>
   </table>
 
-  <h2>Order Items</h2>
+  <!-- ═══════════════════ signature + internal use ══════════════════ -->
+  <table class="grid sig-row">
+    <tr>
+      <td style="width:55%"><span class="lbl">Buyer's signature</span>
+        <span class="val">{{ order.signature_name or "—" }}</span></td>
+      <td style="width:25%"><span class="lbl">Date</span>
+        <span class="val">{{ order.signature_date or "—" }}</span></td>
+      <td style="width:20%"><span class="lbl">Terms accepted</span>
+        <span class="val">{{ "☑ Yes" if order.terms_accepted else "☐ No" }}</span></td>
+    </tr>
+  </table>
+
+  <table class="grid">
+    <tr>
+      <td class="internal-bar ctr" rowspan="2" style="width:10%">
+        <strong>INTERNAL<br>USE ONLY:</strong>
+      </td>
+      <td><span class="lbl">New or reorder</span><span class="val">{{ order.new_or_reorder or "—" }}</span></td>
+      <td><span class="lbl">New account / existing</span><span class="val">{{ order.account_status or "—" }}</span></td>
+      <td colspan="2"><span class="lbl">Campaign</span><span class="val">{{ order.campaign or "—" }}</span></td>
+    </tr>
+    <tr>
+      <td><span class="lbl">PO #</span><span class="val">{{ order.po_number or "—" }}</span></td>
+      <td><span class="lbl">Rep</span><span class="val">{{ order.rep or "—" }}</span></td>
+      <td><span class="lbl">Order written by</span><span class="val">{{ order.order_written_by or "—" }}</span></td>
+      <td><span class="lbl">Split &nbsp; Y | N &nbsp; with</span>
+        <span class="val">{{ order.split_with or "N" }}</span></td>
+    </tr>
+  </table>
+
+  <!-- ════════════════════════════ items ════════════════════════════ -->
   <table class="items">
     <thead>
       <tr>
-        <th>Code #</th><th>Style name</th><th>Color</th>
-        <th class="num">X/S</th><th class="num">S/M</th><th class="num">M/L</th>
-        <th class="num">Total qty</th><th class="num">Unit $</th><th class="num">Line total $</th>
+        <th style="width:11%">Code #</th>
+        <th style="width:28%">Style name</th>
+        <th style="width:23%">Color</th>
+        <th class="num" style="width:6%">X/S</th>
+        <th class="num" style="width:6%">S/M</th>
+        <th class="num" style="width:6%">M/L</th>
+        <th class="num" style="width:7%">Ttl qty</th>
+        <th class="num" style="width:6%">$</th>
+        <th class="num" style="width:7%">Ttl $</th>
       </tr>
     </thead>
     <tbody>
@@ -95,6 +256,10 @@
         <td class="num">{{ "%.2f" % it.line_total }}</td>
       </tr>
       {% endfor %}
+      {# keep the ruled-form look when an order has only a few lines #}
+      {% for _ in range(items | length, 8) %}
+      <tr class="empty"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      {% endfor %}
     </tbody>
     <tfoot>
       <tr>
@@ -106,73 +271,10 @@
     </tfoot>
   </table>
 
-  <h2>Payment</h2>
-  <table class="meta">
-    <tr>
-      <td><span class="label">Payment by</span>
-        {% if order.payment_method == "link" %}Payment link{% elif order.payment_method == "card" %}Credit card{% else %}—{% endif %}
-      </td>
-      <td><span class="label">Charge approval</span>
-        {% if order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Get approval first{% else %}Charge without approval{% endif %}
-      </td>
-    </tr>
-  </table>
+  {% if order.notes %}
+  <div class="spacer"></div>
+  <div class="note-box"><span class="lbl">Notes</span>{{ order.notes }}</div>
+  {% endif %}
 
-  <h2>Tax Exemption Certificate</h2>
-  <div class="ack">Uploaded certificate: {{ order.cert_filename or "—" }}</div>
-
-  <h2>Notes</h2>
-  <div class="box">{{ order.notes or "—" }}</div>
-
-  <h2>Terms &amp; Conditions</h2>
-  <div class="box">
-      <ul>
-        <li>
-          All Wooden Ships are <strong>made to order</strong>.
-        </li>
-        <li>
-          Changes to your order may be requested within <strong>10 days of order confirmation</strong>.
-        </li>
-        <li>
-          Claims for shipping damage or shortages must be reported within
-          <strong>10 days of receiving your order</strong>.
-        </li>
-        <li>
-          Cancelled orders are subject to a <strong>15% restocking fee</strong>.
-        </li>
-        <li>
-          Custom and special orders are <strong>final sale</strong> and are not eligible for
-          cancellation, return, or refund once production has begun.
-        </li>
-      </ul>
-      <p>
-        All Orders are always Net Due prior to shipment. We do not offer net terms. Please let us know within 10 days if you do not agree to these terms. If we don't hear from you, we'll understand this as an acceptance of the terms and will proceed to purchase the yarn. Cancelled orders incur a 15% Restocking Fee.
-      </p>
-  </div>
-  <table class="meta" style="margin-top: 8pt;">
-    <tr>
-      <td><span class="label">Buyer's signature</span> <span class="sig-line">{{ order.signature_name }}</span></td>
-      <td><span class="label">Date</span> {{ order.signature_date or "—" }}</td>
-      <td><span class="label">Terms accepted</span> {{ "☑ Yes" if order.terms_accepted else "☐ No" }}</td>
-    </tr>
-  </table>
-
-  <h2>Internal Use</h2>
-  <div class="internal">
-    <table>
-      <tr>
-        <td><span class="label">New / reorder</span> {{ order.new_or_reorder or "—" }}</td>
-        <td><span class="label">Account</span> {{ order.account_status or "—" }}</td>
-        <td><span class="label">Campaign</span> {{ order.campaign or "—" }}</td>
-        <td><span class="label">PO #</span> {{ order.po_number or "—" }}</td>
-      </tr>
-      <tr>
-        <td><span class="label">Rep</span> {{ order.rep or "—" }}</td>
-        <td><span class="label">Order written by</span> {{ order.order_written_by or "—" }}</td>
-        <td><span class="label">Split</span> {{ order.split_with or "—" }}</td>
-        <td><span class="label">SF account</span> {{ order.sf_account_id or "—" }}</td>
-      </tr>
-    </table>
-  </div>
 </body>
 </html>

@@ -26,7 +26,9 @@ def render_order_pdf(context: dict) -> bytes:
     from weasyprint import HTML
 
     html = _env.get_template("template.html").render(**context)
-    return HTML(string=html).write_pdf()
+    # base_url lets the template reference local assets (the logo) by relative
+    # path; without it WeasyPrint cannot resolve them and silently omits them.
+    return HTML(string=html, base_url=str(Path(__file__).parent)).write_pdf()
 
 
 def _buyer_slug(buyer_name: str) -> str:
