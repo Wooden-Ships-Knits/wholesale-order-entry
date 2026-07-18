@@ -666,6 +666,15 @@ button:hover {
 .unknown {
   color: #aaa;
 }
+/* Highlight only a "Yes": green for a new account, red for a conflict. */
+.admin-table td.flag-green {
+  background: rgba(46, 125, 50, 0.12);
+  font-weight: 600;
+}
+.admin-table td.flag-red {
+  background: rgba(122, 40, 31, 0.12);
+  font-weight: 600;
+}
 .decide {
   display: flex;
   gap: 0.3rem;

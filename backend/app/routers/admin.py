@@ -138,8 +138,12 @@ def download_pdf(order_id: str, db: Session = Depends(get_db)) -> FileResponse:
     filename = pdf_render.order_pdf_filename(
         order.season_code, order.buyer_name or "", order.created_at, order.id
     )
+    # inline → the browser renders it in the tab instead of downloading.
     return FileResponse(
-        _safe_output_path(filename), media_type="application/pdf", filename=filename
+        _safe_output_path(filename),
+        media_type="application/pdf",
+        filename=filename,
+        content_disposition_type="inline",
     )
 
 
@@ -150,6 +154,10 @@ def download_certificate(order_id: str, db: Session = Depends(get_db)) -> FileRe
         raise HTTPException(status_code=404, detail="Order not found")
     if not order.cert_filename:
         raise HTTPException(status_code=404, detail="No certificate for this order")
+    # PDFs and images render inline; browsers fall back to downloading anything
+    # they can't display, so this is safe for every allowed cert type.
     return FileResponse(
-        _safe_output_path(order.cert_filename), filename=order.cert_filename
+        _safe_output_path(order.cert_filename),
+        filename=order.cert_filename,
+        content_disposition_type="inline",
     )

@@ -1,9 +1,10 @@
 import { certUrl, pdfUrl, setOrderStatus } from './api'
 
 // null means unanswered / not yet checked — never render that as "No".
-function YesNo({ value }) {
-  if (value === null || value === undefined) return <span className="unknown">—</span>
-  return value ? 'Yes' : 'No'
+// `tone` tints the cell only when the answer is Yes (green/red as given).
+function YesNoCell({ value, tone }) {
+  if (value === null || value === undefined) return <td><span className="unknown">—</span></td>
+  return <td className={value ? `flag-${tone}` : undefined}>{value ? 'Yes' : 'No'}</td>
 }
 
 export default function OrderTable({ orders, onChanged, onError }) {
@@ -45,12 +46,8 @@ export default function OrderTable({ orders, onChanged, onError }) {
                 Open PDF
               </a>
             </td>
-            <td>
-              <YesNo value={o.isNewAccount} />
-            </td>
-            <td>
-              <YesNo value={o.hasConflict} />
-            </td>
+            <YesNoCell value={o.isNewAccount} tone="green" />
+            <YesNoCell value={o.hasConflict} tone="red" />
             <td>
               {o.hasCertificate ? (
                 <a href={certUrl(o.id)} target="_blank" rel="noreferrer">
