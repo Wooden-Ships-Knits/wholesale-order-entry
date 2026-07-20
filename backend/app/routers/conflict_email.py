@@ -44,7 +44,11 @@ def _from_order(order: Order) -> dict:
     return {
         "store_name": order.buyer_name,
         "contact_name": order.signature_name or order.buyer_name,
-        "to_email": order.ship_email,
+        # Left blank on purpose: this email goes to the REP (not the store),
+        # and rep emails aren't stored — the inventory team fills it in.
+        # Defaulting to the customer's address risks emailing them the
+        # "we can't open your account" message by mistake.
+        "to_email": "",
         "address": address,
         "rep_name": order.rep,
     }

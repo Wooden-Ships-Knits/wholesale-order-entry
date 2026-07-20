@@ -76,6 +76,7 @@ def _row(o: Order) -> dict:
         "seasonCode": o.season_code,
         "accountName": o.buyer_name,
         "salesTerritory": o.sales_territory,
+        "specialInstructions": o.special_instructions,
         "shipEmail": o.ship_email,
         "totalQty": o.total_qty,
         "totalAmount": float(o.total_amount) if o.total_amount is not None else None,

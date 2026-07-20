@@ -130,6 +130,8 @@ class OrderSubmission(CamelModel):
     sf_account_id: str | None = None
     # Account.SalesTerritory__c, carried from the buyer lookup; null if unmatched.
     sales_territory: str | None = None
+    # Account.Special_Instructions__c, carried from the buyer lookup.
+    special_instructions: str | None = None
     bill_to: BillTo = BillTo()
     ship_to: ShipTo
     payment: Payment = Payment()

@@ -76,6 +76,8 @@ class Order(Base):
     sf_account_id: Mapped[str | None] = mapped_column(Text)
     # Account.SalesTerritory__c at order time; null for new/unmatched accounts.
     sales_territory: Mapped[str | None] = mapped_column(Text)
+    # Account.Special_Instructions__c at order time; null for new/unmatched.
+    special_instructions: Mapped[str | None] = mapped_column(Text)
 
     # is this a new account? set from the rep's Internal Use radio
     is_new_account: Mapped[bool | None] = mapped_column(Boolean)
