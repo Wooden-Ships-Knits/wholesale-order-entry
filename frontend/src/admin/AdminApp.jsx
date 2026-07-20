@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { getOrders, getSession, logout } from './api'
 import Login from './Login'
 import OrderTable from './OrderTable'
+import ConflictCheck from '../conflict/ConflictCheck.jsx'
+
+const TABS = [
+  { value: 'orders', label: 'Orders' },
+  { value: 'conflict', label: 'Conflict check' },
+]
 
 const FILTERS = [
   { value: 'submitted', label: 'Awaiting review' },
@@ -12,6 +18,7 @@ const FILTERS = [
 
 export default function AdminApp() {
   const [authed, setAuthed] = useState(null) // null = still checking
+  const [tab, setTab] = useState('orders')
   const [orders, setOrders] = useState([])
   const [filter, setFilter] = useState('submitted')
   const [error, setError] = useState('')
@@ -63,25 +70,44 @@ export default function AdminApp() {
         </button>
       </header>
 
-      <div className="admin-toolbar">
-        {FILTERS.map((f) => (
+      <div className="admin-tabs">
+        {TABS.map((t) => (
           <button
-            key={f.value}
+            key={t.value}
             type="button"
-            className={filter === f.value ? 'chip active' : 'chip'}
-            onClick={() => setFilter(f.value)}
+            className={tab === t.value ? 'admin-tab active' : 'admin-tab'}
+            onClick={() => setTab(t.value)}
           >
-            {f.label}
+            {t.label}
           </button>
         ))}
-        <button type="button" className="link-btn" onClick={load} disabled={loading}>
-          {loading ? 'Refreshing…' : 'Refresh'}
-        </button>
       </div>
 
-      {error && <p className="admin-error">{error}</p>}
+      {tab === 'conflict' ? (
+        <ConflictCheck embedded />
+      ) : (
+        <>
+          <div className="admin-toolbar">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                className={filter === f.value ? 'chip active' : 'chip'}
+                onClick={() => setFilter(f.value)}
+              >
+                {f.label}
+              </button>
+            ))}
+            <button type="button" className="link-btn" onClick={load} disabled={loading}>
+              {loading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
 
-      <OrderTable orders={orders} onChanged={load} onError={setError} />
+          {error && <p className="admin-error">{error}</p>}
+
+          <OrderTable orders={orders} onChanged={load} onError={setError} />
+        </>
+      )}
     </main>
   )
 }

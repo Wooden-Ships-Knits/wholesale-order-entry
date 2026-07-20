@@ -117,7 +117,7 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 
 ### 5.12 New-customer conflict check (new — 2026-07-17)
 - `GET /api/accounts/nearby` — given the new customer's Ship To lat/lng (from the Google Maps search), returns the k nearest existing wholesale stockists and a conflict verdict: **conflict if an existing store is under a 20-minute drive away** (threshold configurable/overridable).
-- **Standalone internal tool page at `/conflict.html`** (location search box → verdict + nearest-stockists table), not linked from the order form. Integration into the order flow itself is still undecided. Design: `docs/superpowers/specs/2026-07-17-nearby-conflict-check-design.md`; explainer: `docs/conflict-checker.md`.
+- **Internal tool page in `/admin` (Conflict check tab)** (location search box → verdict + nearest-stockists table), not linked from the order form. Integration into the order flow itself is still undecided. Design: `docs/superpowers/specs/2026-07-17-nearby-conflict-check-design.md`; explainer: `docs/conflict-checker.md`.
 
 ## 6. Validation rules
 

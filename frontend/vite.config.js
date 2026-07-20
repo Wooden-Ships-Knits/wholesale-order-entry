@@ -1,18 +1,10 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      input: {
-        // Order form (main SPA) + the standalone conflict-check tool.
-        main: fileURLToPath(new URL('./index.html', import.meta.url)),
-        conflict: fileURLToPath(new URL('./conflict.html', import.meta.url)),
-      },
-    },
-  },
+  // Single entry (index.html): /order_form, /admin and /check-conflict are
+  // routed client-side in src/main.jsx and served by the nginx SPA fallback.
   server: {
     // Let a cloudflared quick tunnel reach the dev server. Vite rejects
     // unknown Host headers by default; the leading dot matches any subdomain.

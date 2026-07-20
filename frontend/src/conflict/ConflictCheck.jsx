@@ -10,7 +10,9 @@ async function fetchNearby({ lat, lng, k, maxMinutes }) {
   return res.json()
 }
 
-export default function ConflictCheck() {
+// `embedded` drops the standalone brand header — used when the tool is shown
+// as a tab inside the admin app, which has its own header.
+export default function ConflictCheck({ embedded = false }) {
   const inputRef = useRef(null)
   const [status, setStatus] = useState('')
   const [place, setPlace] = useState(null) // { label, lat, lng }
@@ -68,10 +70,12 @@ export default function ConflictCheck() {
 
   return (
     <div className="order-form conflict-page">
-      <div className="brand">
-        <h1>WOODEN SHIPS</h1>
-        <div className="subtitle">Stockist Conflict Check — internal tool</div>
-      </div>
+      {!embedded && (
+        <div className="brand">
+          <h1>WOODEN SHIPS</h1>
+          <div className="subtitle">Stockist Conflict Check — internal tool</div>
+        </div>
+      )}
 
       <section className="section">
         <h2>New store location</h2>
