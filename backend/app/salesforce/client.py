@@ -217,8 +217,10 @@ def find_accounts(
 ) -> list[dict[str, Any]]:
     """Buyer lookup on Account (person-account org). Returns all candidates.
 
-    Name matching is a partial, case-insensitive LIKE (store name = account
-    name), capped so a broad term cannot pull the whole org.
+    Name matching is an EXACT match on the whole account name (store name),
+    not a substring — SOQL `=` on text is case-insensitive, so casing is
+    forgiven but partial words are not. Identical names still return every
+    candidate so the frontend can show the "which one?" dropdown, same as email.
     """
     fields = ", ".join(mapping.ACCOUNT_FIELDS)
     if email:
@@ -226,7 +228,7 @@ def find_accounts(
     elif account_id:
         where = f"Id = '{soql_str(account_id)}'"
     elif name:
-        where = f"Name LIKE '%{soql_like(name)}%'"
+        where = f"Name = '{soql_str(name.strip())}'"
     else:
         raise ValueError("email, account_id or name required")
     soql = f"SELECT {fields} FROM {mapping.ACCOUNT} WHERE {where} ORDER BY Name LIMIT 25"

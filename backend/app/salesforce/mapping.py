@@ -72,6 +72,7 @@ ACCOUNT_FIELDS = (
     "Tax_ID_Verified__c",
     "Tax_ID_Expires__c",
     SALESPERSON,
+    SALES_TERRITORY,
 )
 
 # ------------------------------------------------------- seasons / price books
@@ -195,6 +196,7 @@ def map_account(rec: dict[str, Any]) -> dict[str, Any]:
         "email": rec.get(ACCOUNT_LOOKUP_EMAIL),
         "resaleTaxId": rec.get("Tax_ID_Number__c"),
         "rep": rec.get("Salesperson__c"),
+        "salesTerritory": rec.get(SALES_TERRITORY),
         "certificateOnFile": _certificate_on_file(rec),
     }
 

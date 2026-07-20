@@ -249,6 +249,7 @@ def submit_order(
         order_written_by=payload.internal.order_written_by,
         split_with=split_with,
         sf_account_id=payload.sf_account_id,
+        sales_territory=payload.sales_territory,
         total_qty=total_qty,
         total_amount=total_amount,
         status="submitted",
