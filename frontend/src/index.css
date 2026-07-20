@@ -854,3 +854,49 @@ button:hover {
   border: none;
   cursor: pointer;
 }
+
+/* Conflict email draft popup — extends .conflict-modal */
+.email-modal {
+  max-width: 720px;
+  border-top-color: #1a1a1a;
+}
+.email-modal h2 {
+  color: #1d1d1b;
+}
+.email-modal label {
+  margin-top: 0.7rem;
+}
+.email-modal textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: normal;
+  border: 1px solid #b9b4aa;
+  border-radius: 2px;
+  resize: vertical;
+}
+.email-modal-actions {
+  align-items: center;
+  gap: 0.75rem;
+}
+/* the .link-btn margin-left:auto would push everything to one side */
+.email-modal-actions .link-btn {
+  margin-left: 0;
+  margin-right: auto;
+}
+.btn-link {
+  padding: 0.5rem 1.2rem;
+  background: #1a1a1a;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.btn-link:hover {
+  background: #3a3a36;
+}

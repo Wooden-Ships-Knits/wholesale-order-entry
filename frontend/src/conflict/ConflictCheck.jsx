@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadGoogleMaps } from '../lib/googleMaps'
-import { seasonFromOrderName } from '../lib/season'
+import { getConflictEmail } from '../admin/api'
+import EmailDraftModal from '../components/EmailDraftModal'
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
@@ -21,6 +22,21 @@ export default function ConflictCheck({ embedded = false }) {
   const [maxMinutes, setMaxMinutes] = useState(20)
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState(null)
+  const [draft, setDraft] = useState(null)
+  const [drafting, setDrafting] = useState(false)
+
+  // No order exists here, so the draft is built from the searched location.
+  // The store's name/contact are unknown — the user fills them in the popup.
+  async function draftEmail() {
+    setDrafting(true)
+    try {
+      setDraft(await getConflictEmail({ address: place?.label, maxMinutes }))
+    } catch (err) {
+      setStatus(err.message)
+    } finally {
+      setDrafting(false)
+    }
+  }
 
   // Attach Places autocomplete once.
   useEffect(() => {
@@ -127,6 +143,13 @@ export default function ConflictCheck({ embedded = false }) {
               ? `CONFLICT — an existing store is within ${result.maxMinutes} minutes`
               : `NO CONFLICT — nothing within ${result.maxMinutes} minutes`}
           </div>
+          <div className="conflict-actions">
+            {result.conflict && (
+              <button type="button" onClick={draftEmail} disabled={drafting}>
+                {drafting ? 'Drafting…' : 'Generate email'}
+              </button>
+            )}
+          </div>
           {result.mode === 'straight-line' && (
             <p className="mode-note">
               Approximate result: drive times are unavailable (no Google server key), so this uses
@@ -174,6 +197,8 @@ export default function ConflictCheck({ embedded = false }) {
           </table>
         </section>
       )}
+
+      {draft && <EmailDraftModal draft={draft} onClose={() => setDraft(null)} />}
     </div>
   )
 }

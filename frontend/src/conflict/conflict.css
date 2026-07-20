@@ -89,3 +89,10 @@ table.neighbors .num {
 table.neighbors .row-conflict td {
   background: #fbe4e4;
 }
+
+/* Generate-email action under the verdict banner */
+.conflict-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.6rem 0 0.2rem;
+}
