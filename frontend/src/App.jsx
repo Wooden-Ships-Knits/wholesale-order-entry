@@ -63,7 +63,7 @@ export default function App() {
   const [certOnFile, setCertOnFile] = useState(false)
   const [certFile, setCertFile] = useState(null)
   const [lookupNoMatch, setLookupNoMatch] = useState(false)
-  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false })
+  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false })
   const [internal, setInternalState] = useState({
     newOrReorder: '',
     accountStatus: '',
@@ -213,7 +213,8 @@ export default function App() {
       problems.push('Please tell us whether this is your first order.')
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!terms.signatureName) problems.push('Signature is required.')
-    if (!terms.accepted) problems.push('You must accept the terms & conditions.')
+    if (!terms.accepted) problems.push('You must accept the Order Policies.')
+    if (!terms.infoConfirmed) problems.push('Please confirm the order information is correct.')
     if (certFile && certFile.size > MAX_CERT_BYTES) {
       problems.push('The tax exemption certificate must be 10 MB or smaller.')
     }

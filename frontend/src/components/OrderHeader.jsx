@@ -10,8 +10,7 @@ export default function OrderHeader({
   return (
     <section className="section order-header">
       <div className="brand">
-        <h1>WOODEN SHIPS</h1>
-        <div className="subtitle">Wholesale Order Form</div>
+        <img src="/ws-logo-black.png" alt="Wooden Ships — Paola Buendia" className="brand-logo" />
       </div>
 
       <div className="header-grid">
