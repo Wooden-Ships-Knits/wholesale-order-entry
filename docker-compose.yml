@@ -34,7 +34,8 @@ services:
   nginx:
     build: ./frontend
     ports:
-      - "80:80"
+      # Host 8082 → container 80 (matches the GCP VM, where port 80 is taken).
+      - "8082:80"
     depends_on:
       - backend
     restart: unless-stopped

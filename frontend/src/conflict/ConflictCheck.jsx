@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadGoogleMaps } from '../lib/googleMaps'
+import { seasonFromOrderName } from '../lib/season'
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
@@ -73,7 +74,7 @@ export default function ConflictCheck({ embedded = false }) {
       {!embedded && (
         <div className="brand">
           <h1>WOODEN SHIPS</h1>
-          <div className="subtitle">Stockist Conflict Check — internal tool</div>
+          <div className="subtitle">Store Conflict Check — internal tool</div>
         </div>
       )}
 
@@ -123,7 +124,7 @@ export default function ConflictCheck({ embedded = false }) {
         <section className="section">
           <div className={result.conflict ? 'verdict verdict-conflict' : 'verdict verdict-clear'}>
             {result.conflict
-              ? `CONFLICT — an existing stockist is within ${result.maxMinutes} minutes`
+              ? `CONFLICT — an existing store is within ${result.maxMinutes} minutes`
               : `NO CONFLICT — nothing within ${result.maxMinutes} minutes`}
           </div>
           {result.mode === 'straight-line' && (
@@ -132,13 +133,13 @@ export default function ConflictCheck({ embedded = false }) {
               straight-line distance ({result.maxMinutes} min ≈ {result.maxMinutes * 0.5} miles).
             </p>
           )}
-          <h2>Nearest existing stockists</h2>
+          <h2>Nearest existing stores</h2>
           <table className="neighbors">
             <thead>
               <tr>
                 <th>Store</th>
                 <th>Location</th>
-                <th>Last order</th>
+                <th>Season</th>
                 <th className="num">Miles</th>
                 <th className="num">Drive (min)</th>
               </tr>
@@ -159,7 +160,7 @@ export default function ConflictCheck({ embedded = false }) {
                 >
                   <td>{n.name}</td>
                   <td>{n.cityState}</td>
-                  <td>{n.lastOrder ?? '—'}</td>
+                  <td>{seasonFromOrderName(n.lastOrderName)}</td>
                   <td className="num">{n.distanceMiles}</td>
                   <td className="num">{n.driveMinutes ?? '—'}</td>
                 </tr>

@@ -194,17 +194,34 @@ def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
         )
         accounts = query_all(soql)
 
-        # Most recent order date per candidate, attached as lastOrderDate.
-        # NB: "last" is a reserved word in SOQL — don't use it as the alias.
-        agg = query_all(
-            f"SELECT {mapping.SALES_ORDER_ACCOUNT} acc, MAX({mapping.SALES_ORDER_DATE}) latest "
+        # Most recent order per candidate — both its date and its Name. A
+        # GROUP BY MAX(date) can't also return the Name of that row, so pull
+        # the orders newest-first and keep the first one seen per account.
+        # ORDER BY holds across queryMore pagination, so "first seen = latest".
+        # Field aliasing is only allowed in aggregate queries, so read the
+        # real field names back off each row.
+        recent = query_all(
+            f"SELECT {mapping.SALES_ORDER_ACCOUNT}, Name, {mapping.SALES_ORDER_NAME}, "
+            f"{mapping.SALES_ORDER_DATE} "
             f"FROM {mapping.SALES_ORDER} "
             f"WHERE {mapping.SALES_ORDER_DATE} >= {since.isoformat()} "
-            f"GROUP BY {mapping.SALES_ORDER_ACCOUNT}"
+            f"ORDER BY {mapping.SALES_ORDER_DATE} DESC"
         )
-        last_by_account = {r["acc"]: r["latest"] for r in agg}
+        last_by_account: dict[str, dict[str, Any]] = {}
+        for r in recent:
+            last_by_account.setdefault(
+                r[mapping.SALES_ORDER_ACCOUNT],
+                {
+                    "date": r[mapping.SALES_ORDER_DATE],
+                    "number": r.get("Name"),
+                    "name": r.get(mapping.SALES_ORDER_NAME),
+                },
+            )
         for a in accounts:
-            a["lastOrderDate"] = last_by_account.get(a["Id"])
+            latest = last_by_account.get(a["Id"])
+            a["lastOrderDate"] = latest["date"] if latest else None
+            a["lastOrderNumber"] = latest["number"] if latest else None
+            a["lastOrderName"] = latest["name"] if latest else None
         return accounts
 
     return _cached("geocoded_accounts", fetch)

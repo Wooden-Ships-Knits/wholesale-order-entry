@@ -37,6 +37,9 @@ WRITTEN_BY = "Written_By__c"
 # sales order object's account lookup + business order date.
 SALES_ORDER_ACCOUNT = "kugo2p__Account__c"
 SALES_ORDER_DATE = "kugo2p__OrderDate__c"
+# Salesforce "Order Name" (e.g. "F26 SWEATERS 11/01 - 11/20"); distinct from
+# the record Name, which is the auto-numbered order number (SO-...).
+SALES_ORDER_NAME = "kugo2p__OrderName__c"
 ACCOUNT_TYPE = "Type"
 # Accounts with these Rank__c values are not active stockists and never
 # count as conflicts (decision 2026-07-18). Accounts with no rank still count.
@@ -171,6 +174,8 @@ def map_nearby_account(rec: dict[str, Any]) -> dict[str, Any]:
         "name": rec.get("Name"),
         "cityState": _city_state(rec.get("ShippingCity"), rec.get("ShippingState")),
         "lastOrder": rec.get("lastOrderDate"),
+        "lastOrderNumber": rec.get("lastOrderNumber"),
+        "lastOrderName": rec.get("lastOrderName"),
         "lat": rec[SHIPPING_LAT],
         "lng": rec[SHIPPING_LNG],
     }
