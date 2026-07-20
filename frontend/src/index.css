@@ -619,6 +619,34 @@ button:hover {
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
+/* Top-level admin sections: Orders | Conflict check */
+.admin-tabs {
+  display: flex;
+  gap: 1.25rem;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 1rem;
+}
+.admin-tab {
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  /* see .chip — the global button rule would make this white */
+  color: #6b6862;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.admin-tab:hover {
+  /* the global button:hover rule would paint a dark box behind the tab */
+  background: none;
+  color: #1d1d1b;
+}
+.admin-tab.active {
+  color: #1d1d1b;
+  border-bottom-color: #1a1a1a;
+}
 .chip {
   padding: 0.3rem 0.75rem;
   font-size: 0.85rem;

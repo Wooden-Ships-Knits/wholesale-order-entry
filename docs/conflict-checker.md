@@ -1,6 +1,6 @@
 # Conflict Checker — Nearby-Stockist Check for New Customers
 
-**Endpoint:** `GET /api/accounts/nearby` · **Added:** 2026-07-17 · **Standalone tool page:** `/conflict.html`
+**Endpoint:** `GET /api/accounts/nearby` · **Added:** 2026-07-17 · **Tool page:** `/admin` → *Conflict check* tab
 Design spec: [`superpowers/specs/2026-07-17-nearby-conflict-check-design.md`](superpowers/specs/2026-07-17-nearby-conflict-check-design.md)
 
 ## What it does
@@ -15,18 +15,14 @@ This is brand protection: two stockists on the same street compete for the same 
 
 Drive time is used instead of straight-line distance on purpose — two stores 2 miles apart across a river can be a 40-minute drive from each other, while 10 miles down one highway can be 12 minutes. Twenty minutes of driving is what "same shopping area" actually means to a customer.
 
-## The standalone tool page
+## The admin tool page
 
-`https://<site>/conflict.html` is an independent internal page (not linked from the order form): type a location in the Google search box, pick a suggestion, and it shows the verdict banner plus the nearest-stockists table. The drive-time threshold and how many neighbors to show are adjustable on the page. It is a second Vite entry (`frontend/src/conflict/`), so it reuses the same Google Maps browser key and deploys with the normal frontend build — nothing extra to configure.
+Sign in at `https://<site>/admin` and pick the **Conflict check** tab: type a location in the Google search box, pick a suggestion, and it shows the verdict banner plus the nearest-stockists table. The drive-time threshold and how many neighbors to show are adjustable on the page.
 
-**Protecting the page:** it has no login by default and exposes the stockist list, so before (or right after) exposing it on the public VM, enable the prepared basic-auth block:
+It lives inside the admin app (`frontend/src/conflict/ConflictCheck.jsx`, rendered by `frontend/src/admin/AdminApp.jsx` with the `embedded` prop), so it is behind the admin password — which matters, because it exposes the stockist list. The old standalone URLs `/check-conflict` and `/conflict.html` 301 to `/admin` (see `frontend/nginx.conf`); no separate basic auth is needed.
 
-1. On the VM, create the password file (prompts for the password):
-   `mkdir -p secrets && printf "admin:$(openssl passwd -apr1)\n" > secrets/htpasswd`
-2. In `docker-compose.yml`, add to the nginx service volumes: `- ./secrets/htpasswd:/etc/nginx/htpasswd:ro`
-3. Uncomment the `location = /conflict.html` block in `frontend/nginx.conf`, then `docker compose build nginx && docker compose up -d nginx`.
+Note the API itself, `GET /api/accounts/nearby`, stays unauthenticated — the order form calls it for the rep-only warning modal, where it returns no stockist names.
 
-The `secrets/` directory must never be committed (add it to `.gitignore` if it isn't).
 
 ## How to call it
 
