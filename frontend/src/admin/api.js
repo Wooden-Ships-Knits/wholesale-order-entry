@@ -25,5 +25,9 @@ export const getOrders = (statusFilter) =>
 export const setOrderStatus = (id, status, reason = '') =>
   post(`/api/admin/orders/${id}/status`, { status, reason })
 
+// Draft of the "we already have a stockist nearby" email. Pass { orderId } from
+// the order table, or the store details from the conflict-check tab.
+export const getConflictEmail = (payload) => post('/api/conflict-email', payload)
+
 export const pdfUrl = (id) => `/api/admin/orders/${id}/pdf`
 export const certUrl = (id) => `/api/admin/orders/${id}/certificate`
