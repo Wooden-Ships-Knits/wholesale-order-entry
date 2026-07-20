@@ -44,6 +44,8 @@ export default function OrderTable({ orders, onChanged, onError }) {
         <thead>
           <tr>
             <th>Order ID</th>
+            <th>Account Name</th>
+            <th>Sales Territory</th>
             <th>PDF</th>
             <th>New account</th>
             <th>Potential conflict</th>
@@ -58,8 +60,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <tr key={o.id}>
               <td title={o.id}>
                 <code>{o.shortId}</code>
-                <div className="sub">{o.buyerName || o.shipEmail}</div>
               </td>
+              <td>{o.accountName || <span className="unknown">—</span>}</td>
+              <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               <td>
                 <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
                   Open PDF
