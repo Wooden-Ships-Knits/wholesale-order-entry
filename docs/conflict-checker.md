@@ -24,6 +24,19 @@ It lives inside the admin app (`frontend/src/conflict/ConflictCheck.jsx`, render
 Note the API itself, `GET /api/accounts/nearby`, stays unauthenticated — the order form calls it for the rep-only warning modal, where it returns no stockist names.
 
 
+## The conflict email draft
+
+`POST /api/conflict-email` (admin-only) returns `{to, subject, body}` — a polite "we already have a stockist serving this area" letter addressed to the applicant. It **sends nothing**: the admin reviews and edits it in a popup, then copies it or opens it in their own mail client (`mailto:`). No SMTP configuration is involved.
+
+Two call sites, both in `/admin`:
+
+| Page | Trigger | Payload |
+|---|---|---|
+| Orders table | *Generate email* button, shown only on rows where `hasConflict` is true | `{orderId}` — buyer name, contact, email, ship address and rep come from the order |
+| Conflict check tab | *Generate email* button, shown only when the verdict is CONFLICT | `{address, maxMinutes}` — there is no order yet, so the user fills the recipient in the popup |
+
+Any explicit field overrides what the order supplied, so the same endpoint serves both. The body never names the neighboring stockists: it is addressed to the applicant, and who else stocks the brand is internal. Wording lives in `backend/app/email/conflict_template.py`; the popup is `frontend/src/components/EmailDraftModal.jsx`.
+
 ## How to call it
 
 ```

@@ -8,6 +8,7 @@ from app.config import settings
 from app.routers import (
     accounts,
     admin,
+    conflict_email,
     health,
     orders,
     products,
@@ -48,3 +49,4 @@ app.include_router(accounts.router, prefix="/api")
 app.include_router(reps.router, prefix="/api")
 app.include_router(orders.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(conflict_email.router, prefix="/api")
