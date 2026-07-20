@@ -48,6 +48,7 @@ export default function App() {
     representativeOk: null,
     firstOrder: null,
     sfAccountId: null,
+    salesTerritory: null,
   })
   const [billTo, setBillToState] = useState({ buyerName: '', street: '', cityState: '', zip: '', tel: '', fax: '', lat: null, lng: null })
   const [shipTo, setShipToState] = useState({ email: '', street: '', cityState: '', zip: '', resaleTaxId: '', lat: null, lng: null })
@@ -141,7 +142,7 @@ export default function App() {
   const setInternal = (k, v) => setInternalState((p) => ({ ...p, [k]: v }))
 
   function applyAccount(m) {
-    setForm((p) => ({ ...p, sfAccountId: m.accountId }))
+    setForm((p) => ({ ...p, sfAccountId: m.accountId, salesTerritory: m.salesTerritory || null }))
     setBillToState({
       buyerName: m.name || '',
       street: m.billTo.street || '',
@@ -254,6 +255,7 @@ export default function App() {
       // equivalent of the rep's Internal Use "New account" radio.
       firstOrder: form.firstOrder,
       sfAccountId: form.sfAccountId,
+      salesTerritory: form.salesTerritory,
       billTo,
       shipTo,
       payment,
