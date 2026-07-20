@@ -70,6 +70,14 @@ export default function TermsSignature({ terms, setTerms }) {
         />
         I have read and accept the Order Policies. <span className="req">*</span>
       </label>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={terms.infoConfirmed}
+          onChange={(e) => setTerms('infoConfirmed', e.target.checked)}
+        />
+        I confirm all the order information is correct. <span className="req">*</span>
+      </label>
     </section>
   )
 }

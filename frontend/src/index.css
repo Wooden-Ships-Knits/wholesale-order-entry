@@ -34,12 +34,13 @@ body {
 }
 
 /* --------------------------------------------------------------- header */
-.brand h1 {
+/* .brand h1 {
   margin: 0;
   letter-spacing: 0.35em;
   font-weight: 400;
   font-size: 1.6rem;
   text-align: center;
+  font-family: 'Filosofia OT', serif; 
 }
 
 .brand .subtitle {
@@ -49,6 +50,18 @@ body {
   font-size: 0.75rem;
   color: #6d6a63;
   margin-bottom: 1.25rem;
+  font-family: 'Gotham', serif; 
+} */
+
+.brand {
+  text-align: center;
+}
+.brand-logo {
+  width: 260px;      /* adjust to taste */
+  max-width: 100%;   /* never overflow on small screens */
+  height: auto;
+  margin: 0 auto 1.25rem;
+  display: block;
 }
 
 .header-grid {
