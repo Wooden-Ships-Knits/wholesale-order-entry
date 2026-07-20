@@ -48,12 +48,16 @@ def test_map_nearby_account():
         "ShippingLatitude": 41.9,
         "ShippingLongitude": -87.6,
         "lastOrderDate": "2026-03-02",
+        "lastOrderNumber": "SO-0004821",
+        "lastOrderName": "F26 SWEATERS 11/01 - 11/20",
     }
     assert map_nearby_account(rec) == {
         "accountId": "001x",
         "name": "Lakeview Knits",
         "cityState": "Chicago, IL",
         "lastOrder": "2026-03-02",
+        "lastOrderNumber": "SO-0004821",
+        "lastOrderName": "F26 SWEATERS 11/01 - 11/20",
         "lat": 41.9,
         "lng": -87.6,
     }

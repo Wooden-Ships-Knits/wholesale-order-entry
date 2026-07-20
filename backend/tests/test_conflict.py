@@ -12,7 +12,8 @@ SF_RECORDS = [
     {"Id": "001A", "Name": "Evanston Wool", "ShippingCity": "Evanston", "ShippingState": "IL",
      "ShippingLatitude": 42.0451, "ShippingLongitude": -87.6877, "lastOrderDate": "2026-05-01"},
     {"Id": "001B", "Name": "Oak Park Knits", "ShippingCity": "Oak Park", "ShippingState": "IL",
-     "ShippingLatitude": 41.8850, "ShippingLongitude": -87.7845, "lastOrderDate": "2025-11-20"},
+     "ShippingLatitude": 41.8850, "ShippingLongitude": -87.7845, "lastOrderDate": "2025-11-20",
+     "lastOrderNumber": "SO-0003977", "lastOrderName": "F26 SWEATERS 11/01 - 11/20"},
     {"Id": "001C", "Name": "NYC Flagship", "ShippingCity": "New York", "ShippingState": "NY",
      "ShippingLatitude": 40.7128, "ShippingLongitude": -74.0060, "lastOrderDate": "2024-08-09"},
 ]
@@ -39,6 +40,8 @@ def test_drive_time_mode_conflict_true():
     assert got["neighbors"][0]["driveMinutes"] == 9
     assert got["neighbors"][0]["distanceMiles"] > 0
     assert got["neighbors"][0]["lastOrder"] == "2025-11-20"  # 001B Oak Park
+    assert got["neighbors"][0]["lastOrderNumber"] == "SO-0003977"
+    assert got["neighbors"][0]["lastOrderName"] == "F26 SWEATERS 11/01 - 11/20"
 
 
 def test_drive_time_mode_conflict_false_at_threshold():

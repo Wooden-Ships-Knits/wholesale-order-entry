@@ -51,7 +51,9 @@ def find_nearby(lat: float, lng: float, k: int, max_minutes: int) -> dict:
         {
             key: a[key]
             for key in (
-                "accountId", "name", "cityState", "lastOrder", "distanceMiles", "driveMinutes",
+                "accountId", "name", "cityState", "lastOrder",
+                "lastOrderNumber", "lastOrderName",
+                "distanceMiles", "driveMinutes",
             )
         }
         for a in pool[:k]
