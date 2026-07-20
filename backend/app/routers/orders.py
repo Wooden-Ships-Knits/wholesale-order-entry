@@ -250,6 +250,7 @@ def submit_order(
         split_with=split_with,
         sf_account_id=payload.sf_account_id,
         sales_territory=payload.sales_territory,
+        special_instructions=payload.special_instructions,
         total_qty=total_qty,
         total_amount=total_amount,
         status="submitted",

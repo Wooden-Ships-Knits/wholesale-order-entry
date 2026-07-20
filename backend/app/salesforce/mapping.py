@@ -25,6 +25,10 @@ SALESPERSON = "Salesperson__c"
 # (not a picklist), so the option list is the distinct values actually in use.
 SALES_TERRITORY = "SalesTerritory__c"
 
+# Free-text special handling notes on the account (textarea). Shown to PPIC on
+# the admin page; empty for new/unmatched accounts.
+SPECIAL_INSTRUCTIONS = "Special_Instructions__c"
+
 # Who wrote the order: picklist on the (managed-package) sales order object.
 # Source for the Internal Use "Order written by" / "Split with" dropdowns.
 SALES_ORDER = "kugo2p__SalesOrder__c"
@@ -76,6 +80,7 @@ ACCOUNT_FIELDS = (
     "Tax_ID_Expires__c",
     SALESPERSON,
     SALES_TERRITORY,
+    SPECIAL_INSTRUCTIONS,
 )
 
 # ------------------------------------------------------- seasons / price books
@@ -202,6 +207,7 @@ def map_account(rec: dict[str, Any]) -> dict[str, Any]:
         "resaleTaxId": rec.get("Tax_ID_Number__c"),
         "rep": rec.get("Salesperson__c"),
         "salesTerritory": rec.get(SALES_TERRITORY),
+        "specialInstructions": rec.get(SPECIAL_INSTRUCTIONS),
         "certificateOnFile": _certificate_on_file(rec),
     }
 

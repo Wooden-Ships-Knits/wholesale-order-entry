@@ -49,6 +49,7 @@ export default function App() {
     firstOrder: null,
     sfAccountId: null,
     salesTerritory: null,
+    specialInstructions: null,
   })
   const [billTo, setBillToState] = useState({ buyerName: '', street: '', cityState: '', zip: '', tel: '', fax: '', lat: null, lng: null })
   const [shipTo, setShipToState] = useState({ email: '', street: '', cityState: '', zip: '', resaleTaxId: '', lat: null, lng: null })
@@ -142,7 +143,12 @@ export default function App() {
   const setInternal = (k, v) => setInternalState((p) => ({ ...p, [k]: v }))
 
   function applyAccount(m) {
-    setForm((p) => ({ ...p, sfAccountId: m.accountId, salesTerritory: m.salesTerritory || null }))
+    setForm((p) => ({
+      ...p,
+      sfAccountId: m.accountId,
+      salesTerritory: m.salesTerritory || null,
+      specialInstructions: m.specialInstructions || null,
+    }))
     setBillToState({
       buyerName: m.name || '',
       street: m.billTo.street || '',
@@ -256,6 +262,7 @@ export default function App() {
       firstOrder: form.firstOrder,
       sfAccountId: form.sfAccountId,
       salesTerritory: form.salesTerritory,
+      specialInstructions: form.specialInstructions,
       billTo,
       shipTo,
       payment,
