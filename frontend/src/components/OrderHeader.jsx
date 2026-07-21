@@ -92,7 +92,7 @@ export default function OrderHeader({
         {form.representativeOk === false && (
           <fieldset className="inline-radios">
             <legend>
-              Is this your first order with Wooden Ships? <span className="req">*</span>
+              Is this your first order with Wooden Ships?<span className="req">*</span>
             </legend>
             <label>
               <input

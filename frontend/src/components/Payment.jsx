@@ -6,34 +6,57 @@ export default function Payment({ payment, setPayment }) {
       <h2>Payment</h2>
 
       <fieldset className="inline-radios">
-        <legend>Payment by</legend>
+        <legend>Payment method</legend>
         <label>
           <input
             type="radio"
             name="paymentMethod"
-            checked={payment.method === 'link'}
-            onChange={() => setPayment('method', 'link')}
+            checked={payment.method === 'direct'}
+            onChange={() => setPayment('method', 'direct')}
           />
-          Payment link
+          Direct
         </label>
         <label>
           <input
             type="radio"
             name="paymentMethod"
-            checked={payment.method === 'card'}
-            onChange={() => setPayment('method', 'card')}
+            checked={payment.method === 'store'}
+            onChange={() => setPayment('method', 'store')}
           />
-          Credit card
+          Store your card
         </label>
       </fieldset>
 
-      {payment.method === 'link' && (
-        <p className="muted small">
-          A secure payment link will be emailed to you once the order is confirmed.
-        </p>
+      {payment.method === 'direct' && (
+        <>
+          <fieldset className="inline-radios">
+            <legend>Payment type</legend>
+            <label>
+              <input
+                type="radio"
+                name="directPaymentType"
+                checked={payment.directType === 'card'}
+                onChange={() => setPayment('directType', 'card')}
+              />
+              Credit Card
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="directPaymentType"
+                checked={payment.directType === 'paypal'}
+                onChange={() => setPayment('directType', 'paypal')}
+              />
+              PayPal
+            </label>
+          </fieldset>
+          <p className="muted small">
+            A secure payment link will be emailed to you as the start ship date approaches.
+          </p>
+        </>
       )}
 
-      {payment.method === 'card' && (
+      {payment.method === 'store' && (
         <>
           <fieldset className="inline-radios">
             <legend>Charge approval</legend>
@@ -88,17 +111,6 @@ export default function Payment({ payment, setPayment }) {
                 maxLength="5"
                 value={payment.expDate}
                 onChange={(e) => setPayment('expDate', e.target.value)}
-              />
-            </label>
-            <label>
-              Security code (CVV)
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="cc-csc"
-                maxLength="4"
-                value={payment.cvv}
-                onChange={(e) => setPayment('cvv', e.target.value.replace(/\D/g, ''))}
               />
             </label>
           </div>

@@ -115,10 +115,10 @@
         {% if order.filled_by == "rep" %}Sales rep{% elif order.filled_by == "customer" %}Customer{% else %}—{% endif %}
       </span></td>
       <td><span class="lbl">Payment by</span><span class="val">
-        {% if order.payment_method == "link" %}Payment link{% elif order.payment_method == "card" %}Credit card{% else %}—{% endif %}
+        {% if order.payment_method == "direct" %}Buyer pays (link){% elif order.payment_method == "store" %}Card on file{% else %}—{% endif %}
       </span></td>
       <td><span class="lbl">Charge approval</span><span class="val">
-        {% if order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
+        {% if order.payment_method != "store" or order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
       </span></td>
     </tr>
   </table>
