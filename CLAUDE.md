@@ -51,7 +51,7 @@ docker-compose.yml
 - `GET /api/territories` — distinct `Account.SalesTerritory__c` values
 - `GET /api/order-writers` — `kugo2p__SalesOrder__c.Written_By__c` picklist values
 - `GET /api/accounts/nearby?lat&lng&k&maxMinutes` — new-customer conflict check (k nearest wholesale stockists; conflict = drive < 20 min default; straight-line fallback without a Google server key). Tool page = the *Conflict check* tab in `/admin` (`frontend/src/conflict/`, `/check-conflict` + `/conflict.html` 301 there); also wired into the order form as a rep-only warning modal (rep + new account + Ship To coords → dismissible popup, never blocks; stockist names hidden from customers). See docs/conflict-checker.md.
-- `POST /api/conflict-email` — admin-only; drafts the "we already have a stockist nearby" email for a conflicting store (returns `{to, subject, body}`, sends nothing). Takes `orderId` (admin order table) or `storeName`/`contactName`/`email`/`address`/`repName` (conflict-check tab). Never names the neighboring stockists — the draft goes to the applicant.
+- `POST /api/conflict-email` — admin-only; drafts an **internal** email to the rep about a new store's inquiry, listing the conflicting nearby stockists by name with drive time / distance / last-order season (returns `{to, subject, body}`, sends nothing). Takes `orderId` (admin order table — store, rep, ship coords and state come from the order) or `storeName`/`repName`/`state`/`address`/`lat`/`lng` (conflict-check tab). The backend recomputes the conflicting neighbors from the coordinates. Names the stockists on purpose — the email goes to the rep, not the applicant.
 - `POST /api/orders`  → validate, persist (no card#), render PDF + save uploaded tax cert, email admin
 - `GET /api/health`
 

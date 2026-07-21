@@ -26,16 +26,16 @@ Note the API itself, `GET /api/accounts/nearby`, stays unauthenticated — the o
 
 ## The conflict email draft
 
-`POST /api/conflict-email` (admin-only) returns `{to, subject, body}` — a polite "we already have a stockist serving this area" letter addressed to the applicant. It **sends nothing**: the admin reviews and edits it in a popup, then copies it or opens it in their own mail client (`mailto:`). No SMTP configuration is involved.
+`POST /api/conflict-email` (admin-only) returns `{to, subject, body}` — an **internal** note to the rep: "please see the wholesale inquiry below from `<store>`; there are potential conflicts …" followed by the conflicting stockists, each as `NAME (8 min, 2.8 miles) - Last order: F26`. It **sends nothing**: the admin reviews and edits it in a popup, then copies it or opens it in their own mail client (`mailto:`). No SMTP configuration is involved. The `to` (rep's address) is left blank for the admin to fill — rep emails aren't stored.
 
 Two call sites, both in `/admin`:
 
 | Page | Trigger | Payload |
 |---|---|---|
-| Orders table | *Generate email* button, shown only on rows where `hasConflict` is true | `{orderId}` — buyer name, contact, email, ship address and rep come from the order |
-| Conflict check tab | *Generate email* button, shown only when the verdict is CONFLICT | `{address, maxMinutes}` — there is no order yet, so the user fills the recipient in the popup |
+| Orders table | *Generate email* button, shown only on rows where `hasConflict` is true | `{orderId}` — store name, rep, ship coordinates and state come from the order |
+| Conflict check tab | *Generate email* button, shown only when the verdict is CONFLICT | `{address, lat, lng, maxMinutes}` — there is no order yet, so the store name and rep are filled into the draft in the popup |
 
-Any explicit field overrides what the order supplied, so the same endpoint serves both. The body never names the neighboring stockists: it is addressed to the applicant, and who else stocks the brand is internal. Wording lives in `backend/app/email/conflict_template.py`; the popup is `frontend/src/components/EmailDraftModal.jsx`.
+Given coordinates (from the order's ship geocode or the tab's Places pick), the backend recomputes the conflicting neighbors — the ones inside the drive-time / straight-line threshold — and lists them. Because this email goes to the rep, not the applicant, it **does** name the neighboring stockists. Wording lives in `backend/app/email/conflict_template.py`; the popup is `frontend/src/components/EmailDraftModal.jsx`.
 
 ## How to call it
 
