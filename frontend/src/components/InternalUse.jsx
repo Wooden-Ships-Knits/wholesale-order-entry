@@ -30,7 +30,9 @@ export default function InternalUse({
       <h2>Internal Use</h2>
       <div className="internal-grid">
         <fieldset className="inline-radios">
-          <legend>New or reorder (optional)</legend>
+          <legend>
+            New or reorder <span className="req">*</span>
+          </legend>
           <label>
             <input
               type="radio"
@@ -52,7 +54,9 @@ export default function InternalUse({
         </fieldset>
 
         <fieldset className="inline-radios">
-          <legend>Account*</legend>
+          <legend>
+            Account <span className="req">*</span>
+          </legend>
           <label>
             <input
               type="radio"
@@ -74,7 +78,9 @@ export default function InternalUse({
         </fieldset>
 
         <fieldset className="inline-radios span2">
-          <legend>Campaign (optional)</legend>
+          <legend>
+            Campaign <span className="req">*</span>
+          </legend>
           <label>
             <input
               type="radio"
@@ -107,7 +113,7 @@ export default function InternalUse({
           <input type="text" value={internal.poNumber} onChange={(e) => setInternal('poNumber', e.target.value)} />
         </label>
         <label>
-          Order written by*
+          Order written by <span className="req">*</span>
           <select
             value={internal.orderWrittenBy}
             onChange={(e) => setInternal('orderWrittenBy', e.target.value)}

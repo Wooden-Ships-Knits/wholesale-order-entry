@@ -68,7 +68,7 @@ export default function TermsSignature({ terms, setTerms }) {
           checked={terms.accepted}
           onChange={(e) => setTerms('accepted', e.target.checked)}
         />
-        I have read and accept the Order Policies. <span className="req">*</span>
+        <span>I have read and accept the Order Policies.<span className="req">*</span></span>
       </label>
       <label className="check">
         <input
@@ -76,7 +76,7 @@ export default function TermsSignature({ terms, setTerms }) {
           checked={terms.infoConfirmed}
           onChange={(e) => setTerms('infoConfirmed', e.target.checked)}
         />
-        I confirm all the order information is correct. <span className="req">*</span>
+        <span>I confirm all the order information is correct.<span className="req">*</span></span>
       </label>
     </section>
   )
