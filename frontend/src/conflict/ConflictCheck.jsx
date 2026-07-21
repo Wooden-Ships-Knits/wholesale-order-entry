@@ -27,11 +27,19 @@ export default function ConflictCheck({ embedded = false }) {
   const [drafting, setDrafting] = useState(false)
 
   // No order exists here, so the draft is built from the searched location.
-  // The store's name/contact are unknown — the user fills them in the popup.
+  // Coords let the backend list the conflicting stockists; the store name and
+  // rep are unknown here, so the user fills them into the draft in the popup.
   async function draftEmail() {
     setDrafting(true)
     try {
-      setDraft(await getConflictEmail({ address: place?.label, maxMinutes }))
+      setDraft(
+        await getConflictEmail({
+          address: place?.label,
+          lat: place?.lat,
+          lng: place?.lng,
+          maxMinutes,
+        }),
+      )
     } catch (err) {
       setStatus(err.message)
     } finally {
