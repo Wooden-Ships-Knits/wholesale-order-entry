@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="woodenships-order" name="Wooden Ships Order Flow">
-        <mxGraphModel dx="1341" dy="539" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="2750" math="0" shadow="0">
+        <mxGraphModel dx="467" dy="519" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="2750" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -246,65 +246,65 @@
                 <mxCell id="2" value="Email to buyer&lt;br&gt;— DEFERRED in v1&lt;br&gt;(buyer sees on-page confirmation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="370" y="1965" width="220" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-3" value="New store location&lt;br&gt;(lat / lng from the Google Maps search box)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-3" value="New store location&lt;br&gt;(lat / lng from the Google Maps search box)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" parent="1" vertex="1">
                     <mxGeometry x="1510" y="30" width="300" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-4" value="Salesforce candidates (cached 5 min):&lt;br&gt;Type = Wholesale, shipping geocode present,&lt;br&gt;≥ 1 sales order in the last 3 years (~900 stores)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-4" value="Salesforce candidates (cached 5 min):&lt;br&gt;Type = Wholesale, shipping geocode present,&lt;br&gt;≥ 1 sales order in the last 3 years (~900 stores)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="1510" y="130" width="300" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-5" value="Straight-line (haversine) distance to every&lt;br&gt;candidate — keep the nearest 10–25" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-5" value="Straight-line (haversine) distance to every&lt;br&gt;candidate — keep the nearest 10–25" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">
                     <mxGeometry x="1510" y="240" width="300" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-6" value="Google server key&lt;br&gt;configured &amp;amp; reachable?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-6" value="Google server key&lt;br&gt;configured &amp;amp; reachable?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
                     <mxGeometry x="1530" y="340" width="260" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-7" value="Google Distance Matrix (1 request,&lt;br&gt;coordinates only): driving minutes&lt;br&gt;to each finalist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-7" value="Google Distance Matrix (1 request,&lt;br&gt;coordinates only): driving minutes&lt;br&gt;to each finalist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e2cf;strokeColor=#b5651d;fontColor=#5a3b13;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="1350" y="480" width="280" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-8" value="Fallback — straight-line mode:&lt;br&gt;distance only, threshold ≈ maxMinutes × 0.5 mi&lt;br&gt;(response says mode = straight-line)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-8" value="Fallback — straight-line mode:&lt;br&gt;distance only, threshold ≈ maxMinutes × 0.5 mi&lt;br&gt;(response says mode = straight-line)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
                     <mxGeometry x="1710" y="480" width="300" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-9" value="Any active stockist closer&lt;br&gt;than maxMinutes&lt;br&gt;(default 20 min drive)?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-9" value="Any active stockist closer&lt;br&gt;than maxMinutes&lt;br&gt;(default 20 min drive)?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fdf6e3;strokeColor=#c9a227;fontColor=#6b5a12;" parent="1" vertex="1">
                     <mxGeometry x="1530" y="600" width="260" height="90" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-10" value="CONFLICT (verdict: true)&lt;br&gt;nearest stockists listed as evidence:&lt;br&gt;miles, drive minutes, last order date" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-10" value="CONFLICT (verdict: true)&lt;br&gt;nearest stockists listed as evidence:&lt;br&gt;miles, drive minutes, last order date" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe4e4;strokeColor=#b5651d;fontColor=#7a1f1f;" parent="1" vertex="1">
                     <mxGeometry x="1350" y="750" width="280" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-11" value="NO CONFLICT (verdict: false)&lt;br&gt;nearest stockists still listed&lt;br&gt;for PPIC to review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f0e7;strokeColor=#4b7a4b;fontColor=#274427;" vertex="1" parent="1">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-11" value="NO CONFLICT (verdict: false)&lt;br&gt;nearest stockists still listed&lt;br&gt;for PPIC to review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f0e7;strokeColor=#4b7a4b;fontColor=#274427;" parent="1" vertex="1">
                     <mxGeometry x="1710" y="750" width="280" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-3" target="Hh1_HbILnipfF6ywL9yE-4">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="Hh1_HbILnipfF6ywL9yE-3" target="Hh1_HbILnipfF6ywL9yE-4" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-4" target="Hh1_HbILnipfF6ywL9yE-5">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="Hh1_HbILnipfF6ywL9yE-4" target="Hh1_HbILnipfF6ywL9yE-5" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-5" target="Hh1_HbILnipfF6ywL9yE-6">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;" parent="1" source="Hh1_HbILnipfF6ywL9yE-5" target="Hh1_HbILnipfF6ywL9yE-6" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-15" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-6" target="Hh1_HbILnipfF6ywL9yE-7">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-15" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="Hh1_HbILnipfF6ywL9yE-6" target="Hh1_HbILnipfF6ywL9yE-7" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-16" value="No key / Google error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-6" target="Hh1_HbILnipfF6ywL9yE-8">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-16" value="No key / Google error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="Hh1_HbILnipfF6ywL9yE-6" target="Hh1_HbILnipfF6ywL9yE-8" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-7" target="Hh1_HbILnipfF6ywL9yE-9">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="Hh1_HbILnipfF6ywL9yE-7" target="Hh1_HbILnipfF6ywL9yE-9" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-8" target="Hh1_HbILnipfF6ywL9yE-9">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="Hh1_HbILnipfF6ywL9yE-8" target="Hh1_HbILnipfF6ywL9yE-9" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-19" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-9" target="Hh1_HbILnipfF6ywL9yE-10">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-19" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="Hh1_HbILnipfF6ywL9yE-9" target="Hh1_HbILnipfF6ywL9yE-10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Hh1_HbILnipfF6ywL9yE-20" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Hh1_HbILnipfF6ywL9yE-9" target="Hh1_HbILnipfF6ywL9yE-11">
+                <mxCell id="Hh1_HbILnipfF6ywL9yE-20" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="Hh1_HbILnipfF6ywL9yE-9" target="Hh1_HbILnipfF6ywL9yE-11" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
     </diagram>
     <diagram id="conflict-checker" name="Conflict Checker">
-        <mxGraphModel dx="1341" dy="306" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="900" math="0" shadow="0">
+        <mxGraphModel dx="747" dy="403" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="900" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -361,6 +361,23 @@
                 </mxCell>
                 <mxCell id="ce9" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8a6d3b;fontColor=#5a3b13;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="c_verdict" target="c_no" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="fJaJvE91afMl8-pdujUu" name="Shipping Window Date">
+        <mxGraphModel dx="747" dy="403" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="pWGpbt_1FZt7tPQCQNy6-2" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="_W6nhg01atfTT9JU0_Yv-1" target="pWGpbt_1FZt7tPQCQNy6-1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_W6nhg01atfTT9JU0_Yv-1" value="Shipping window dibuat:&lt;div&gt;- Spring: May 1&lt;/div&gt;&lt;div&gt;- Fall: Dec 20&lt;/div&gt;&lt;div&gt;Juga berdasarkan linesheet ready&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6efe6;strokeColor=#b5651d;arcSize=50;fontColor=#5a3b13;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="20" width="300" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pWGpbt_1FZt7tPQCQNy6-1" value="Paola aprroval" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="110" width="300" height="60" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
