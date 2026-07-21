@@ -47,6 +47,7 @@ export default function TermsSignature({ terms, setTerms }) {
           Buyer's signature (type your full name)
           <input
             type="text"
+            className="signature-input"
             value={terms.signatureName}
             onChange={(e) => setTerms('signatureName', e.target.value)}
             required
