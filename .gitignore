@@ -17,3 +17,8 @@ output/
 .DS_Store
 secrets/
 backend/credentials/*
+
+notebooks/
+notebooks/*.ipynb
+
+venv/

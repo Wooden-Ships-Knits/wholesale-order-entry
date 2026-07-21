@@ -34,7 +34,9 @@ RANGE_COLUMNS = "B:Q"
 _lock = threading.Lock()
 _service: Any = None
 
-_CACHE_TTL_SECONDS = 300
+# Short TTL so a strikethrough edit in the sheet shows up on the form within a
+# minute, not five. The sheet is small, so refetching often is cheap.
+_CACHE_TTL_SECONDS = 60
 _cache: dict[str, tuple[float, Any]] = {}
 
 
@@ -50,24 +52,50 @@ def _client() -> Any:
         return _service
 
 
-def _read(season_code: str) -> list[list[str]]:
-    """Raw rows for one season's worksheet. Empty list if the tab is missing."""
+def _read(season_code: str) -> list[list[tuple[str, bool]]]:
+    """Rows for one season's worksheet as (value, struck) cells.
+
+    Uses spreadsheets.get with grid data so cell formatting (strikethrough)
+    is visible — values().get() does not return formatting. Empty list if
+    the tab is missing.
+    """
     try:
         result = (
             _client()
             .spreadsheets()
-            .values()
             .get(
                 spreadsheetId=settings.shipping_window_sheet_id,
-                range=f"'{season_code}'!{RANGE_COLUMNS}",
+                ranges=[f"'{season_code}'!{RANGE_COLUMNS}"],
+                includeGridData=True,
+                fields=(
+                    "sheets.data.rowData.values("
+                    "formattedValue,"
+                    "effectiveFormat.textFormat.strikethrough)"
+                ),
             )
             .execute()
         )
-        return result.get("values", [])
     except Exception:
-        # A season with no tab yet is normal — don't blow up the form.
         logger.warning("No ship-window sheet for season %s", season_code, exc_info=True)
         return []
+
+    sheets = result.get("sheets", [])
+    data = sheets[0].get("data", []) if sheets else []
+    row_data = data[0].get("rowData", []) if data else []
+
+    rows: list[list[tuple[str, bool]]] = []
+    for row in row_data:
+        cells: list[tuple[str, bool]] = []
+        for cell in row.get("values", []):
+            value = (cell.get("formattedValue") or "").strip()
+            struck = (
+                cell.get("effectiveFormat", {})
+                .get("textFormat", {})
+                .get("strikethrough", False)
+            )
+            cells.append((value, struck))
+        rows.append(cells)
+    return rows
 
 
 # A ship window looks like "7/1-30" or "12/1-10". Matching the value shape
@@ -82,8 +110,9 @@ def list_ship_windows(season_code: str) -> list[str]:
         windows: list[str] = []
         for row in _read(season_code):
             # Column 0 is the collection name; ship windows follow.
-            for cell in row[1:]:
-                value = (cell or "").strip()
+            for value, struck in row[1:]:
+                if struck:
+                    continue  # window closed — don't offer it
                 if _WINDOW_RE.match(value) and value not in windows:
                     windows.append(value)
         if not windows:

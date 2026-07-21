@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Ship windows come from a Google Sheet: one worksheet per season code,
     # read live via a service account (share the sheet with its client_email).
     shipping_window_sheet_id: str = ""
-    google_credentials_path: str = "/credentials/service-account.json"
+    google_credentials_path: str = "credentials/dialy-report-automation-e20c53e67542.json"
 
     pdf_output_dir: str = "/output/orders"
 
