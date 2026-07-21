@@ -66,13 +66,45 @@ body {
 
 .header-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-areas:
+    'filled .      total'
+    'date   season ship';
+  gap: 1rem 1.5rem;
   align-items: end;
+}
+.ha-filled {
+  grid-area: filled;
+  align-self: start;
+}
+.ha-total {
+  grid-area: total;
+  align-self: start;
+  text-align: right;
+}
+.ha-date {
+  grid-area: date;
+}
+.ha-season {
+  grid-area: season;
+}
+.ha-ship {
+  grid-area: ship;
+}
+
+/* Filled by + Order total: a touch larger than the standard field text */
+.ha-filled legend {
+  font-size: 0.95rem;
+}
+.ha-filled label {
+  font-size: 1rem;
+}
+.ha-total .field-label {
+  font-size: 0.95rem;
 }
 
 .order-total {
-  font-size: 1.15rem;
+  font-size: 1.7rem;
   font-weight: bold;
   display: block;
   padding: 0.35rem 0;
@@ -299,6 +331,16 @@ th.num {
   border: 1px solid #b9b4aa;
   border-radius: 2px;
   text-align: right;
+}
+
+/* Centre the size columns — must come AFTER .num and .qty-cell input, which
+   have equal specificity, so source order is what wins. */
+th.size-col,
+td.size-col {
+  text-align: center;
+}
+.size-col input {
+  text-align: center;
 }
 
 .qty-cell input.bad {

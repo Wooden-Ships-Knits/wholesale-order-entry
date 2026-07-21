@@ -105,7 +105,7 @@ export default function ProductLines({
               <th className="style-col">Style name</th>
               <th className="color-col">Color</th>
               {SIZES.map((s) => (
-                <th key={s.key} className="num">
+                <th key={s.key} className="num size-col">
                   {s.label}
                 </th>
               ))}
@@ -155,7 +155,7 @@ export default function ProductLines({
                   {SIZES.map((s) => {
                     const available = line.row?.sizes?.[s.key]
                     return (
-                      <td key={s.key} className="num qty-cell">
+                      <td key={s.key} className="num qty-cell size-col">
                         <input
                           type="number"
                           min="0"

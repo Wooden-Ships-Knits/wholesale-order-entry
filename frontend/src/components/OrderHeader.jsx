@@ -14,33 +14,10 @@ export default function OrderHeader({
       </div>
 
       <div className="header-grid">
-        <label>
-          Collection / Season
-          <select value={season} onChange={(e) => onSeasonChange(e.target.value)} required>
-            <option value="">Select a collection…</option>
-            {seasons.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.code} — {s.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Order date
-          <input type="date" value={form.orderDate} onChange={(e) => setField('orderDate', e.target.value)} />
-        </label>
-
-        <div className="field">
-          <span className="field-label">Order total</span>
-          <span className="order-total">
-            ${totalAmount.toFixed(2)}
-          </span>
-        </div>
-
-        <fieldset className="inline-radios">
+        {/* Row 1: Filled by (left) · Order total (right) */}
+        <fieldset className="inline-radios ha-filled">
           <legend>
-            Filled by <span className="req">*</span>
+            Filled by<span className="req">*</span>
           </legend>
           <label>
             <input
@@ -62,9 +39,32 @@ export default function OrderHeader({
           </label>
         </fieldset>
 
+        <div className="field ha-total">
+          <span className="field-label">Order total</span>
+          <span className="order-total">
+            ${totalAmount.toFixed(2)}
+          </span>
+        </div>
 
+        {/* Row 2: Order date · Collection · Ship window */}
+        <label className="ha-date">
+          Order date
+          <input type="date" value={form.orderDate} onChange={(e) => setField('orderDate', e.target.value)} />
+        </label>
 
-        <label>
+        <label className="ha-season">
+          Collection / Season
+          <select value={season} onChange={(e) => onSeasonChange(e.target.value)} required>
+            <option value="">Select a collection…</option>
+            {seasons.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.code} — {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="ha-ship">
           Ship Window
           <select
             value={form.shipWindow}
@@ -92,7 +92,7 @@ export default function OrderHeader({
         {form.representativeOk === false && (
           <fieldset className="inline-radios">
             <legend>
-              Is this your first order? <span className="req">*</span>
+              Is this your first order with Wooden Ships? <span className="req">*</span>
             </legend>
             <label>
               <input
