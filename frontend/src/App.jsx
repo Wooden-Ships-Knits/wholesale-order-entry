@@ -55,6 +55,7 @@ export default function App() {
   const [shipTo, setShipToState] = useState({ email: '', street: '', cityState: '', zip: '', resaleTaxId: '', lat: null, lng: null })
   const [payment, setPaymentState] = useState({
     method: '',
+    directType: '',
     approvalBeforeCharge: null,
     cardNumber: '',
     cardName: '',
