@@ -24,7 +24,7 @@ from typing import Any
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
-from backend.app.config import settings
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,9 @@ RANGE_COLUMNS = "B:Q"
 _lock = threading.Lock()
 _service: Any = None
 
-_CACHE_TTL_SECONDS = 300
+# Short TTL so a strikethrough edit in the sheet shows up on the form within a
+# minute, not five. The sheet is small, so refetching often is cheap.
+_CACHE_TTL_SECONDS = 60
 _cache: dict[str, tuple[float, Any]] = {}
 
 
