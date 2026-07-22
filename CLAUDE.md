@@ -78,12 +78,13 @@ POSTGRES_PASSWORD=
 POSTGRES_DB=woodenships
 DATABASE_URL=postgresql+psycopg://woodenships:${POSTGRES_PASSWORD}@db:5432/woodenships
 
-# Email
-SMTP_HOST=
+# Email (order copies + admin notice; blank host/user/pass = disabled)
+SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=
+SMTP_USER=wholesale@wooden-ships.com
 SMTP_PASS=
-ADMIN_EMAIL=orders@wooden-ships.com
+MAIL_FROM=wholesale@wooden-ships.com
+ADMIN_EMAIL=wholesale@wooden-ships.com
 
 # Conflict check (server-side Google key — NOT the browser key; IP-restrict it)
 GOOGLE_MAPS_SERVER_API_KEY=
