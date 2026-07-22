@@ -168,6 +168,7 @@ label select:focus {
 }
 /* Signature: what the buyer types appears in a handwritten-style font (matches
    the order PDF, which uses the bundled Dancing Script). */
+
 .signature-input {
   font-family: 'Dancing Script', cursive;
   font-size: 1.5rem !important;
