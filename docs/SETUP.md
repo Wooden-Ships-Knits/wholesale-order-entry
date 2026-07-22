@@ -222,7 +222,7 @@ Every successful submission writes a PDF to `./output/orders/` (host side of the
 WS-order-{season}-{buyer}-{YYYYMMDD}-{shortOrderId}.pdf
 ```
 
-**These PDFs contain full card details for manual processing.** The folder is git-ignored and never served by the web server — handle the files per card-data policy and delete them after processing.
+The folder is git-ignored and never served by the web server. The PDF renders the payment **method** only (e.g. "Card on file") — no card number, name, or CVV ever reaches the template (see `backend/app/pdf/template.html`), so the same PDF is safely emailed to the buyer/admin.
 
 ---
 
