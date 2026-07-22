@@ -158,6 +158,13 @@ label select:focus {
   margin-left: 2px;
 }
 
+.field-warning {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #b03a2e;
+  text-transform: none;
+  letter-spacing: 0;
 /* Signature: what the buyer types appears in a handwritten-style font (matches
    the order PDF, which uses the bundled Dancing Script). */
 .signature-input {
