@@ -41,6 +41,10 @@ There is **no price book ID** to configure — wholesale price books are found b
 
 This is the production-shaped setup: three containers — `nginx` (serves the built frontend + proxies `/api`), `backend` (FastAPI), `db` (PostgreSQL 16).
 
+> **Serving it over HTTPS on a domain?** See
+> [`deploy/https-and-domain.md`](deploy/https-and-domain.md) — host-nginx + Let's
+> Encrypt setup, GoDaddy DNS, CORS/Maps-key changes, and admin-over-HTTPS notes.
+
 ```bash
 # start (builds images the first time)
 docker compose up -d
