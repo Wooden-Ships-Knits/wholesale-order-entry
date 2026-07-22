@@ -95,7 +95,7 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo }) {
         <Field label="Street" value={billTo.street} onChange={(v) => setBillTo('street', v)} />
         <Field label="City / State" value={billTo.cityState} onChange={(v) => setBillTo('cityState', v)} />
         <Field label="Zip" value={billTo.zip} onChange={(v) => setBillTo('zip', v)} />
-        <Field label="Tel" value={billTo.tel} onChange={(v) => setBillTo('tel', v)} type="tel" placeholder="ex: (423) 240-9340" />
+        <Field label="Tel" value={billTo.tel} onChange={(v) => setBillTo('tel', v)} type="tel" placeholder="Example: (423) 240-9340" />
       </div>
       <div className="address-col">
         <div className="col-head">
