@@ -66,7 +66,7 @@ export default function App() {
   const [certOnFile, setCertOnFile] = useState(false)
   const [certFile, setCertFile] = useState(null)
   const [lookupNoMatch, setLookupNoMatch] = useState(false)
-  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false })
+  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false, orderCopy: false, orderCopyEmail: '' })
   const [internal, setInternalState] = useState({
     newOrReorder: '',
     accountStatus: '',

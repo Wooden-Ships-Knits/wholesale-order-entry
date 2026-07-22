@@ -31,10 +31,10 @@ export default function EmailDraftModal({ draft, onClose }) {
         className="conflict-modal email-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Conflict email draft"
+        aria-label={draft.title || 'Email draft'}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2>Conflict email draft</h2>
+        <h2>{draft.title || 'Email draft'}</h2>
         <p className="conflict-modal-note">
           Nothing is sent from here — review, edit, then copy it or open it in your mail app.
         </p>
