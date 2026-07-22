@@ -4,12 +4,8 @@ Content builders return (subject, body); orchestrators attach the card-free
 order PDF and delegate transport to app.email.mailer. schedule_order_emails is
 the single entry point the orders router calls after commit.
 """
-import logging
-
 from app.config import settings
 from app.email import mailer
-
-logger = logging.getLogger(__name__)
 
 
 def _summary(ctx: dict) -> str:
