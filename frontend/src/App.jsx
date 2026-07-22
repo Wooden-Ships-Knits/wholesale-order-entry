@@ -215,10 +215,22 @@ export default function App() {
   async function onSubmit(e) {
     e.preventDefault()
     const problems = [...minimums.errors]
+    if (terms.orderCopy && !terms.orderCopyEmail) problems.push('Please enter an email for the order copy.')
     if (totalPieces === 0) problems.unshift('No items entered yet.')
+    // Required order-header fields (marked * on the form).
+    if (!season) problems.push('Please select a collection / season.')
+    if (!form.orderDate) problems.push('Order date is required.')
+    if (!form.shipWindow) problems.push('Please select a ship window.')
     if (form.representativeOk === null) problems.push('Please select who is filling in this form.')
     if (form.representativeOk === false && form.firstOrder === null)
       problems.push('Please tell us whether this is your first order.')
+    // Internal Use fields are only shown (and only required) for a rep.
+    if (form.representativeOk === true) {
+      if (!internal.newOrReorder) problems.push('Internal Use: choose New or reorder.')
+      if (!internal.accountStatus) problems.push('Internal Use: choose New account or Existing.')
+      if (!internal.campaign) problems.push('Internal Use: choose a Campaign.')
+      if (!internal.orderWrittenBy) problems.push('Internal Use: select who the order was written by.')
+    }
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!terms.signatureName) problems.push('Signature is required.')
     if (!terms.accepted) problems.push('You must accept the Order Policies.')

@@ -48,12 +48,12 @@ export default function OrderHeader({
 
         {/* Row 2: Order date · Collection · Ship window */}
         <label className="ha-date">
-          Order date
+          Order date<span className="req">*</span>
           <input type="date" value={form.orderDate} onChange={(e) => setField('orderDate', e.target.value)} />
         </label>
 
         <label className="ha-season">
-          Collection / Season
+          Collection / Season<span className="req">*</span>
           <select value={season} onChange={(e) => onSeasonChange(e.target.value)} required>
             <option value="">Select a collection…</option>
             {seasons.map((s) => (
@@ -65,7 +65,7 @@ export default function OrderHeader({
         </label>
 
         <label className="ha-ship">
-          Ship Window
+          Ship Window<span className="req">*</span>
           <select
             value={form.shipWindow}
             onChange={(e) => setField('shipWindow', e.target.value)}
