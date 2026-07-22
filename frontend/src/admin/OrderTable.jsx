@@ -52,6 +52,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
           <tr>
             <th>Order ID</th>
             <th>Account Name</th>
+            <th>Order copy email</th>
             <th>Sales Territory</th>
             <th>Special Instruction</th>
             <th>PDF</th>
@@ -70,6 +71,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
                 <code>{o.shortId}</code>
               </td>
               <td>{o.accountName || <span className="unknown">—</span>}</td>
+              <td className="notes-cell" title={o.orderCopyEmail || ''}>
+                {o.orderCopyEmail || <span className="unknown">—</span>}
+              </td>
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               <td className="notes-cell" title={o.specialInstructions || ''}>
                 {o.specialInstructions || <span className="unknown">—</span>}

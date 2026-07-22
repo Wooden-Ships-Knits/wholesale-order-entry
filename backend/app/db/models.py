@@ -62,6 +62,8 @@ class Order(Base):
     signature_name: Mapped[str | None] = mapped_column(Text)
     signature_date: Mapped[date | None] = mapped_column(Date)
     terms_accepted: Mapped[bool | None] = mapped_column(Boolean)
+    # buyer opted to receive a copy of the order form at this address; null = no
+    order_copy_email: Mapped[str | None] = mapped_column(Text)
 
     # internal use
     new_or_reorder: Mapped[str | None] = mapped_column(Text)
