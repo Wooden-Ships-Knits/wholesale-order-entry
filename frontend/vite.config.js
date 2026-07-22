@@ -12,9 +12,10 @@ export default defineConfig({
     allowedHosts: ['.trycloudflare.com'],
     // Local dev only — in production nginx does this proxying
     proxy: {
-      // Local dev: the wholesale API is served by the nginx container on :80
-      // (:8080 on the host belongs to a different project).
-      '/api': 'http://localhost:80',
+      // Local dev: the wholesale API is served by the nginx container, which
+      // publishes on host :8082 (:80/:8080 belong to other projects — see the
+      // "align local port with VM" change in docker-compose.yml).
+      '/api': 'http://localhost:8082',
     },
   },
 })

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 
 from app.config import settings
 from app.geo import conflict
@@ -9,6 +9,7 @@ router = APIRouter()
 
 @router.get("/accounts/nearby")
 def nearby_accounts(
+    response: Response,
     lat: float = Query(..., ge=-90, le=90),
     lng: float = Query(..., ge=-180, le=180),
     k: int = Query(5, ge=1, le=25),
@@ -17,6 +18,10 @@ def nearby_accounts(
     """New-customer conflict check: the k nearest wholesale stockists to the
     given Ship To point, with drive times when Google is configured.
     conflict = any neighbor closer than maxMinutes (default from settings)."""
+    # Never reuse a cached result — the drive-time vs straight-line mode flips
+    # when the Google server key is (re)configured, and a stale response would
+    # keep showing "no drive times" after the key is fixed.
+    response.headers["Cache-Control"] = "no-store"
     return conflict.find_nearby(lat, lng, k, maxMinutes or settings.conflict_max_minutes)
 
 

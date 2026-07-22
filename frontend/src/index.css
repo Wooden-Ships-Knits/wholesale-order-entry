@@ -165,6 +165,11 @@ label select:focus {
   color: #b03a2e;
   text-transform: none;
   letter-spacing: 0;
+/* Signature: what the buyer types appears in a handwritten-style font (matches
+   the order PDF, which uses the bundled Dancing Script). */
+.signature-input {
+  font-family: 'Dancing Script', cursive;
+  font-size: 1.5rem !important;
 }
 
 fieldset.inline-radios {
@@ -733,16 +738,17 @@ button:hover {
 .admin-table th {
   background: #efece6;
   text-align: left;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border: 1px solid #d8d4cc;
-  padding: 0.4rem 0.5rem;
+  padding: 0.7rem 0.9rem;
 }
 .admin-table td {
   border: 1px solid #e2ded6;
-  padding: 0.45rem 0.5rem;
+  padding: 0.7rem 0.9rem;
   vertical-align: top;
+  line-height: 1.4;
 }
 .admin-table .sub {
   color: #888;

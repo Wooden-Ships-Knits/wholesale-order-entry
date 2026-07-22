@@ -27,6 +27,9 @@
     font-weight: bold;
   }
   .val { font-size: 9pt; }
+  /* Typed name rendered as a handwritten-style signature (font bundled in the
+     image via fonts-dancingscript). */
+  .signature { font-family: 'Dancing Script', cursive; font-size: 18pt; }
   .ctr { text-align: center; }
 
   /* masthead — the logo art is square with generous padding, so crop it to a
@@ -112,10 +115,10 @@
         {% if order.filled_by == "rep" %}Sales rep{% elif order.filled_by == "customer" %}Customer{% else %}—{% endif %}
       </span></td>
       <td><span class="lbl">Payment by</span><span class="val">
-        {% if order.payment_method == "link" %}Payment link{% elif order.payment_method == "card" %}Credit card{% else %}—{% endif %}
+        {% if order.payment_method == "direct" %}Buyer pays (link){% elif order.payment_method == "store" %}Card on file{% else %}—{% endif %}
       </span></td>
       <td><span class="lbl">Charge approval</span><span class="val">
-        {% if order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
+        {% if order.payment_method != "store" or order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
       </span></td>
     </tr>
   </table>
@@ -201,7 +204,7 @@
   <table class="grid sig-row">
     <tr>
       <td style="width:55%"><span class="lbl">Buyer's signature</span>
-        <span class="val">{{ order.signature_name or "—" }}</span></td>
+        <span class="signature">{{ order.signature_name or "—" }}</span></td>
       <td style="width:25%"><span class="lbl">Date</span>
         <span class="val">{{ order.signature_date or "—" }}</span></td>
       <td style="width:20%"><span class="lbl">Terms accepted</span>
