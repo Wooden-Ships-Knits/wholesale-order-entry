@@ -21,7 +21,7 @@ A web-based wholesale order form for Wooden Ships knit sweaters: products and bu
 - Salesforce: `simple-salesforce` with username + password + security token auth (re-auth on session expiry).
 - DB: PostgreSQL (own container); SQLAlchemy 2.0 + `psycopg` v3, Alembic migrations.
 - PDF: WeasyPrint (Jinja2 HTML template → PDF).
-- Email: `fastapi-mail` (SMTP), configurable recipients.
+- Email: stdlib `smtplib` (SMTP, sent via FastAPI BackgroundTasks — chosen over `fastapi-mail` because the submit flow is synchronous). Order copies to the buyer (opt-in) + an admin notice on every order; both from `wholesale@wooden-ships.com`.
 - **Containerized with Docker + Docker Compose** (`db`, `backend`, `nginx`). Deploy on the GCP VM via `docker compose up -d`.
 
 ## Directory conventions
@@ -78,12 +78,13 @@ POSTGRES_PASSWORD=
 POSTGRES_DB=woodenships
 DATABASE_URL=postgresql+psycopg://woodenships:${POSTGRES_PASSWORD}@db:5432/woodenships
 
-# Email
-SMTP_HOST=
+# Email (order copies + admin notice; blank host/user/pass = disabled)
+SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=
+SMTP_USER=wholesale@wooden-ships.com
 SMTP_PASS=
-ADMIN_EMAIL=orders@wooden-ships.com
+MAIL_FROM=wholesale@wooden-ships.com
+ADMIN_EMAIL=wholesale@wooden-ships.com
 
 # Conflict check (server-side Google key — NOT the browser key; IP-restrict it)
 GOOGLE_MAPS_SERVER_API_KEY=
@@ -141,7 +142,7 @@ uvicorn app.main:app --reload --port 8080
 - ~~X/L size~~ — decision 2026-07-14: form keeps 3 size columns; X/L SKUs are not orderable on the web form.
 - ~~Email lookup field~~ — confirmed: `ContactBuyingEmail__c` is the canonical lookup key.
 - ~~Account discounts~~ — confirmed: form always shows price-book prices; discounts handled by admin.
-- Admin email recipient(s).
+- ~~Admin email recipient(s)~~ — confirmed 2026-07-22: `wholesale@wooden-ships.com` (reps' orders already land there; it's also the From address).
 - SKU definition for the "2 pcs per SKU" rule.
 - SMTP provider.
 - Which seasons to sell right now — `GET /api/seasons` is hardcoded to the 2 most recent (2026-07-16).

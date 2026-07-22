@@ -118,7 +118,10 @@ flowchart LR
 
 The endpoint **never fails because Google is down** — it degrades to straight-line mode and says so in `mode`, so a caller can always distinguish an approximate verdict from a real one.
 
-> **Current state:** the server key is configured — the API returns real drive times (`mode: "drive-time"`, verified 2026-07-17).
+> **Current state:** on the production VM the server slot was found holding a
+> *referrer-restricted* (browser) key, so Distance Matrix is denied and the API
+> falls back to straight-line — Drive (min) shows blank (2026-07-22). Fix: put an
+> IP-restricted server key in `GOOGLE_MAPS_SERVER_API_KEY` (see below).
 
 ## Setup: enabling real drive times
 
@@ -132,6 +135,42 @@ The endpoint **never fails because Google is down** — it degrades to straight-
 4. `docker compose up -d backend` to restart.
 
 **Cost:** about $5 per 1,000 destination lookups → ~10 destinations per check ≈ **$0.05 per new-customer check**. It only runs when someone calls the endpoint.
+
+### The two keys — do not cross them
+
+There are **two separate Google keys**, and using the wrong one is the most common reason drive times silently disappear:
+
+| Key | Env var | Restriction | Used by |
+|---|---|---|---|
+| Browser / Places | `VITE_GOOGLE_MAPS_API_KEY` (`frontend/.env`) | **HTTP referrers** (`https://<domain>/*`) | Maps JS + address autocomplete, in the browser |
+| Server / Distance Matrix | `GOOGLE_MAPS_SERVER_API_KEY` (backend `.env`) | **IP address** (the VM's outbound IP) | Drive-time conflict check, on the backend |
+
+Distance Matrix is a server-side API and **rejects referrer-restricted keys**. Pasting the browser key into `GOOGLE_MAPS_SERVER_API_KEY` produces `REQUEST_DENIED` / *"API keys with referer restrictions cannot be used with this API."* and the endpoint falls back to straight-line — so **Drive (min) is blank in the admin table** even though a key is present.
+
+### Troubleshooting: "Drive (min)" is missing
+
+Drive times only appear when `mode == "drive-time"` (`backend/app/geo/conflict.py`). If the column is blank, diagnose on the VM:
+
+```bash
+# 1. Confirm the failure and its reason (logged with the exception)
+docker compose logs backend --since 1h | grep -i "drive-time"
+
+# 2. Test the EXACT key the running backend uses (no copy-paste slips)
+KEY=$(docker compose exec -T backend printenv GOOGLE_MAPS_SERVER_API_KEY | tr -d '\r\n')
+echo "key length: ${#KEY}"
+curl -s "https://maps.googleapis.com/maps/api/distancematrix/json?origins=34.05,-118.24&destinations=34.10,-118.30&mode=driving&key=$KEY"
+```
+
+Read Google's `status` / `error_message`:
+
+| Response | Cause | Fix |
+|---|---|---|
+| `key length: 0` | Backend has no key | Set `GOOGLE_MAPS_SERVER_API_KEY` in `.env`, `docker compose up -d backend` |
+| `"referer restrictions cannot be used with this API"` | A **browser** (referrer) key is in the server slot | Create a dedicated **IP-restricted** key (see table above) |
+| `REQUEST_DENIED` + *"IP address is not authorized"* | Key's IP allowlist doesn't include the VM | Add the VM's IP (`curl -s https://api.ipify.org`) to the key's IP restrictions |
+| `REQUEST_DENIED` + *"not authorized to use this API"* | Distance Matrix API not enabled | Enable **Distance Matrix API** on the project |
+| `REQUEST_DENIED` + *"Billing"* | Billing disabled | Re-enable billing |
+| `"status":"OK"` with a `duration` | Key is fine | Was a transient error; reload the conflict tab |
 
 ## Where the code lives
 

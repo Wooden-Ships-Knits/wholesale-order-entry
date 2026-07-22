@@ -41,6 +41,10 @@ There is **no price book ID** to configure — wholesale price books are found b
 
 This is the production-shaped setup: three containers — `nginx` (serves the built frontend + proxies `/api`), `backend` (FastAPI), `db` (PostgreSQL 16).
 
+> **Serving it over HTTPS on a domain?** See
+> [`deploy/https-and-domain.md`](deploy/https-and-domain.md) — host-nginx + Let's
+> Encrypt setup, GoDaddy DNS, CORS/Maps-key changes, and admin-over-HTTPS notes.
+
 ```bash
 # start (builds images the first time)
 docker compose up -d
@@ -222,7 +226,7 @@ Every successful submission writes a PDF to `./output/orders/` (host side of the
 WS-order-{season}-{buyer}-{YYYYMMDD}-{shortOrderId}.pdf
 ```
 
-**These PDFs contain full card details for manual processing.** The folder is git-ignored and never served by the web server — handle the files per card-data policy and delete them after processing.
+The folder is git-ignored and never served by the web server. The PDF renders the payment **method** only (e.g. "Card on file") — no card number, name, or CVV ever reaches the template (see `backend/app/pdf/template.html`), so the same PDF is safely emailed to the buyer/admin.
 
 ---
 

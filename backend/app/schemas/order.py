@@ -9,7 +9,7 @@ import binascii
 from datetime import date
 from pathlib import PurePosixPath
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -92,6 +92,14 @@ class Terms(CamelModel):
     signature_name: str = ""
     signature_date: date | None = None
     accepted: bool = False
+    order_copy: bool = False
+    order_copy_email: EmailStr | None = None
+
+    @model_validator(mode="after")
+    def _require_copy_email(self) -> "Terms":
+        if self.order_copy and not self.order_copy_email:
+            raise ValueError("order_copy_email is required when order_copy is set")
+        return self
 
 
 class Internal(CamelModel):
