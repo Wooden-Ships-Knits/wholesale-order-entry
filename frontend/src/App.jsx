@@ -47,6 +47,7 @@ export default function App() {
     partShipOk: null,
     representativeOk: null,
     firstOrder: null,
+    accountName: '', // the store/account (distinct from the Bill To buyer person)
     sfAccountId: null,
     salesTerritory: null,
     specialInstructions: null,
@@ -146,12 +147,13 @@ export default function App() {
   function applyAccount(m) {
     setForm((p) => ({
       ...p,
+      accountName: m.name || '',
       sfAccountId: m.accountId,
       salesTerritory: m.salesTerritory || null,
       specialInstructions: m.specialInstructions || null,
     }))
     setBillToState({
-      buyerName: m.name || '',
+      buyerName: '',
       street: m.billTo.street || '',
       cityState: m.billTo.cityState || '',
       zip: m.billTo.zip || '',
@@ -219,6 +221,7 @@ export default function App() {
     if (totalPieces === 0) problems.unshift('No items entered yet.')
     // Required order-header fields (marked * on the form).
     if (!season) problems.push('Please select a collection / season.')
+    if (!form.accountName.trim()) problems.push('Account name is required.')
     if (!form.orderDate) problems.push('Order date is required.')
     if (!form.shipWindow) problems.push('Please select a ship window.')
     if (form.representativeOk === null) problems.push('Please select who is filling in this form.')
@@ -273,6 +276,7 @@ export default function App() {
       // Customer's own "is this your first order?" answer — the customer-side
       // equivalent of the rep's Internal Use "New account" radio.
       firstOrder: form.firstOrder,
+      accountName: form.accountName,
       sfAccountId: form.sfAccountId,
       salesTerritory: form.salesTerritory,
       specialInstructions: form.specialInstructions,
@@ -343,7 +347,12 @@ export default function App() {
         />
       )}
       
-      <BuyerLookup onSelect={applyAccount} onResult={(m) => setLookupNoMatch(m.length === 0)} />
+      <BuyerLookup
+        onSelect={applyAccount}
+        onResult={(m) => setLookupNoMatch(m.length === 0)}
+        accountName={form.accountName}
+        setAccountName={(v) => setField('accountName', v.toUpperCase())}
+      />
       <Addresses billTo={billTo} shipTo={shipTo} setBillTo={setBillTo} setShipTo={setShipTo} />
 
       <ProductLines

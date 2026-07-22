@@ -74,7 +74,7 @@ def _row(o: Order) -> dict:
         "shortId": str(o.id)[:8],
         "createdAt": o.created_at.isoformat() if o.created_at else None,
         "seasonCode": o.season_code,
-        "accountName": o.buyer_name,
+        "accountName": o.account_name,
         "salesTerritory": o.sales_territory,
         "specialInstructions": o.special_instructions,
         "shipEmail": o.ship_email,

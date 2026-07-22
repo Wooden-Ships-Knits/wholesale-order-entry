@@ -128,6 +128,8 @@ class OrderSubmission(CamelModel):
     first_order: bool | None = None
     notes: str = ""
     sf_account_id: str | None = None
+    # The store / account this order is for (distinct from the Bill To buyer).
+    account_name: str = ""
     # Account.SalesTerritory__c, carried from the buyer lookup; null if unmatched.
     sales_territory: str | None = None
     # Account.Special_Instructions__c, carried from the buyer lookup.
