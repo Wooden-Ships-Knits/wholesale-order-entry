@@ -158,6 +158,15 @@ label select:focus {
   margin-left: 2px;
 }
 
+.field-warning {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #b03a2e;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 fieldset.inline-radios {
   border: none;
   margin: 0;
