@@ -239,6 +239,11 @@ label.check input {
   margin-top: 0.5rem;
 }
 
+/* space between the lookup row and the Account Name field below it */
+.buyer-lookup > label {
+  margin-top: 1.25rem;
+}
+
 /* ------------------------------------------------------------ addresses */
 .addresses {
   display: grid;
