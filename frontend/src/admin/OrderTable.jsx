@@ -26,9 +26,22 @@ export default function OrderTable({ orders, onChanged, onError }) {
   }
 
   // Request a tax-exemption certificate from a new account that didn't upload
-  // one. Opens a blank draft — subject / body / recipient are filled in by hand.
-  function requestTaxCert() {
-    setDraft({ to: '', subject: '', body: '', title: 'Tax certificate request' })
+  // one. Recipient is left blank (the rep's email is filled in by hand).
+  function requestTaxCert(order) {
+    const name = order.accountName || order.buyerName || 'your store'
+    setDraft({
+      to: '',
+      subject: `New Account Info Required - ${name}`,
+      body:
+        'Hi Wooden Ships Retailer,\n\n' +
+        'Thank you for your support as a new Wooden Ships Retailer! We so appreciate your support.\n\n' +
+        'Please note that a copy of your Resale Certificate is required to complete your status as a ' +
+        'Wooden Ships Retailer. Please reply to this email with your state-issued Sales Tax Exemption ' +
+        'form as soon as possible.\n\n' +
+        'Best,\n' +
+        'Wooden Ships',
+      title: 'Tax certificate request',
+    })
   }
 
   async function decide(order, status) {
@@ -107,7 +120,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   </a>
                 ) : o.isNewAccount ? (
                   /* new account, no cert uploaded → offer to request one */
-                  <button type="button" className="chip" onClick={requestTaxCert}>
+                  <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
                     Generate email
                   </button>
                 ) : (

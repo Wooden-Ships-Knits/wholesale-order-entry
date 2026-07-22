@@ -37,11 +37,13 @@
   /* The cell spans both masthead rows, so it is taller than the art; centring
      it vertically puts the wordmark in the middle of the dark block instead of
      pinning it to the top (the matching background hides where the art ends). */
-  .logo-cell { background: #4a4a4a; width: 21%; padding: 0; vertical-align: middle; }
+  /* padding-top nudges the wordmark down toward the optical centre — WeasyPrint
+     doesn't vertically centre a rowspan cell reliably, so we do it by hand. */
+  .logo-cell { background: #4a4a4a; width: 21%; padding: 12pt 0 0; vertical-align: middle; }
   .logo-cell img { display: block; width: 100%; height: 40pt; object-fit: cover; }
   /* vertical-align beats the .grid td default of top, centring SEASON/YEAR
      against the two-row masthead. */
-  .season-cell { background: #b8b5ae; text-align: right; width: 13%; vertical-align: middle; }
+  .season-cell { background: #b8b5ae; text-align: right; width: 13%; vertical-align: middle; padding-top: 12pt; }
   .season-cell .season { font-size: 14pt; font-weight: bold; line-height: 1.05; }
 
   /* info panel */
@@ -187,15 +189,13 @@
       </td>
       <td style="width:30%">
         <h3>Tax exemption certificate</h3>
-        <div class="ack">{{ "☑" if order.cert_required_ack else "☐" }}
-          <span class="hl">Rep has notified account that a copy of state-issued tax exemption certificate is required</span></div>
-        <div class="ack">{{ "☑" if order.cert_sending_ack else "☐" }}
-          <span class="hl">Account confirms sending certificate</span> <em>(orders will not be processed without this)</em></div>
         <div class="ack">{{ "☑" if order.cert_on_file else "☐" }} <strong>Certificate on file</strong>
-          <em>(internal use only)</em></div>
-        {% if order.cert_filename %}
-        <div style="font-size:7pt; margin-top:3pt;">Uploaded: {{ order.cert_filename }}</div>
-        {% endif %}
+          <em>(from Salesforce)</em></div>
+        <div class="ack">
+          {% if order.cert_filename %}☑ Uploaded with this order:<br>
+          <span style="font-size:7pt;">{{ order.cert_filename }}</span>
+          {% else %}☐ No certificate uploaded with this order{% endif %}
+        </div>
       </td>
     </tr>
   </table>
