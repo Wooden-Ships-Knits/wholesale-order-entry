@@ -16,12 +16,19 @@ export default function OrderTable({ orders, onChanged, onError }) {
   async function draftEmail(order) {
     setDrafting(order.id)
     try {
-      setDraft(await getConflictEmail({ orderId: order.id }))
+      const d = await getConflictEmail({ orderId: order.id })
+      setDraft({ ...d, title: 'Conflict email draft' })
     } catch (err) {
       onError(err.message)
     } finally {
       setDrafting(null)
     }
+  }
+
+  // Request a tax-exemption certificate from a new account that didn't upload
+  // one. Opens a blank draft — subject / body / recipient are filled in by hand.
+  function requestTaxCert() {
+    setDraft({ to: '', subject: '', body: '', title: 'Tax certificate request' })
   }
 
   async function decide(order, status) {
@@ -94,6 +101,11 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   <a href={certUrl(o.id)} target="_blank" rel="noreferrer">
                     Open
                   </a>
+                ) : o.isNewAccount ? (
+                  /* new account, no cert uploaded → offer to request one */
+                  <button type="button" className="chip" onClick={requestTaxCert}>
+                    Generate email
+                  </button>
                 ) : (
                   <span className="unknown">—</span>
                 )}

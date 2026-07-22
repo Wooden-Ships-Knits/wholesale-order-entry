@@ -44,7 +44,7 @@ export default function TermsSignature({ terms, setTerms }) {
       
       <div className="signature-grid">
         <label>
-          Buyer's signature (type your full name)
+          Buyer's signature (type your full name)<span className="req">*</span>
           <input
             type="text"
             className="signature-input"
@@ -71,6 +71,7 @@ export default function TermsSignature({ terms, setTerms }) {
         />
         <span>I have read and accept the Order Policies.<span className="req">*</span></span>
       </label>
+
       <label className="check">
         <input
           type="checkbox"
@@ -79,6 +80,27 @@ export default function TermsSignature({ terms, setTerms }) {
         />
         <span>I confirm all the order information is correct.<span className="req">*</span></span>
       </label>
+
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={terms.orderCopy}
+            onChange={(e) => setTerms('orderCopy', e.target.checked)}
+          />
+        <span>I would like to receive a copy of this order form.</span>
+      </label> 
+
+      {terms.orderCopy && (
+        <label className="span2">
+          Email address for order copy<span className="req">*</span>
+          <input
+            type="email"
+            value={terms.orderCopyEmail}
+            onChange={(e) => setTerms('orderCopyEmail', e.target.value)}
+          />
+        </label>
+      )}
+
     </section>
   )
 }
