@@ -42,5 +42,23 @@ class Settings(BaseSettings):
     # Set false only for local http dev; cookies are Secure in production.
     session_cookie_secure: bool = True
 
+    # Outbound email (order copies + admin notice). Gmail/Workspace SMTP.
+    # Blank host/user/pass = mail disabled: the app logs a warning and skips
+    # sending, orders still succeed. See app/email/mailer.py.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_pass: str = ""
+    mail_from: str = ""  # From address; falls back to smtp_user when blank
+    admin_email: str = "wholesale@wooden-ships.com"
+
+    @property
+    def mail_configured(self) -> bool:
+        return bool(self.smtp_host and self.smtp_user and self.smtp_pass)
+
+    @property
+    def mail_sender(self) -> str:
+        return self.mail_from or self.smtp_user
+
 
 settings = Settings()
