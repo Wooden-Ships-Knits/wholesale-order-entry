@@ -241,6 +241,7 @@ def submit_order(
         signature_name=payload.terms.signature_name,
         signature_date=payload.terms.signature_date,
         terms_accepted=payload.terms.accepted,
+        order_copy_email=str(payload.terms.order_copy_email) if payload.terms.order_copy_email else None,
         new_or_reorder=payload.internal.new_or_reorder,
         account_status=payload.internal.account_status,
         is_new_account=_is_new_account(payload),

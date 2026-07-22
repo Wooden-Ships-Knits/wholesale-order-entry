@@ -75,6 +75,7 @@ def _row(o: Order) -> dict:
         "createdAt": o.created_at.isoformat() if o.created_at else None,
         "seasonCode": o.season_code,
         "accountName": o.buyer_name,
+        "orderCopyEmail": o.order_copy_email,
         "salesTerritory": o.sales_territory,
         "specialInstructions": o.special_instructions,
         "shipEmail": o.ship_email,
