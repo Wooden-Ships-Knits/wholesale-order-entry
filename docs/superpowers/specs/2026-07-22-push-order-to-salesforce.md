@@ -21,7 +21,7 @@ the status past Draft.
 |---|---|
 | `kugo2p__Account__c` | `sf_account_id` |
 | `kugo2p__Pricebook2Id__c` | the season's wholesale price book (already resolved) |
-| `Written_By__c` | `order_written_by` (picklist value) |
+| `Written_By__c` | `order_written_by` (rep orders only) — **leave empty for direct/customer orders** (field is nillable; decision 2026-07-22) |
 | `kugo2p__BillToName__c` | `account_name` |
 | `Start_Ship_Date__c` | parse from the ship-window string (e.g. `"8/1-30"` → `2026-08-01`) |
 | `kugo2p__Warehouse__c` | **`a0p900000008hZlAAI` (`000 - Bali`)** — see Warehouse below |
