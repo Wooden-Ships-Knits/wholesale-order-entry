@@ -70,3 +70,25 @@ def test_cert_file_rejects_oversize():
 def test_cert_file_rejects_invalid_base64():
     with pytest.raises(ValidationError):
         _sub(taxExemption={"certFile": {"name": "cert.pdf", "contentBase64": "not@base64!!"}})
+
+
+def test_order_copy_defaults_off_for_old_payloads():
+    sub = _sub()
+    assert sub.terms.order_copy is False
+    assert sub.terms.order_copy_email is None
+
+
+def test_order_copy_with_email_parses_from_camel_case():
+    sub = _sub(terms={"orderCopy": True, "orderCopyEmail": "cust@store.com"})
+    assert sub.terms.order_copy is True
+    assert sub.terms.order_copy_email == "cust@store.com"
+
+
+def test_order_copy_true_requires_an_email():
+    with pytest.raises(ValidationError):
+        _sub(terms={"orderCopy": True})
+
+
+def test_order_copy_true_rejects_invalid_email():
+    with pytest.raises(ValidationError):
+        _sub(terms={"orderCopy": True, "orderCopyEmail": "not-an-email"})
