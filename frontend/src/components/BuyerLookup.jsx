@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { lookupAccounts } from '../api'
 
-export default function BuyerLookup({ onSelect, onResult }) {
+export default function BuyerLookup({ onSelect, onResult, accountName, setAccountName }) {
   const [query, setQuery] = useState('')
   const [matches, setMatches] = useState(null)
   const [status, setStatus] = useState('')
@@ -30,15 +30,15 @@ export default function BuyerLookup({ onSelect, onResult }) {
 
   return (
     <section className="section buyer-lookup">
-      <h2>Find your account</h2>
+      <h2>Account</h2>
       <div className="lookup-row">
         <label>
-          Email or Account Name
+          Find your Account
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="you@yourstore.com or your store name"
+            placeholder="'you@yourstore.com' or 'your store name'"
           />
         </label>
         <button type="button" onClick={search}>
@@ -46,6 +46,17 @@ export default function BuyerLookup({ onSelect, onResult }) {
         </button>
       </div>
       {status && <p className="lookup-status">{status}</p>}
+
+      <label>
+        Account Name (store)<span className="req">*</span>
+        <input
+          type="text"
+          value={accountName}
+          onChange={(e) => setAccountName(e.target.value)}
+          autoComplete="organization"
+          placeholder="The store / account this order is for"
+        />
+      </label>
       {matches && matches.length > 1 && (
         <select
           className="match-select"

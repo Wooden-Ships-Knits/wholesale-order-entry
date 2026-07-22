@@ -12,6 +12,7 @@ def _order(**over):
         created_at=datetime.now(timezone.utc),
         season_code="F26",
         buyer_name="A Pied",
+        account_name="A Pied Boutique",
         order_copy_email="cust@store.com",
         sales_territory=None,
         special_instructions=None,

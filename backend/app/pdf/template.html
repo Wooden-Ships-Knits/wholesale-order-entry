@@ -126,8 +126,8 @@
   <!-- ══════════════════════ bill to / ship to ══════════════════════ -->
   <table class="grid">
     <tr>
-      <td style="width:50%"><span class="lbl">Bill to</span><span class="val">{{ order.buyer_name or "—" }}</span></td>
-      <td style="width:50%"><span class="lbl">Ship to</span><span class="val">{{ order.buyer_name or "—" }}</span></td>
+      <td style="width:50%"><span class="lbl">Bill to</span><span class="val">{{ order.account_name or order.buyer_name or "—" }}</span></td>
+      <td style="width:50%"><span class="lbl">Ship to</span><span class="val">{{ order.account_name or order.buyer_name or "—" }}</span></td>
     </tr>
     <tr>
       <td><span class="lbl">Street</span><span class="val">{{ order.bill_street or "—" }}</span></td>

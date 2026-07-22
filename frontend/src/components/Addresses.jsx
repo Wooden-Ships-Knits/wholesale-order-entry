@@ -79,7 +79,12 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo }) {
         <div className="col-head">
           <h2>Bill To</h2>
         </div>
-        <Field label="Buyer name" value={billTo.buyerName} onChange={(v) => setBillTo('buyerName', v)} />
+        <Field
+          label="Buyer name"
+          value={billTo.buyerName}
+          onChange={(v) => setBillTo('buyerName', v)}
+          autoComplete="name"
+        />
         <AddressMap
           lat={billTo.lat}
           lng={billTo.lng}

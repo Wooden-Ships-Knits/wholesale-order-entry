@@ -78,6 +78,8 @@ class Order(Base):
     sf_account_id: Mapped[str | None] = mapped_column(Text)
     # Account.SalesTerritory__c at order time; null for new/unmatched accounts.
     sales_territory: Mapped[str | None] = mapped_column(Text)
+    # The store / account name (distinct from buyer_name, the Bill To person).
+    account_name: Mapped[str | None] = mapped_column(Text)
     # Account.Special_Instructions__c at order time; null for new/unmatched.
     special_instructions: Mapped[str | None] = mapped_column(Text)
 
