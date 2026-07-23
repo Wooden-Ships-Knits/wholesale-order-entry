@@ -109,7 +109,8 @@ _WINDOW_RE = re.compile(r"^\d{1,2}/\d{1,2}-\d{1,2}$")
 # is a comma-separated list of 2-letter US state codes (e.g. "AK,AZ,NE,NV"),
 # sometimes mixed with descriptive text ("DC Metro/Suburb, DE, MD, NJ, PA") —
 # so we pull out standalone 2-letter codes and keep only real US states.
-TERRITORY_RANGE = "A:C"
+TERRITORY_RANGE = "REGION!A:C"
+REPS_EMAIL = "Email!A:E"
 _STATE_CODE_RE = re.compile(r"\b[A-Z]{2}\b")
 US_STATE_CODES = frozenset(
     "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS "
