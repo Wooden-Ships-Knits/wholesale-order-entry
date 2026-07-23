@@ -18,6 +18,7 @@ from app.db.models import Order
 from app.db.session import get_db
 from app.email import conflict_template
 from app.geo import conflict
+from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,11 @@ def conflict_email(payload: ConflictEmailRequest, db: Session = Depends(get_db))
 
     if not fields.get("state"):
         fields["state"] = _state_from(payload.address)
+
+    # Recipient = the affected rep, looked up by sales territory. No CC. Empty
+    # when the territory is unknown or has no rep — the admin fills it by hand.
+    if not fields.get("to_email"):
+        fields["to_email"] = sheets_client.rep_email_for_territory(fields.get("sales_territory"))
 
     max_minutes = payload.maxMinutes or settings.conflict_max_minutes
 

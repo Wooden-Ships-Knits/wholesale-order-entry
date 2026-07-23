@@ -21,6 +21,7 @@ from app.db.session import get_db
 from app.pdf import render as pdf_render
 from app.salesforce import client as sf_client
 from app.salesforce import mapping
+from app.sheets import client as sheets_client
 from fastapi import Depends
 
 logger = logging.getLogger(__name__)
@@ -79,6 +80,9 @@ def _row(o: Order) -> dict:
         "accountName": o.account_name,
         "orderCopyEmail": o.order_copy_email,
         "salesTerritory": o.sales_territory,
+        # Lead rep email for the territory (tax-cert CC / conflict recipient);
+        # null when territory is empty or has no rep row.
+        "repEmail": sheets_client.rep_email_for_territory(o.sales_territory),
         "specialInstructions": o.special_instructions,
         "shipEmail": o.ship_email,
         "totalQty": o.total_qty,
