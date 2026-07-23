@@ -155,7 +155,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
               </td>
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
-              <td className={o.hasConflict ? 'flag-red' : undefined}>
+              <td>
                 {o.hasConflict ? (
                   <div className="cert-missing">
                     <span>Yes</span>
