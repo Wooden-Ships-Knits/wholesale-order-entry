@@ -65,7 +65,7 @@ export default function AddressMap({ lat, lng, onPlaceSelect }) {
 
   return (
     <div className="address-map">
-      <input ref={inputRef} className="map-search" placeholder="Search a location…" />
+      <input ref={inputRef} className="map-search" placeholder="Type an address…" />
       {status && <span className="map-status">{status}</span>}
       {/* {lat != null && lng != null && (
         <div className="coords">
