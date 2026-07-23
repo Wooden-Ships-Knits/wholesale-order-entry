@@ -84,6 +84,18 @@ export default function OrderTable({ orders, onChanged, onError }) {
   }
 
   async function decide(order, status) {
+    // Accept now also pushes the order into Salesforce (Kugamon Draft), so
+    // confirm the live-org write first.
+    if (status === 'accepted') {
+      const name = order.accountName || 'this order'
+      if (
+        !window.confirm(
+          `Accept "${name}" and create the order in Salesforce (Kugamon Draft)?\n\n` +
+            'For a new account, create its Salesforce account first.',
+        )
+      )
+        return
+    }
     const reason =
       status === 'declined' ? window.prompt('Reason for declining (optional):') ?? '' : ''
     try {
@@ -211,9 +223,16 @@ export default function OrderTable({ orders, onChanged, onError }) {
                     </button>
                   </div>
                 ) : (
-                  <span className={`status ${o.status}`} title={o.statusReason || ''}>
-                    {o.status}
-                  </span>
+                  <div className="cert-missing">
+                    <span className={`status ${o.status}`} title={o.statusReason || ''}>
+                      {o.status}
+                    </span>
+                    {o.sfOrderNumber && (
+                      <span className="sf-created" title={o.sfOrderId}>
+                        {o.sfOrderNumber}
+                      </span>
+                    )}
+                  </div>
                 )}
               </td>
             </tr>

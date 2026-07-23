@@ -82,6 +82,54 @@ def create_account(fields: dict[str, Any]) -> str:
     return result["id"]
 
 
+def get_wholesale_pricebook_id(season_code: str) -> str | None:
+    """Id of the '<season> Wholesale' price book, or None if not found."""
+    target = mapping.pricebook_name_for_season(season_code)
+    for pb in list_wholesale_pricebooks():
+        if pb.get("Name") == target:
+            return pb["Id"]
+    return None
+
+
+def create_sales_order(header: dict[str, Any], lines: list[dict[str, Any]]) -> tuple[str, str | None]:
+    """Create a Kugamon sales order (header + lines) as a Draft.
+
+    Returns (order_id, order_number). Raises on any Salesforce error so Accept
+    can surface it — never fail silently on a live-org write. Header is created
+    first; each line links back to it. Kugamon auto-numbers Name and sets Status.
+    """
+    def _create(sobject: str, data: dict[str, Any]) -> dict[str, Any]:
+        try:
+            return getattr(_client(), sobject).create(data)
+        except SalesforceExpiredSession:
+            logger.info("Salesforce session expired — re-authenticating")
+            _reset_client()
+            return getattr(_client(), sobject).create(data)
+
+    result = _create(mapping.SALES_ORDER, header)
+    if not result.get("success"):
+        raise RuntimeError(f"Sales order header rejected: {result.get('errors')}")
+    order_id = result["id"]
+
+    for line in lines:
+        payload = {**line, mapping.SALES_ORDER_LINE_ORDER: order_id}
+        line_result = _create(mapping.SALES_ORDER_LINE, payload)
+        if not line_result.get("success"):
+            # Header already exists in SF as a Draft — report which line failed.
+            raise RuntimeError(
+                f"Order {order_id} created, but a line was rejected: {line_result.get('errors')}"
+            )
+
+    # Best-effort fetch of the auto-number Name (SO-...) for display.
+    number: str | None = None
+    try:
+        rows = query_all(f"SELECT Name FROM {mapping.SALES_ORDER} WHERE Id = '{soql_str(order_id)}'")
+        number = rows[0]["Name"] if rows else None
+    except Exception:
+        logger.warning("Could not read back the sales order number for %s", order_id)
+    return order_id, number
+
+
 def describe_fields(sobject: str) -> list[dict[str, Any]]:
     """Describe an sobject's fields, re-authenticating once on session expiry."""
     try:

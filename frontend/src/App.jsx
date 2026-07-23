@@ -389,10 +389,11 @@ export default function App() {
         shipTo={shipTo}
         setBillTo={setBillTo}
         setShipTo={setShipTo}
-        // "Search a location" only for a new account: a rep marking it New (or
-        // a lookup with no match), or a customer's first order. Same rule as
-        // isNewAccount, which also gates the conflict check.
-        showLocationSearch={isNewAccount}
+        // "Search a location" for reps, or a customer placing their first order.
+        showLocationSearch={
+          form.representativeOk === true ||
+          (form.representativeOk === false && form.firstOrder === true)
+        }
       />
 
       {isNewAccount && (form.salesTerritory || territoryStatus) && (
