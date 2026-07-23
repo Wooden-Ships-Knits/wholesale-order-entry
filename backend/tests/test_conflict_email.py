@@ -1,5 +1,12 @@
+from fastapi.testclient import TestClient
+
+from app.admin.security import require_admin
 from app.email import conflict_template
+from app.main import app
 from app.routers.conflict_email import _state_from
+
+app.dependency_overrides[require_admin] = lambda: None
+client = TestClient(app)
 
 NEIGHBORS = [
     {
@@ -66,6 +73,25 @@ def test_greeting_falls_back_to_rep_field_without_territory_delimiter():
 def test_greeting_team_fallback():
     d = conflict_template.build(neighbors=[])
     assert d["body"].startswith("Hi team,")
+
+
+def test_endpoint_prefers_account_name_over_buyer_name():
+    # No lat/lng -> no nearby lookup; store identity comes from accountName.
+    resp = client.post(
+        "/api/conflict-email",
+        json={"storeName": "Jane Smith", "accountName": "A Pied Boutique"},
+    )
+    assert resp.status_code == 200
+    d = resp.json()
+    assert "A Pied Boutique" in d["subject"]
+    assert "A Pied Boutique" in d["body"]
+    assert "Jane Smith" not in d["subject"]
+
+
+def test_endpoint_falls_back_to_buyer_name_without_account_name():
+    resp = client.post("/api/conflict-email", json={"storeName": "Jane Smith"})
+    assert resp.status_code == 200
+    assert "Jane Smith" in resp.json()["subject"]
 
 
 def test_no_conflicts_message():
