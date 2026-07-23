@@ -937,6 +937,12 @@ button:hover {
 .email-modal label {
   margin-top: 0.7rem;
 }
+.email-modal .optional {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  color: #8a8578;
+}
 .email-modal textarea {
   display: block;
   width: 100%;

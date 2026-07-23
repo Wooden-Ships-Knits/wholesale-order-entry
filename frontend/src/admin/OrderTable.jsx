@@ -65,13 +65,10 @@ export default function OrderTable({ orders, onChanged, onError }) {
           <tr>
             <th>Order ID</th>
             <th>Account Name</th>
-            <th>Order copy email</th>
             <th>Sales Territory</th>
             <th>Special Instruction</th>
-            <th>PDF</th>
             <th>New account</th>
             <th>Potential conflict</th>
-            <th>Conflict email</th>
             <th>Tax certificate</th>
             <th>Notes</th>
             <th>Decision</th>
@@ -81,36 +78,40 @@ export default function OrderTable({ orders, onChanged, onError }) {
           {orders.map((o) => (
             <tr key={o.id}>
               <td title={o.id}>
-                <code>{o.shortId}</code>
+                <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
+                  <code>{o.shortId}</code>
+                </a>
               </td>
               <td>{o.accountName || <span className="unknown">—</span>}</td>
-              <td className="notes-cell" title={o.orderCopyEmail || ''}>
-                {o.orderCopyEmail || <span className="unknown">—</span>}
-              </td>
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               <td className="notes-cell" title={o.specialInstructions || ''}>
                 {o.specialInstructions || <span className="unknown">—</span>}
               </td>
-              <td>
-                <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
-                  Open PDF
-                </a>
-              </td>
-              <YesNoCell value={o.isNewAccount} tone="green" />
-              <YesNoCell value={o.hasConflict} tone="red" />
-              <td>
-                {/* only offered where there is a conflict to explain */}
+              <td>{o.isNewAccount ? 'Yes' : 'No'}</td>
+              {/* Conflict + its email action combined into one cell.
+                  No conflict (or not yet checked) shows "No" — never blank. */}
+              <td className={o.hasConflict ? 'flag-red' : undefined}>
                 {o.hasConflict ? (
-                  <button
-                    type="button"
-                    className="chip"
-                    disabled={drafting === o.id}
-                    onClick={() => draftEmail(o)}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: '4px',
+                    }}
                   >
-                    {drafting === o.id ? 'Drafting…' : 'Generate email'}
-                  </button>
+                    <span>Yes</span>
+                    <button
+                      type="button"
+                      className="chip"
+                      disabled={drafting === o.id}
+                      onClick={() => draftEmail(o)}
+                    >
+                      {drafting === o.id ? 'Drafting…' : 'Send Email'}
+                    </button>
+                  </div>
                 ) : (
-                  <span className="unknown">—</span>
+                  'No'
                 )}
               </td>
               <td>
