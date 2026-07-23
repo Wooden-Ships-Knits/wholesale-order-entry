@@ -656,6 +656,57 @@ button:hover {
   }
 }
 
+/* Phone only (<=640px). iPad starts at 768px, so none of this touches iPad or
+   desktop — it refines the already-stacked small-screen layout for handsets. */
+@media (max-width: 640px) {
+  .order-form {
+    margin: 1rem auto 3rem;
+    padding: 1rem 0.85rem;
+  }
+
+  /* Header fields stack in natural source order (drop the 3-column areas). */
+  .header-grid {
+    grid-template-areas: none;
+    gap: 0.9rem;
+  }
+  .ha-total {
+    text-align: left;
+  }
+
+  /* 16px keeps iOS Safari from auto-zooming when a field gets focus. */
+  label input,
+  label select,
+  textarea,
+  .match-select,
+  .map-search,
+  .lookup-row input {
+    font-size: 16px;
+  }
+
+  /* Account lookup: input above its button instead of a cramped row. */
+  .lookup-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lookup-row button {
+    width: 100%;
+  }
+
+  /* Tighten the vertical gap once Bill To / Ship To stack. */
+  .addresses {
+    gap: 1.25rem;
+  }
+
+  /* Full-width, thumb-friendly submit; footer links wrap instead of overflow. */
+  .submit-btn {
+    width: 100%;
+  }
+  .form-footer {
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+  }
+}
+
 /* ============================================================ admin page */
 .admin {
   /* Wide table with many columns — use most of the screen, capped so it
