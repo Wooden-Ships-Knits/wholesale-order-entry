@@ -19,6 +19,8 @@ from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
 from app.pdf import render as pdf_render
+from app.salesforce import client as sf_client
+from app.salesforce import mapping
 from fastapi import Depends
 
 logger = logging.getLogger(__name__)
@@ -85,6 +87,9 @@ def _row(o: Order) -> dict:
         "isNewAccount": o.is_new_account,
         "hasConflict": o.has_conflict,
         "hasCertificate": bool(o.cert_filename),
+        # Salesforce Account link: created id (null = not created yet).
+        "sfAccountId": o.sf_account_id,
+        "sfAccountCreated": o.sf_account_created_at is not None,
         "notes": o.notes,
         "status": o.status,
         "statusReason": o.status_reason,
@@ -116,6 +121,41 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
     order.status_at = datetime.now(timezone.utc)
     db.commit()
     logger.info("Order %s marked %s", str(order.id)[:8], payload.status)
+    return _row(order)
+
+
+@router.post("/orders/{order_id}/create-account", dependencies=[AdminRequired])
+def create_account(order_id: str, db: Session = Depends(get_db)) -> dict:
+    """Create the Salesforce Business Account for a new-account order.
+
+    Idempotent: refuses if an account was already created (sf_account_id set),
+    so a double-click never makes two accounts. Live-org write — any Salesforce
+    rejection (duplicate/validation/permission) is surfaced, not swallowed.
+    """
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.sf_account_id:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A Salesforce account already exists for this order ({order.sf_account_id}).",
+        )
+    if not order.is_new_account:
+        raise HTTPException(status_code=400, detail="This order is not marked as a new account.")
+    if not (order.account_name or "").strip():
+        raise HTTPException(status_code=400, detail="This order has no account name to create.")
+
+    payload = mapping.build_account_create_payload(order)
+    try:
+        account_id = sf_client.create_account(payload)
+    except Exception as exc:  # duplicate rule, validation rule, permission, etc.
+        logger.exception("Salesforce account create failed for order %s", str(order.id)[:8])
+        raise HTTPException(status_code=502, detail=f"Salesforce create failed: {exc}")
+
+    order.sf_account_id = account_id
+    order.sf_account_created_at = datetime.now(timezone.utc)
+    db.commit()
+    logger.info("Created SF account %s for order %s", account_id, str(order.id)[:8])
     return _row(order)
 
 

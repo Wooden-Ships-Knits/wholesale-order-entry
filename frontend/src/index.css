@@ -778,6 +778,12 @@ button:hover {
   align-items: flex-start;
   gap: 0.3rem;
 }
+/* "Created ✓" once a Salesforce account has been made for the order */
+.sf-created {
+  color: #2e7d32;
+  font-weight: 600;
+  cursor: default;
+}
 /* Highlight only a "Yes": green for a new account, red for a conflict. */
 .admin-table td.flag-green {
   background: rgba(46, 125, 50, 0.12);

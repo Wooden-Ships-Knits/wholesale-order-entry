@@ -60,6 +60,28 @@ def query_all(soql: str) -> list[dict[str, Any]]:
         return _client().query_all(soql)["records"]
 
 
+def create_account(fields: dict[str, Any]) -> str:
+    """Create a Salesforce Account, re-authenticating once on session expiry.
+
+    Returns the new Account Id. Raises on any Salesforce error (duplicate rules,
+    validation rules, missing permission) so the caller can surface it — this is
+    a write to the live org, never fail silently.
+    """
+    def do() -> dict[str, Any]:
+        return _client().Account.create(fields)
+
+    try:
+        result = do()
+    except SalesforceExpiredSession:
+        logger.info("Salesforce session expired — re-authenticating")
+        _reset_client()
+        result = do()
+
+    if not result.get("success"):
+        raise RuntimeError(f"Salesforce rejected the account create: {result.get('errors')}")
+    return result["id"]
+
+
 def describe_fields(sobject: str) -> list[dict[str, Any]]:
     """Describe an sobject's fields, re-authenticating once on session expiry."""
     try:

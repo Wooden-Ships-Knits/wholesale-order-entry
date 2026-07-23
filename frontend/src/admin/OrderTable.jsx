@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { certUrl, getConflictEmail, pdfUrl, setOrderStatus } from './api'
+import { certUrl, createSfAccount, getConflictEmail, pdfUrl, setOrderStatus } from './api'
 import EmailDraftModal from '../components/EmailDraftModal'
 
 // Always render Yes / No (never blank) — null/undefined is treated as No.
@@ -12,6 +12,29 @@ function YesNoCell({ value, tone }) {
 export default function OrderTable({ orders, onChanged, onError }) {
   const [draft, setDraft] = useState(null)
   const [drafting, setDrafting] = useState(null) // id of the order being drafted
+  const [creating, setCreating] = useState(null) // id of the order whose SF account is being created
+
+  // Create the Salesforce Business Account for a new-account order. This is a
+  // live-org write, so confirm first; the backend is idempotent as a backstop.
+  async function createAccount(order) {
+    const name = order.accountName || 'this store'
+    if (
+      !window.confirm(
+        `Create a Salesforce Business Account for "${name}"?\n\n` +
+          'This writes to the live Salesforce org and cannot be undone from here.',
+      )
+    )
+      return
+    setCreating(order.id)
+    try {
+      await createSfAccount(order.id)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setCreating(null)
+    }
+  }
 
   async function draftEmail(order) {
     setDrafting(order.id)
@@ -68,6 +91,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <th>Sales Territory</th>
             <th>Special Instruction</th>
             <th>New account</th>
+            <th>Salesforce account</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
             <th>Notes</th>
@@ -88,6 +112,24 @@ export default function OrderTable({ orders, onChanged, onError }) {
                 {o.specialInstructions || <span className="unknown">—</span>}
               </td>
               <td>{o.isNewAccount ? 'Yes' : 'No'}</td>
+              <td>
+                {o.sfAccountId ? (
+                  <span className="sf-created" title={o.sfAccountId}>
+                    Created ✓
+                  </span>
+                ) : o.isNewAccount ? (
+                  <button
+                    type="button"
+                    className="chip"
+                    disabled={creating === o.id}
+                    onClick={() => createAccount(o)}
+                  >
+                    {creating === o.id ? 'Creating…' : 'Create account'}
+                  </button>
+                ) : (
+                  <span className="unknown">—</span>
+                )}
+              </td>
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
               <td className={o.hasConflict ? 'flag-red' : undefined}>
