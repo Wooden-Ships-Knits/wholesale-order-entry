@@ -658,7 +658,9 @@ button:hover {
 
 /* ============================================================ admin page */
 .admin {
-  max-width: 1200px;
+  /* Wide table with many columns — use most of the screen, capped so it
+     doesn't over-stretch on ultrawide monitors. */
+  max-width: min(1800px, 95vw);
   margin: 2rem auto;
   padding: 0 1.5rem;
 }
