@@ -2,13 +2,6 @@ import { useState } from 'react'
 import { certUrl, getConflictEmail, pdfUrl, setOrderStatus } from './api'
 import EmailDraftModal from '../components/EmailDraftModal'
 
-// null means unanswered / not yet checked — never render that as "No".
-// `tone` tints the cell only when the answer is Yes (green/red as given).
-function YesNoCell({ value, tone }) {
-  if (value === null || value === undefined) return <td><span className="unknown">—</span></td>
-  return <td className={value ? `flag-${tone}` : undefined}>{value ? 'Yes' : 'No'}</td>
-}
-
 export default function OrderTable({ orders, onChanged, onError }) {
   const [draft, setDraft] = useState(null)
   const [drafting, setDrafting] = useState(null) // id of the order being drafted
@@ -87,7 +80,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
               <td className="notes-cell" title={o.specialInstructions || ''}>
                 {o.specialInstructions || <span className="unknown">—</span>}
               </td>
-              <YesNoCell value={o.isNewAccount} tone="green" />
+              <td>{o.isNewAccount ? 'Yes' : 'No'}</td>
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
               <td className={o.hasConflict ? 'flag-red' : undefined}>
