@@ -14,10 +14,26 @@ GREETING_FALLBACK = "Hi team"
 _SEASON_RE = re.compile(r"[FS]\d{2}", re.IGNORECASE)
 
 
-def _first_name(name: str | None) -> str:
-    if not name:
-        return GREETING_FALLBACK
-    return f"Hi {name.strip().split()[0]}"
+def _rep_from_territory(territory: str | None) -> str | None:
+    """Rep name out of a Sales Territory value like "New England - Kitty Tally"
+    -> "Kitty Tally" (everything after the " - "). None when there is no such
+    delimiter, so the caller can fall back to the rep field."""
+    if not territory or " - " not in territory:
+        return None
+    name = territory.split(" - ", 1)[1].strip()
+    return name or None
+
+
+def _greeting(rep_name: str | None, sales_territory: str | None = None) -> str:
+    """"Hi <name>," line. Prefers the rep named in the Sales Territory field
+    (kept in full, e.g. "Hi Kitty Tally"); otherwise the first name from the
+    rep field; otherwise the team fallback."""
+    territory_rep = _rep_from_territory(sales_territory)
+    if territory_rep:
+        return f"Hi {territory_rep}"
+    if rep_name and rep_name.strip():
+        return f"Hi {rep_name.strip().split()[0]}"
+    return GREETING_FALLBACK
 
 
 def _season(order_name: str | None) -> str:
@@ -43,6 +59,7 @@ def build(
     *,
     store_name: str | None = None,
     rep_name: str | None = None,
+    sales_territory: str | None = None,
     state: str | None = None,
     neighbors: list[dict] | None = None,
     to_email: str | None = None,
@@ -68,7 +85,7 @@ def build(
     # One line per paragraph — the mail client wraps it. The bullet block is the
     # exception: its newlines are meaningful, so it is joined into one paragraph.
     paragraphs = [
-        f"{_first_name(rep_name)},",
+        f"{_greeting(rep_name, sales_territory)},",
         f"Please see the wholesale inquiry below from {store_phrase}.",
     ]
     if neighbors:
