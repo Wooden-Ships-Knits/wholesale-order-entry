@@ -159,7 +159,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
                 {o.hasConflict ? (
                   <div className="cert-missing">
                     <span>Yes</span>
-                    {sentConflict.has(o.id) ? (
+                    {o.conflictEmailSent || sentConflict.has(o.id) ? (
                       <span className="sf-created">Sent ✓</span>
                     ) : (
                       <button
@@ -185,7 +185,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   /* new account, no cert uploaded → show No + offer to request one */
                   <div className="cert-missing">
                     <span>No</span>
-                    {sentTaxCert.has(o.id) ? (
+                    {o.taxCertEmailSent || sentTaxCert.has(o.id) ? (
                       <span className="sf-created">Sent ✓</span>
                     ) : (
                       <button type="button" className="chip" onClick={() => requestTaxCert(o)}>

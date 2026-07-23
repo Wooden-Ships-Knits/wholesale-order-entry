@@ -30,6 +30,11 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
   const ccMissing = !cc.trim()
   const canSend = !toMissing && !ccMissing && !sending && !sent
 
+  // Tie this draft to an order so a successful send is recorded server-side
+  // (persistent "Sent ✓"). Tax-cert and conflict drafts carry different ids.
+  const orderId = draft.conflictOrderId || draft.taxCertOrderId || null
+  const kind = draft.conflictOrderId ? 'conflict' : draft.taxCertOrderId ? 'tax_cert' : null
+
   async function send() {
     const ccNote = cc.trim() ? ` (cc ${cc.trim()})` : ''
     if (!window.confirm(`Send this email to ${to.trim()}${ccNote}?`)) return
@@ -40,7 +45,7 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: to.trim(), cc: cc.trim(), subject, body }),
+        body: JSON.stringify({ to: to.trim(), cc: cc.trim(), subject, body, orderId, kind }),
       })
       if (!res.ok) {
         const b = await res.json().catch(() => ({}))

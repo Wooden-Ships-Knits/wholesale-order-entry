@@ -24,6 +24,8 @@ def _order(**over):
         cert_filename=None,
         sf_account_id=None,
         sf_account_created_at=None,
+        conflict_email_sent_at=None,
+        tax_cert_email_sent_at=None,
         notes=None,
         status="submitted",
         status_reason=None,
