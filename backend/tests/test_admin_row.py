@@ -22,6 +22,8 @@ def _order(**over):
         is_new_account=None,
         has_conflict=None,
         cert_filename=None,
+        sf_account_id=None,
+        sf_account_created_at=None,
         notes=None,
         status="submitted",
         status_reason=None,
