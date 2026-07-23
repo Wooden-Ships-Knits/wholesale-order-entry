@@ -19,12 +19,14 @@ def send_email(
     subject: str,
     body: str,
     attachments: list[tuple[str, bytes, str]] | None = None,
+    cc: str | None = None,
 ) -> bool:
-    """Send a plain-text email with optional attachments.
+    """Send a plain-text email with optional attachments and CC.
 
     attachments: list of (filename, data, mime_subtype), e.g.
-    ("WS-order.pdf", b"%PDF...", "pdf"). Returns True on send, False if SMTP is
-    not configured or any error occurs (both logged; never raises).
+    ("WS-order.pdf", b"%PDF...", "pdf"). cc: comma-separated address(es), added
+    as a Cc header so smtplib also delivers to them. Returns True on send, False
+    if SMTP is not configured or any error occurs (both logged; never raises).
     """
     if not settings.mail_configured:
         logger.warning("Email not sent to %s: SMTP is not configured", to)
@@ -33,6 +35,8 @@ def send_email(
     msg = EmailMessage()
     msg["From"] = settings.mail_sender
     msg["To"] = to
+    if cc:
+        msg["Cc"] = cc
     msg["Subject"] = subject
     msg.set_content(body)
     for filename, data, subtype in attachments or []:

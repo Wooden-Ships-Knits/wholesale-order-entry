@@ -107,7 +107,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
                       disabled={drafting === o.id}
                       onClick={() => draftEmail(o)}
                     >
-                      {drafting === o.id ? 'Drafting…' : 'Send Email'}
+                      {drafting === o.id ? 'Generating…' : 'Generate email'}
                     </button>
                   </div>
                 ) : (

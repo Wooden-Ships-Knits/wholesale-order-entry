@@ -41,6 +41,33 @@ def test_rep_facing_draft_lists_conflicts():
     assert body.endswith("Thanks!")
 
 
+def test_greeting_uses_rep_from_sales_territory():
+    # "New England - Kitty Tally" -> greet "Hi Kitty Tally" (full name),
+    # and it wins over the rep field.
+    d = conflict_template.build(
+        store_name="Some Store",
+        rep_name="Jason Miller",
+        sales_territory="New England - Kitty Tally",
+        neighbors=NEIGHBORS,
+    )
+    assert d["body"].startswith("Hi Kitty Tally,")
+
+
+def test_greeting_falls_back_to_rep_field_without_territory_delimiter():
+    # No " - " in the territory -> fall back to the rep field's first name.
+    d = conflict_template.build(
+        rep_name="Jason Miller",
+        sales_territory="New England",
+        neighbors=[],
+    )
+    assert d["body"].startswith("Hi Jason,")
+
+
+def test_greeting_team_fallback():
+    d = conflict_template.build(neighbors=[])
+    assert d["body"].startswith("Hi team,")
+
+
 def test_no_conflicts_message():
     d = conflict_template.build(store_name="New Store", rep_name="Jason", neighbors=[])
     assert "No nearby stockist conflicts were found" in d["body"]

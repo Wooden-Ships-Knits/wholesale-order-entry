@@ -937,11 +937,11 @@ button:hover {
 .email-modal label {
   margin-top: 0.7rem;
 }
-.email-modal .optional {
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 400;
-  color: #8a8578;
+/* Open-in-mail-app is disabled until the required CC is filled in. */
+.btn-link.disabled {
+  background: #b9b4aa;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 .email-modal textarea {
   display: block;
@@ -970,10 +970,30 @@ button:hover {
   background: #1a1a1a;
   color: #fff;
   text-decoration: none;
+  font: inherit;
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  border: none;
+  cursor: pointer;
 }
 .btn-link:hover {
   background: #3a3a36;
+}
+.btn-link.disabled,
+.btn-link:disabled {
+  background: #b9b4aa;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+/* Send result under the message field in the email draft modal. */
+.send-status {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+}
+.send-status.ok {
+  color: #1e7d34;
+}
+.send-status.err {
+  color: #b03a2e;
 }

@@ -14,6 +14,7 @@ from app.routers import (
     products,
     reps,
     seasons,
+    send_email,
     ship_windows,
 )
 
@@ -50,3 +51,4 @@ app.include_router(reps.router, prefix="/api")
 app.include_router(orders.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(conflict_email.router, prefix="/api")
+app.include_router(send_email.router, prefix="/api")

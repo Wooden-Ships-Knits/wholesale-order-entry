@@ -29,5 +29,8 @@ export const setOrderStatus = (id, status, reason = '') =>
 // the order table, or the store details from the conflict-check tab.
 export const getConflictEmail = (payload) => post('/api/conflict-email', payload)
 
+// Send a drafted email (To/Cc/Subject/Body) via the server's SMTP account.
+export const sendEmail = (payload) => post('/api/send-email', payload)
+
 export const pdfUrl = (id) => `/api/admin/orders/${id}/pdf`
 export const certUrl = (id) => `/api/admin/orders/${id}/certificate`

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
 /**
- * Popup showing the conflict email draft returned by POST /api/conflict-email.
- * The draft is editable — nothing is sent from here; the user copies it or
- * hands it to their own mail client.
+ * Popup showing an email draft (conflict-inquiry from POST /api/conflict-email,
+ * or a tax-certificate request). The draft is editable; "Send Mail" hands it to
+ * the server's SMTP account via POST /api/send-email. To and CC are required.
  */
 export default function EmailDraftModal({ draft, onClose }) {
   const [to, setTo] = useState(draft.to || '')
@@ -11,6 +11,9 @@ export default function EmailDraftModal({ draft, onClose }) {
   const [subject, setSubject] = useState(draft.subject || '')
   const [body, setBody] = useState(draft.body || '')
   const [copied, setCopied] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [sendError, setSendError] = useState('')
 
   async function copy() {
     try {
@@ -22,11 +25,34 @@ export default function EmailDraftModal({ draft, onClose }) {
     }
   }
 
-  // CC is optional — only add it to the mailto link when it's filled in.
-  const ccParam = cc.trim() ? `cc=${encodeURIComponent(cc.trim())}&` : ''
-  const mailto = `mailto:${encodeURIComponent(to)}?${ccParam}subject=${encodeURIComponent(
-    subject,
-  )}&body=${encodeURIComponent(body)}`
+  // To and CC are both required before the email can be sent.
+  const toMissing = !to.trim()
+  const ccMissing = !cc.trim()
+  const canSend = !toMissing && !ccMissing && !sending && !sent
+
+  async function send() {
+    const ccNote = cc.trim() ? ` (cc ${cc.trim()})` : ''
+    if (!window.confirm(`Send this email to ${to.trim()}${ccNote}?`)) return
+    setSending(true)
+    setSendError('')
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: to.trim(), cc: cc.trim(), subject, body }),
+      })
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}))
+        throw new Error(b.detail || `Send failed (${res.status})`)
+      }
+      setSent(true)
+    } catch (e) {
+      setSendError(e.message)
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <div className="conflict-modal-overlay" onClick={onClose}>
@@ -39,20 +65,27 @@ export default function EmailDraftModal({ draft, onClose }) {
       >
         <h2>{draft.title || 'Email draft'}</h2>
         <p className="conflict-modal-note">
-          Nothing is sent from here — review, edit, then copy it or open it in your mail app.
+          Review and edit the draft, then send it from wholesale@wooden-ships.com — or copy the text.
         </p>
 
         <label>
-          To
-          <input value={to} onChange={(e) => setTo(e.target.value)} />
+          To<span className="req">*</span>
+          <input
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            aria-required="true"
+          />
+          {toMissing && <span className="field-warning">To is required.</span>}
         </label>
         <label>
-          CC <span className="optional">(optional)</span>
+          CC<span className="req">*</span>
           <input
             value={cc}
             onChange={(e) => setCc(e.target.value)}
             placeholder="name@example.com, another@example.com"
+            aria-required="true"
           />
+          {ccMissing && <span className="field-warning">CC is required.</span>}
         </label>
         <label>
           Subject
@@ -63,16 +96,27 @@ export default function EmailDraftModal({ draft, onClose }) {
           <textarea rows="14" value={body} onChange={(e) => setBody(e.target.value)} />
         </label>
 
+        {sent && <p className="send-status ok">Email sent.</p>}
+        {sendError && <p className="send-status err">{sendError}</p>}
+
         <div className="conflict-modal-actions email-modal-actions">
           <button type="button" className="link-btn" onClick={onClose}>
-            Close
+            {sent ? 'Close' : 'Cancel'}
           </button>
           <button type="button" onClick={copy}>
             {copied ? 'Copied' : 'Copy'}
           </button>
-          <a className="btn-link" href={mailto}>
-            Open in mail app
-          </a>
+          <button
+            type="button"
+            className="btn-link"
+            onClick={send}
+            disabled={!canSend}
+            title={
+              toMissing || ccMissing ? 'Fill in the required To and CC fields first' : undefined
+            }
+          >
+            {sending ? 'Sending…' : sent ? 'Sent' : 'Send Mail'}
+          </button>
         </div>
       </div>
     </div>
