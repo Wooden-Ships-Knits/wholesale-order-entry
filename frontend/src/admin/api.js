@@ -25,6 +25,9 @@ export const getOrders = (statusFilter) =>
 export const setOrderStatus = (id, status, reason = '') =>
   post(`/api/admin/orders/${id}/status`, { status, reason })
 
+// Create the Salesforce Business Account for a new-account order (live write).
+export const createSfAccount = (id) => post(`/api/admin/orders/${id}/create-account`)
+
 // Draft of the "we already have a stockist nearby" email. Pass { orderId } from
 // the order table, or the store details from the conflict-check tab.
 export const getConflictEmail = (payload) => post('/api/conflict-email', payload)

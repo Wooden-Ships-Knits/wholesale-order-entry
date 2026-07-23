@@ -76,6 +76,9 @@ class Order(Base):
 
     # salesforce link
     sf_account_id: Mapped[str | None] = mapped_column(Text)
+    # Set when the SF Business Account for this new account was created from
+    # /admin (sf_account_id holds the created id). null = not yet created.
+    sf_account_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Account.SalesTerritory__c at order time; null for new/unmatched accounts.
     sales_territory: Mapped[str | None] = mapped_column(Text)
     # The store / account name (distinct from buyer_name, the Bill To person).

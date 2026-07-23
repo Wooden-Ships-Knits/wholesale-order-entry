@@ -60,6 +60,20 @@ SHIPPING_LAT = "ShippingLatitude"
 SHIPPING_LNG = "ShippingLongitude"
 NEARBY_ACCOUNT_FIELDS = ("Id", "Name", "ShippingCity", "ShippingState", SHIPPING_LAT, SHIPPING_LNG)
 
+# ------------------------------------------- Account create (new web accounts)
+# All confirmed against the org via describe on 2026-07-23. New wholesale stores
+# are BUSINESS accounts (person-account org, but a store is a business). Buyer
+# is a Contact on the account (ContactBuying__c / ContactBuyingEmail__c is a
+# non-createable rollup) — NOT created here; buyer details go into Description.
+BUSINESS_ACCOUNT_RECORD_TYPE_ID = "01290000000gohtAAA"
+TAX_ID_NUMBER = "Tax_ID_Number__c"
+AIR_VS_SEA = "AIR_VS_SEA__c"
+INTERNAL_REP = "Internal_Rep__c"  # lookup to User
+# Standing defaults for a new web account (constants, not collected on the form):
+INTERNAL_REP_USER_ID = "0052v00000jF9TGAA0"  # Christine Poveda (active User)
+AIR_VS_SEA_NEW_ACCOUNT = "New Account - review at 6 month anniversary"
+RANK_NEW_ACCOUNT = "C - $2,000+ / Monthly / All Mktg"
+
 ACCOUNT_FIELDS = (
     "Id",
     "Name",
@@ -210,6 +224,62 @@ def map_account(rec: dict[str, Any]) -> dict[str, Any]:
         "specialInstructions": rec.get(SPECIAL_INSTRUCTIONS),
         "certificateOnFile": _certificate_on_file(rec),
     }
+
+
+def _split_city_state(value: str | None) -> tuple[str, str]:
+    """'Los Angeles, CA' -> ('Los Angeles', 'CA'). No comma -> (value, '')."""
+    if not value:
+        return "", ""
+    if "," in value:
+        city, state = value.rsplit(",", 1)
+        return city.strip(), state.strip()
+    return value.strip(), ""
+
+
+def build_account_create_payload(order: Any) -> dict[str, Any]:
+    """Map a submitted (new-account) order to Salesforce Account create fields.
+
+    Business account: Name is the store, RecordType is Business, Type is
+    Wholesale. Store address == buyer address (first order's buyer is the store
+    owner). Only fields confirmed createable are set; ContactBuyingEmail__c is a
+    non-createable rollup, so the buyer's name/email/phone go into Description
+    for the team to create/link the Contact. Blank values are dropped so we
+    never overwrite org defaults with empty strings.
+    """
+    bill_city, bill_state = _split_city_state(order.bill_city_state)
+    ship_city, ship_state = _split_city_state(order.ship_city_state)
+
+    buyer_bits = [
+        bit
+        for bit in (
+            f"Buyer: {order.buyer_name}" if order.buyer_name else "",
+            f"Email: {order.ship_email}" if order.ship_email else "",
+            f"Phone: {order.tel}" if order.tel else "",
+        )
+        if bit
+    ]
+
+    payload: dict[str, Any] = {
+        "Name": (order.account_name or "").strip(),
+        "RecordTypeId": BUSINESS_ACCOUNT_RECORD_TYPE_ID,
+        ACCOUNT_TYPE: WHOLESALE_TYPE,  # "Type" = "Wholesale"
+        INTERNAL_REP: INTERNAL_REP_USER_ID,  # Christine Poveda
+        AIR_VS_SEA: AIR_VS_SEA_NEW_ACCOUNT,
+        RANK: RANK_NEW_ACCOUNT,
+        "BillingStreet": order.bill_street or "",
+        "BillingCity": bill_city,
+        "BillingState": bill_state,
+        "BillingPostalCode": order.bill_zip or "",
+        "ShippingStreet": order.ship_street or "",
+        "ShippingCity": ship_city,
+        "ShippingState": ship_state,
+        "ShippingPostalCode": order.ship_zip or "",
+        "Phone": order.tel or "",
+        TAX_ID_NUMBER: order.resale_tax_id or "",
+        SALES_TERRITORY: order.sales_territory or "",
+        "Description": " | ".join(buyer_bits),
+    }
+    return {k: v for k, v in payload.items() if v not in ("", None)}
 
 
 def group_products(entries: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, int]]:
