@@ -384,7 +384,17 @@ export default function App() {
         accountName={form.accountName}
         setAccountName={(v) => setField('accountName', v.toUpperCase())}
       />
-      <Addresses billTo={billTo} shipTo={shipTo} setBillTo={setBillTo} setShipTo={setShipTo} />
+      <Addresses
+        billTo={billTo}
+        shipTo={shipTo}
+        setBillTo={setBillTo}
+        setShipTo={setShipTo}
+        // "Search a location" for reps, or a customer placing their first order.
+        showLocationSearch={
+          form.representativeOk === true ||
+          (form.representativeOk === false && form.firstOrder === true)
+        }
+      />
 
       {isNewAccount && (form.salesTerritory || territoryStatus) && (
         <section className="section territory-auto">
