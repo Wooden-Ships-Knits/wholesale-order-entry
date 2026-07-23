@@ -42,7 +42,7 @@ export default function OrderHeader({
         <div className="field ha-total">
           <span className="field-label">Order total</span>
           <span className="order-total">
-            ${totalAmount.toFixed(2)}
+            ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
 

@@ -1,6 +1,24 @@
 # Push accepted order to Salesforce (Kugamon) — design
 
-**Status:** draft (discovery done, not built) · **Date:** 2026-07-22
+**Status:** BUILT 2026-07-23 (trigger = Accept) · not yet run against prod · **Date:** 2026-07-22
+
+## Built (2026-07-23)
+`POST /api/admin/orders/{id}/status` with `accepted` calls `_push_order_to_salesforce`
+→ `sf_client.create_sales_order(header, lines)`. Header first, then one line per
+size (product + qty only; Kugamon prices from the header price book). Created
+`kugo2p__SalesOrder__c` id + auto-number Name stored in `orders.sf_order_id` /
+`sf_order_number` (migration 0009). **Idempotent** (skips if `sf_order_id` set);
+**guards** on missing `sf_account_id` (create the account first) and missing
+price book; on any SF error it raises BEFORE flipping status, so the order stays
+actionable and the team can retry Accept. Confirm dialog on Accept. All header +
+line fields verified createable via describe 2026-07-23; `Name`/`Status`/totals
+left to Kugamon (not createable). Pricebook resolved live per season.
+
+**Remaining (live-behaviour, resolve on first sandbox/prod create):** does Kugamon
+auto-price + auto-total from the price book? Any trigger-forced fields? Known gap:
+if the header succeeds but a line is rejected, an orphan Draft is left in SF
+(error names the order id) — no auto-rollback in v1.
+
 
 When the monitoring team clicks **Accept** on an order in `/admin`, create the
 corresponding **Kugamon sales order** in Salesforce as a **Draft**. The team then
