@@ -68,7 +68,6 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <th>Order copy email</th>
             <th>Sales Territory</th>
             <th>Special Instruction</th>
-            <th>PDF</th>
             <th>New account</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
@@ -80,7 +79,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
           {orders.map((o) => (
             <tr key={o.id}>
               <td title={o.id}>
-                <code>{o.shortId}</code>
+                <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
+                  <code>{o.shortId}</code>
+                </a>
               </td>
               <td>{o.accountName || <span className="unknown">—</span>}</td>
               <td className="notes-cell" title={o.orderCopyEmail || ''}>
@@ -89,11 +90,6 @@ export default function OrderTable({ orders, onChanged, onError }) {
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               <td className="notes-cell" title={o.specialInstructions || ''}>
                 {o.specialInstructions || <span className="unknown">—</span>}
-              </td>
-              <td>
-                <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
-                  Open PDF
-                </a>
               </td>
               <YesNoCell value={o.isNewAccount} tone="green" />
               {/* Conflict + its email action combined into one cell.
