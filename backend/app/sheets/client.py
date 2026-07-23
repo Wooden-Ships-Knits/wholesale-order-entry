@@ -171,6 +171,65 @@ def territory_for_state(state_code: str) -> str | None:
     return _territory_map().get(code)
 
 
+# The 'Email' tab: # | Sales Territory | Name | Email Address | NOTE (A:E). A
+# territory can span several rows (assistants); the FIRST row for a territory is
+# the lead rep ("the boss"), whose email we want.
+def _normalize_territory(value: str | None) -> str:
+    """Match key that ignores spacing/case differences between the REGION tab
+    ('CA/ HI - Rande Cohen') and the Email tab ('CA/HI - Rande Cohen')."""
+    return re.sub(r"\s+", "", value or "").lower()
+
+
+def _rep_email_map() -> dict[str, str]:
+    """Normalized Sales Territory -> lead rep email (first matching row's Email)."""
+    def fetch() -> dict[str, str]:
+        try:
+            result = (
+                _client()
+                .spreadsheets()
+                .values()
+                .get(
+                    spreadsheetId=settings.region_rep_territories_sheet_id,
+                    range=REPS_EMAIL,
+                )
+                .execute()
+            )
+        except Exception:
+            logger.warning("Could not read the reps email sheet", exc_info=True)
+            return {}
+
+        emails: dict[str, str] = {}
+        for row in result.get("values", [])[1:]:  # skip the header row
+            # A=# B=Sales Territory C=Name D=Email Address E=NOTE
+            territory = _normalize_territory(row[1]) if len(row) > 1 else ""
+            email = (row[3] or "").strip() if len(row) > 3 else ""
+            if territory and email:
+                emails.setdefault(territory, email)  # first row = the lead rep
+        if not emails:
+            logger.warning("No territory->email rows parsed from the reps email sheet")
+        return emails
+
+    if not settings.region_rep_territories_sheet_id:
+        return {}
+
+    key = "rep_email_map"
+    now = time.monotonic()
+    hit = _cache.get(key)
+    if hit and hit[0] > now:
+        return hit[1]
+    value = fetch()
+    _cache[key] = (now + _CACHE_TTL_SECONDS, value)
+    return value
+
+
+def rep_email_for_territory(territory: str | None) -> str | None:
+    """Lead rep email for a Sales Territory value, or None if not found."""
+    key = _normalize_territory(territory)
+    if not key:
+        return None
+    return _rep_email_map().get(key)
+
+
 def list_ship_windows(season_code: str) -> list[str]:
     """Distinct ship windows offered for a season, in sheet order."""
     def fetch() -> list[str]:

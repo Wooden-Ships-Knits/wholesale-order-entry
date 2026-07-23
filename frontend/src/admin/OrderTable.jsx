@@ -44,7 +44,8 @@ export default function OrderTable({ orders, onChanged, onError }) {
       const d = await getConflictEmail({ orderId: order.id })
       // conflictOrderId marks this as a conflict draft so a successful send
       // flips that order's button to "Sent" (tax-cert drafts don't set it).
-      setDraft({ ...d, title: 'Conflict email draft', conflictOrderId: order.id })
+      // Conflict email goes to the affected rep only — no CC.
+      setDraft({ ...d, title: 'Conflict email draft', conflictOrderId: order.id, hideCc: true })
     } catch (err) {
       onError(err.message)
     } finally {
@@ -66,7 +67,10 @@ export default function OrderTable({ orders, onChanged, onError }) {
   function requestTaxCert(order) {
     const name = order.accountName || order.buyerName || 'your store'
     setDraft({
-      to: '',
+      // Sent to the buyer (Ship To email); the rep is CC'd (by sales territory).
+      // Either may be empty — the admin fills in what's missing before sending.
+      to: order.shipEmail || '',
+      cc: order.repEmail || '',
       subject: `New Account Info Required - ${name}`,
       body:
         'Hi Wooden Ships Retailer,\n\n' +

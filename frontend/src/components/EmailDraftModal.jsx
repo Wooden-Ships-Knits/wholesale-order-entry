@@ -25,10 +25,11 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
     }
   }
 
-  // To and CC are both required before the email can be sent.
+  // Conflict emails have no CC (hideCc); tax-cert CC is the rep and may be
+  // empty when the territory is unknown. So only To is required.
+  const showCc = !draft.hideCc
   const toMissing = !to.trim()
-  const ccMissing = !cc.trim()
-  const canSend = !toMissing && !ccMissing && !sending && !sent
+  const canSend = !toMissing && !sending && !sent
 
   // Tie this draft to an order so a successful send is recorded server-side
   // (persistent "Sent ✓"). Tax-cert and conflict drafts carry different ids.
@@ -83,16 +84,16 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
           />
           {toMissing && <span className="field-warning">To is required.</span>}
         </label>
-        <label>
-          CC<span className="req">*</span>
-          <input
-            value={cc}
-            onChange={(e) => setCc(e.target.value)}
-            placeholder="name@example.com, another@example.com"
-            aria-required="true"
-          />
-          {ccMissing && <span className="field-warning">CC is required.</span>}
-        </label>
+        {showCc && (
+          <label>
+            CC
+            <input
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              placeholder="name@example.com, another@example.com"
+            />
+          </label>
+        )}
         <label>
           Subject
           <input value={subject} onChange={(e) => setSubject(e.target.value)} />
@@ -117,9 +118,7 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
             className="btn-link"
             onClick={send}
             disabled={!canSend}
-            title={
-              toMissing || ccMissing ? 'Fill in the required To and CC fields first' : undefined
-            }
+            title={toMissing ? 'Fill in the required To field first' : undefined}
           >
             {sending ? 'Sending…' : sent ? 'Sent' : 'Send Mail'}
           </button>
