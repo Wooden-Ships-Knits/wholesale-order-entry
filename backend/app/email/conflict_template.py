@@ -81,6 +81,8 @@ def build(
         paragraphs.append(
             "Please reach out to the account if you would like to work with them."
         )
+        # Add thanks
+        paragraphs.append("Thanks!")
     else:
         paragraphs.append("No nearby stockist conflicts were found for this inquiry.")
 
