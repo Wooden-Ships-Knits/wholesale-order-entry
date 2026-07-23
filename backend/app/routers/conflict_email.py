@@ -52,6 +52,7 @@ class ConflictEmailRequest(BaseModel):
 
     orderId: str | None = Field(None, max_length=36)
     storeName: str | None = Field(None, max_length=255)
+    accountName: str | None = Field(None, max_length=255)
     repName: str | None = Field(None, max_length=255)
     salesTerritory: str | None = Field(None, max_length=255)
     state: str | None = Field(None, max_length=2)
@@ -65,6 +66,7 @@ class ConflictEmailRequest(BaseModel):
 def _from_order(order: Order) -> dict:
     return {
         "store_name": order.buyer_name,
+        "account_name": order.account_name,
         "rep_name": order.rep,
         "sales_territory": order.sales_territory,
         "state": _state_from(order.ship_city_state, order.bill_city_state),
@@ -98,6 +100,7 @@ def conflict_email(payload: ConflictEmailRequest, db: Session = Depends(get_db))
     # Explicit fields override whatever the order supplied.
     overrides = {
         "store_name": payload.storeName,
+        "account_name": payload.accountName,
         "rep_name": payload.repName,
         "sales_territory": payload.salesTerritory,
         "state": payload.state,
@@ -118,7 +121,8 @@ def conflict_email(payload: ConflictEmailRequest, db: Session = Depends(get_db))
         neighbors = _conflicting_neighbors(lat, lng, max_minutes)
 
     return conflict_template.build(
-        store_name=fields.get("store_name"),
+        # Prefer the store's business name; fall back to the buyer/contact name.
+        store_name=fields.get("account_name") or fields.get("store_name"),
         rep_name=fields.get("rep_name"),
         sales_territory=fields.get("sales_territory"),
         state=fields.get("state"),
