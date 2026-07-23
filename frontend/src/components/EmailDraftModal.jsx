@@ -5,7 +5,7 @@ import { useState } from 'react'
  * or a tax-certificate request). The draft is editable; "Send Mail" hands it to
  * the server's SMTP account via POST /api/send-email. To and CC are required.
  */
-export default function EmailDraftModal({ draft, onClose }) {
+export default function EmailDraftModal({ draft, onClose, onSent }) {
   const [to, setTo] = useState(draft.to || '')
   const [cc, setCc] = useState(draft.cc || '')
   const [subject, setSubject] = useState(draft.subject || '')
@@ -47,6 +47,7 @@ export default function EmailDraftModal({ draft, onClose }) {
         throw new Error(b.detail || `Send failed (${res.status})`)
       }
       setSent(true)
+      onSent?.()
     } catch (e) {
       setSendError(e.message)
     } finally {

@@ -13,6 +13,8 @@ export default function OrderTable({ orders, onChanged, onError }) {
   const [draft, setDraft] = useState(null)
   const [drafting, setDrafting] = useState(null) // id of the order being drafted
   const [creating, setCreating] = useState(null) // id of the order whose SF account is being created
+  const [sentConflict, setSentConflict] = useState(() => new Set()) // orders whose conflict email was sent
+  const [sentTaxCert, setSentTaxCert] = useState(() => new Set()) // orders whose tax-cert email was sent
 
   // Create the Salesforce Business Account for a new-account order. This is a
   // live-org write, so confirm first; the backend is idempotent as a backstop.
@@ -40,11 +42,22 @@ export default function OrderTable({ orders, onChanged, onError }) {
     setDrafting(order.id)
     try {
       const d = await getConflictEmail({ orderId: order.id })
-      setDraft({ ...d, title: 'Conflict email draft' })
+      // conflictOrderId marks this as a conflict draft so a successful send
+      // flips that order's button to "Sent" (tax-cert drafts don't set it).
+      setDraft({ ...d, title: 'Conflict email draft', conflictOrderId: order.id })
     } catch (err) {
       onError(err.message)
     } finally {
       setDrafting(null)
+    }
+  }
+
+  function handleSent() {
+    if (draft?.conflictOrderId) {
+      setSentConflict((prev) => new Set(prev).add(draft.conflictOrderId))
+    }
+    if (draft?.taxCertOrderId) {
+      setSentTaxCert((prev) => new Set(prev).add(draft.taxCertOrderId))
     }
   }
 
@@ -64,6 +77,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
         'Best,\n' +
         'Wooden Ships',
       title: 'Tax certificate request',
+      // taxCertOrderId marks this as a tax-cert draft so a successful send
+      // flips that order's button to "Sent".
+      taxCertOrderId: order.id,
     })
   }
 
@@ -82,7 +98,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
 
   return (
     <>
-      {draft && <EmailDraftModal draft={draft} onClose={() => setDraft(null)} />}
+      {draft && (
+        <EmailDraftModal draft={draft} onClose={() => setDraft(null)} onSent={handleSent} />
+      )}
       <table className="admin-table">
         <thead>
           <tr>
@@ -139,23 +157,20 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   No conflict (or not yet checked) shows "No" — never blank. */}
               <td className={o.hasConflict ? 'flag-red' : undefined}>
                 {o.hasConflict ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      gap: '4px',
-                    }}
-                  >
+                  <div className="cert-missing">
                     <span>Yes</span>
-                    <button
-                      type="button"
-                      className="chip"
-                      disabled={drafting === o.id}
-                      onClick={() => draftEmail(o)}
-                    >
-                      {drafting === o.id ? 'Generating…' : 'Generate email'}
-                    </button>
+                    {sentConflict.has(o.id) ? (
+                      <span className="sf-created">Sent ✓</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="chip"
+                        disabled={drafting === o.id}
+                        onClick={() => draftEmail(o)}
+                      >
+                        {drafting === o.id ? 'Generating…' : 'Generate email'}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   'No'
@@ -170,9 +185,13 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   /* new account, no cert uploaded → show No + offer to request one */
                   <div className="cert-missing">
                     <span>No</span>
-                    <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
-                      Generate email
-                    </button>
+                    {sentTaxCert.has(o.id) ? (
+                      <span className="sf-created">Sent ✓</span>
+                    ) : (
+                      <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
+                        Generate email
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <span className="unknown">—</span>
