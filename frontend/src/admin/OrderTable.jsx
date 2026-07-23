@@ -71,7 +71,6 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <th>PDF</th>
             <th>New account</th>
             <th>Potential conflict</th>
-            <th>Conflict email</th>
             <th>Tax certificate</th>
             <th>Notes</th>
             <th>Decision</th>
@@ -97,20 +96,30 @@ export default function OrderTable({ orders, onChanged, onError }) {
                 </a>
               </td>
               <YesNoCell value={o.isNewAccount} tone="green" />
-              <YesNoCell value={o.hasConflict} tone="red" />
-              <td>
-                {/* only offered where there is a conflict to explain */}
+              {/* Conflict + its email action combined into one cell.
+                  No conflict (or not yet checked) shows "No" — never blank. */}
+              <td className={o.hasConflict ? 'flag-red' : undefined}>
                 {o.hasConflict ? (
-                  <button
-                    type="button"
-                    className="chip"
-                    disabled={drafting === o.id}
-                    onClick={() => draftEmail(o)}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: '4px',
+                    }}
                   >
-                    {drafting === o.id ? 'Drafting…' : 'Generate email'}
-                  </button>
+                    <span>Yes</span>
+                    <button
+                      type="button"
+                      className="chip"
+                      disabled={drafting === o.id}
+                      onClick={() => draftEmail(o)}
+                    >
+                      {drafting === o.id ? 'Drafting…' : 'Send Email'}
+                    </button>
+                  </div>
                 ) : (
-                  <span className="unknown">—</span>
+                  'No'
                 )}
               </td>
               <td>
