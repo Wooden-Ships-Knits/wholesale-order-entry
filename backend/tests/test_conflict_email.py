@@ -37,9 +37,8 @@ def test_rep_facing_draft_lists_conflicts():
     assert "according to the state (FL)" in body
     assert "• VAGABOND APPAREL BOUTIQUE (8 min, 2.8 miles) - Last order: F26" in body
     assert "• LADY LANELL'S (9 min, 3.6 miles) - Last order: S26" in body
-    assert body.endswith(
-        "Please reach out to the account if you would like to work with them."
-    )
+    assert "Please reach out to the account if you would like to work with them." in body
+    assert body.endswith("Thanks!")
 
 
 def test_no_conflicts_message():
