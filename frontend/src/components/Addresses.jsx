@@ -55,7 +55,7 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
   )
 }
 
-export default function Addresses({ billTo, shipTo, setBillTo, setShipTo }) {
+export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false }) {
   const [sameAsBilling, setSameAsBilling] = useState(false)
 
   // While checked, mirror the shared address fields from Bill To — including
@@ -85,18 +85,20 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo }) {
           onChange={(v) => setBillTo('buyerName', v)}
           autoComplete="name"
         />
-        <AddressMap
-          lat={billTo.lat}
-          lng={billTo.lng}
-          onPlaceSelect={(p) => {
-            setBillTo('street', p.street)
-            setBillTo('cityState', p.cityState)
-            setBillTo('zip', p.zip)
-            setBillTo('lat', p.lat)
-            setBillTo('lng', p.lng)
-          }}
-        />      
-          
+        {showLocationSearch && (
+          <AddressMap
+            lat={billTo.lat}
+            lng={billTo.lng}
+            onPlaceSelect={(p) => {
+              setBillTo('street', p.street)
+              setBillTo('cityState', p.cityState)
+              setBillTo('zip', p.zip)
+              setBillTo('lat', p.lat)
+              setBillTo('lng', p.lng)
+            }}
+          />
+        )}
+
         <Field label="Street" value={billTo.street} onChange={(v) => setBillTo('street', v)} />
         <Field label="City / State" value={billTo.cityState} onChange={(v) => setBillTo('cityState', v)} />
         <Field label="Zip" value={billTo.zip} onChange={(v) => setBillTo('zip', v)} />
@@ -122,17 +124,19 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo }) {
           required
           autoComplete="email"
         />
-        <AddressMap
-          lat={shipTo.lat}
-          lng={shipTo.lng}
-          onPlaceSelect={(p) => {
-            setShipTo('street', p.street)
-            setShipTo('cityState', p.cityState)
-            setShipTo('zip', p.zip)
-            setShipTo('lat', p.lat)
-            setShipTo('lng', p.lng)
-          }}
-        />
+        {showLocationSearch && (
+          <AddressMap
+            lat={shipTo.lat}
+            lng={shipTo.lng}
+            onPlaceSelect={(p) => {
+              setShipTo('street', p.street)
+              setShipTo('cityState', p.cityState)
+              setShipTo('zip', p.zip)
+              setShipTo('lat', p.lat)
+              setShipTo('lng', p.lng)
+            }}
+          />
+        )}
 
         <Field
           label="Street"

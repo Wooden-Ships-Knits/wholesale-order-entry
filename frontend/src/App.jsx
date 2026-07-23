@@ -384,7 +384,16 @@ export default function App() {
         accountName={form.accountName}
         setAccountName={(v) => setField('accountName', v.toUpperCase())}
       />
-      <Addresses billTo={billTo} shipTo={shipTo} setBillTo={setBillTo} setShipTo={setShipTo} />
+      <Addresses
+        billTo={billTo}
+        shipTo={shipTo}
+        setBillTo={setBillTo}
+        setShipTo={setShipTo}
+        // "Search a location" only for a new account: a rep marking it New (or
+        // a lookup with no match), or a customer's first order. Same rule as
+        // isNewAccount, which also gates the conflict check.
+        showLocationSearch={isNewAccount}
+      />
 
       {isNewAccount && (form.salesTerritory || territoryStatus) && (
         <section className="section territory-auto">
