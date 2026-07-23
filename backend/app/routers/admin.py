@@ -90,6 +90,9 @@ def _row(o: Order) -> dict:
         # Salesforce Account link: created id (null = not created yet).
         "sfAccountId": o.sf_account_id,
         "sfAccountCreated": o.sf_account_created_at is not None,
+        # Kugamon order pushed on Accept: id + auto-number (null = not pushed).
+        "sfOrderId": o.sf_order_id,
+        "sfOrderNumber": o.sf_order_number,
         "notes": o.notes,
         "status": o.status,
         "statusReason": o.status_reason,
@@ -109,6 +112,38 @@ def list_orders(
     return {"orders": [_row(o) for o in db.execute(stmt).scalars()]}
 
 
+def _push_order_to_salesforce(order: Order) -> None:
+    """Create the Kugamon Draft order for an accepted order. Sets sf_order_id /
+    sf_order_number on success; raises HTTPException (surfaced to the admin) on
+    any problem. Idempotent: a re-push is a no-op once sf_order_id is set."""
+    if order.sf_order_id:
+        return  # already pushed — don't create a second order
+    if not order.sf_account_id:
+        raise HTTPException(
+            status_code=400,
+            detail="This order has no Salesforce account yet. Create the account first, then Accept.",
+        )
+    pricebook_id = sf_client.get_wholesale_pricebook_id(order.season_code)
+    if not pricebook_id:
+        raise HTTPException(
+            status_code=502, detail=f"No wholesale price book found for {order.season_code}."
+        )
+    lines = mapping.build_sales_order_lines(order)
+    if not lines:
+        raise HTTPException(status_code=400, detail="This order has no line items to push.")
+
+    header = mapping.build_sales_order_header(order, pricebook_id)
+    try:
+        so_id, so_number = sf_client.create_sales_order(header, lines)
+    except Exception as exc:  # header/line rejection, permission, etc.
+        logger.exception("Salesforce order push failed for order %s", str(order.id)[:8])
+        raise HTTPException(status_code=502, detail=f"Salesforce order create failed: {exc}")
+
+    order.sf_order_id = so_id
+    order.sf_order_number = so_number
+    logger.info("Pushed order %s to Salesforce as %s", str(order.id)[:8], so_number or so_id)
+
+
 @router.post("/orders/{order_id}/status", dependencies=[AdminRequired])
 def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_db)) -> dict:
     if payload.status not in VALID_STATUSES:
@@ -116,6 +151,11 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
     order = db.get(Order, order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
+    # Accept = push the order into Salesforce (Kugamon Draft). If the push
+    # fails, raise BEFORE changing status so the order stays actionable and the
+    # team can fix the cause (e.g. missing account) and click Accept again.
+    if payload.status == "accepted":
+        _push_order_to_salesforce(order)
     order.status = payload.status
     order.status_reason = payload.reason or None
     order.status_at = datetime.now(timezone.utc)

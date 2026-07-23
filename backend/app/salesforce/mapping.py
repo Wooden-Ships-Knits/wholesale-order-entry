@@ -34,6 +34,21 @@ SPECIAL_INSTRUCTIONS = "Special_Instructions__c"
 SALES_ORDER = "kugo2p__SalesOrder__c"
 WRITTEN_BY = "Written_By__c"
 
+# ------------------------------------- Kugamon order push (Accept -> SF Draft)
+# Header (kugo2p__SalesOrder__c) + lines (kugo2p__SalesOrderProductLine__c),
+# all createable-verified 2026-07-23. Name/Status are NOT createable (auto).
+SALES_ORDER_PRICEBOOK = "kugo2p__Pricebook2Id__c"
+SALES_ORDER_BILLTONAME = "kugo2p__BillToName__c"
+SALES_ORDER_WAREHOUSE = "kugo2p__Warehouse__c"
+SALES_ORDER_START_SHIP = "Start_Ship_Date__c"
+# Org default warehouse "000 - Bali" (~59k orders). Per-store warehouses for the
+# rare >24/SKU case are left to the team to switch on the Draft (spec decision).
+WAREHOUSE_BALI_ID = "a0p900000008hZlAAI"
+SALES_ORDER_LINE = "kugo2p__SalesOrderProductLine__c"
+SALES_ORDER_LINE_ORDER = "kugo2p__SalesOrder__c"  # parent lookup on the line
+SALES_ORDER_LINE_PRODUCT = "kugo2p__Product__c"
+SALES_ORDER_LINE_QTY = "kugo2p__Quantity__c"
+
 # Nearby-stockist conflict check (GET /api/accounts/nearby). Shipping geocodes
 # are Salesforce-populated (verified 2026-07-17: 4,930/6,467 accounts, accuracy
 # Address/NearAddress); BillingLatitude is unpopulated org-wide.
@@ -280,6 +295,60 @@ def build_account_create_payload(order: Any) -> dict[str, Any]:
         "Description": " | ".join(buyer_bits),
     }
     return {k: v for k, v in payload.items() if v not in ("", None)}
+
+
+# Ship window looks like "8/1-30" or "12/1-10"; the start is month/first-day.
+_SHIP_WINDOW_START_RE = re.compile(r"^\s*(\d{1,2})/(\d{1,2})")
+
+
+def start_ship_date(ship_window: str | None, season_code: str | None) -> str | None:
+    """'8/1-30' + season 'F26' -> '2026-08-01' (ISO). None if unparseable.
+
+    The year comes from the season code (F26/S27 -> 2026/2027); the window only
+    carries month/day. Good enough for a Draft the team reviews.
+    """
+    m = _SHIP_WINDOW_START_RE.match(ship_window or "")
+    s = _SEASON_CODE_RE.match((season_code or "").strip())
+    if not m or not s:
+        return None
+    try:
+        return date(2000 + int(s.group(2)), int(m.group(1)), int(m.group(2))).isoformat()
+    except ValueError:
+        return None
+
+
+def build_sales_order_header(order: Any, pricebook_id: str) -> dict[str, Any]:
+    """Order -> kugo2p__SalesOrder__c create fields. Name/Status/totals are left
+    to Kugamon; Written_By is set for rep orders only (empty for direct)."""
+    header: dict[str, Any] = {
+        SALES_ORDER_ACCOUNT: order.sf_account_id,
+        SALES_ORDER_PRICEBOOK: pricebook_id,
+        SALES_ORDER_BILLTONAME: order.account_name or "",
+        SALES_ORDER_WAREHOUSE: WAREHOUSE_BALI_ID,
+    }
+    ship_date = start_ship_date(order.ship_window, order.season_code)
+    if ship_date:
+        header[SALES_ORDER_START_SHIP] = ship_date
+    # Rep orders credit the writer; direct/customer orders leave it empty
+    # (decision 2026-07-22). The picklist values are the same rep names.
+    if order.filled_by == "rep" and order.order_written_by:
+        header[WRITTEN_BY] = order.order_written_by
+    return {k: v for k, v in header.items() if v not in ("", None)}
+
+
+def build_sales_order_lines(order: Any) -> list[dict[str, Any]]:
+    """Order items -> one line per size with qty > 0 (product + quantity only;
+    Kugamon prices from the header's price book)."""
+    lines: list[dict[str, Any]] = []
+    for item in order.items:
+        for product_id, qty in (
+            (item.sf_product_id_xs, item.qty_xs),
+            (item.sf_product_id_sm, item.qty_sm),
+            (item.sf_product_id_ml, item.qty_ml),
+        ):
+            if product_id and qty:
+                lines.append({SALES_ORDER_LINE_PRODUCT: product_id, SALES_ORDER_LINE_QTY: qty})
+    return lines
 
 
 def group_products(entries: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, int]]:
