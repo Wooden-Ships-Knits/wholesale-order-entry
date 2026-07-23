@@ -73,6 +73,13 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sameAsBilling, billTo.street, billTo.cityState, billTo.zip, billTo.lat, billTo.lng])
 
+  // Street / City / Zip stay hidden until the address is populated — by the
+  // location search (new customer picks a place) or the account lookup
+  // (existing account autofills). Any one of the three being present reveals
+  // the block so it can be reviewed / edited.
+  const billHasAddress = Boolean(billTo.street || billTo.cityState || billTo.zip)
+  const shipHasAddress = Boolean(shipTo.street || shipTo.cityState || shipTo.zip)
+
   return (
     <section className="section addresses">
       <div className="address-col">
@@ -99,9 +106,13 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
           />
         )}
 
-        <Field label="Street" value={billTo.street} onChange={(v) => setBillTo('street', v)} />
-        <Field label="City / State" value={billTo.cityState} onChange={(v) => setBillTo('cityState', v)} />
-        <Field label="Zip" value={billTo.zip} onChange={(v) => setBillTo('zip', v)} />
+        {billHasAddress && (
+          <>
+            <Field label="Street" value={billTo.street} onChange={(v) => setBillTo('street', v)} />
+            <Field label="City / State" value={billTo.cityState} onChange={(v) => setBillTo('cityState', v)} />
+            <Field label="Zip" value={billTo.zip} onChange={(v) => setBillTo('zip', v)} />
+          </>
+        )}
         <Field label="Tel" value={billTo.tel} onChange={(v) => setBillTo('tel', v)} type="tel" placeholder="Example: (423) 240-9340" />
       </div>
       <div className="address-col">
@@ -138,19 +149,23 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
           />
         )}
 
-        <Field
-          label="Street"
-          value={shipTo.street}
-          onChange={(v) => setShipTo('street', v)}
-          disabled={sameAsBilling}
-        />
-        <Field
-          label="City / State"
-          value={shipTo.cityState}
-          onChange={(v) => setShipTo('cityState', v)}
-          disabled={sameAsBilling}
-        />
-        <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipTo('zip', v)} disabled={sameAsBilling} />
+        {shipHasAddress && (
+          <>
+            <Field
+              label="Street"
+              value={shipTo.street}
+              onChange={(v) => setShipTo('street', v)}
+              disabled={sameAsBilling}
+            />
+            <Field
+              label="City / State"
+              value={shipTo.cityState}
+              onChange={(v) => setShipTo('cityState', v)}
+              disabled={sameAsBilling}
+            />
+            <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipTo('zip', v)} disabled={sameAsBilling} />
+          </>
+        )}
         <Field label="Resale tax ID" value={shipTo.resaleTaxId} onChange={(v) => setShipTo('resaleTaxId', v)} />
       </div>
     </section>
