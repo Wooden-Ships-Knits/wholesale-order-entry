@@ -86,6 +86,9 @@ def _row(o: Order) -> dict:
         # null = unanswered / not yet checked. The UI must not render these as "No".
         "isNewAccount": o.is_new_account,
         "hasConflict": o.has_conflict,
+        # Persistent "Sent ✓" state for the admin email buttons.
+        "conflictEmailSent": o.conflict_email_sent_at is not None,
+        "taxCertEmailSent": o.tax_cert_email_sent_at is not None,
         "hasCertificate": bool(o.cert_filename),
         # Salesforce Account link: created id (null = not created yet).
         "sfAccountId": o.sf_account_id,

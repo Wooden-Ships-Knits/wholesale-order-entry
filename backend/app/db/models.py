@@ -93,6 +93,11 @@ class Order(Base):
     # (feat/nearby-conflict-api); null means "not yet checked", NOT "no conflict".
     has_conflict: Mapped[bool | None] = mapped_column(Boolean)
 
+    # when the admin sent the conflict / tax-cert email for this order from
+    # /admin. null = not sent. Drives the persistent "Sent ✓" button state.
+    conflict_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    tax_cert_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     # totals / status
     total_qty: Mapped[int] = mapped_column(Integer)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
