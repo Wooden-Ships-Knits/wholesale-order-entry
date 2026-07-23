@@ -7,6 +7,7 @@ import { useState } from 'react'
  */
 export default function EmailDraftModal({ draft, onClose }) {
   const [to, setTo] = useState(draft.to || '')
+  const [cc, setCc] = useState(draft.cc || '')
   const [subject, setSubject] = useState(draft.subject || '')
   const [body, setBody] = useState(draft.body || '')
   const [copied, setCopied] = useState(false)
@@ -21,7 +22,9 @@ export default function EmailDraftModal({ draft, onClose }) {
     }
   }
 
-  const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(
+  // CC is optional — only add it to the mailto link when it's filled in.
+  const ccParam = cc.trim() ? `cc=${encodeURIComponent(cc.trim())}&` : ''
+  const mailto = `mailto:${encodeURIComponent(to)}?${ccParam}subject=${encodeURIComponent(
     subject,
   )}&body=${encodeURIComponent(body)}`
 
@@ -42,6 +45,14 @@ export default function EmailDraftModal({ draft, onClose }) {
         <label>
           To
           <input value={to} onChange={(e) => setTo(e.target.value)} />
+        </label>
+        <label>
+          CC <span className="optional">(optional)</span>
+          <input
+            value={cc}
+            onChange={(e) => setCc(e.target.value)}
+            placeholder="name@example.com, another@example.com"
+          />
         </label>
         <label>
           Subject
