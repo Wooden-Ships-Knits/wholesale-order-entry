@@ -1,4 +1,4 @@
-export default function TermsSignature({ terms, setTerms }) {
+export default function TermsSignature({ terms, setTerms, defaultCopyEmail }) {
   return (
     <section className="section terms">
       {/* <h2>Terms &amp; conditions</h2> */}
@@ -85,8 +85,16 @@ export default function TermsSignature({ terms, setTerms }) {
         <input
           type="checkbox"
           checked={terms.orderCopy}
-            onChange={(e) => setTerms('orderCopy', e.target.checked)}
-          />
+          onChange={(e) => {
+            const checked = e.target.checked
+            setTerms('orderCopy', checked)
+            // Prefill with the buyer's (Ship To) email — editable after, and
+            // never overwrites an address they already typed.
+            if (checked && !terms.orderCopyEmail) {
+              setTerms('orderCopyEmail', defaultCopyEmail || '')
+            }
+          }}
+        />
         <span>I would like to receive a copy of this order form.</span>
       </label> 
 

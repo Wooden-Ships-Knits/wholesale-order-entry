@@ -104,6 +104,72 @@ def _read(season_code: str) -> list[list[tuple[str, bool]]]:
 _WINDOW_RE = re.compile(r"^\d{1,2}/\d{1,2}-\d{1,2}$")
 
 
+# --------------------------------------------------------- region/rep territory
+# The territories sheet's first tab: Territory | States | Rep. The States cell
+# is a comma-separated list of 2-letter US state codes (e.g. "AK,AZ,NE,NV"),
+# sometimes mixed with descriptive text ("DC Metro/Suburb, DE, MD, NJ, PA") —
+# so we pull out standalone 2-letter codes and keep only real US states.
+TERRITORY_RANGE = "A:C"
+_STATE_CODE_RE = re.compile(r"\b[A-Z]{2}\b")
+US_STATE_CODES = frozenset(
+    "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS "
+    "MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split()
+)
+
+
+def _territory_map() -> dict[str, str]:
+    """US state code -> territory label, read from the region/rep sheet."""
+    def fetch() -> dict[str, str]:
+        try:
+            result = (
+                _client()
+                .spreadsheets()
+                .values()
+                .get(
+                    spreadsheetId=settings.region_rep_territories_sheet_id,
+                    range=TERRITORY_RANGE,
+                )
+                .execute()
+            )
+        except Exception:
+            logger.warning("Could not read the region/rep territories sheet", exc_info=True)
+            return {}
+
+        mapping: dict[str, str] = {}
+        for row in result.get("values", [])[1:]:  # skip the header row
+            if len(row) < 2:
+                continue
+            territory = (row[0] or "").strip()
+            if not territory:
+                continue
+            for code in _STATE_CODE_RE.findall((row[1] or "").upper()):
+                if code in US_STATE_CODES:
+                    mapping.setdefault(code, territory)  # first row wins on overlap
+        if not mapping:
+            logger.warning("No state->territory rows parsed from the territories sheet")
+        return mapping
+
+    if not settings.region_rep_territories_sheet_id:
+        return {}
+
+    key = "territory_map"
+    now = time.monotonic()
+    hit = _cache.get(key)
+    if hit and hit[0] > now:
+        return hit[1]
+    value = fetch()
+    _cache[key] = (now + _CACHE_TTL_SECONDS, value)
+    return value
+
+
+def territory_for_state(state_code: str) -> str | None:
+    """Territory label for a 2-letter US state code, or None if unmapped."""
+    code = (state_code or "").strip().upper()
+    if len(code) != 2:
+        return None
+    return _territory_map().get(code)
+
+
 def list_ship_windows(season_code: str) -> list[str]:
     """Distinct ship windows offered for a season, in sheet order."""
     def fetch() -> list[str]:

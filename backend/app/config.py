@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     shipping_window_sheet_id: str = ""
     google_credentials_path: str = "credentials/dialy-report-automation-e20c53e67542.json"
 
+    # Region -> rep territory lookup: a Google Sheet whose first tab maps US
+    # state codes to a territory label (columns: Territory | States | Rep).
+    # Used to auto-assign a sales territory to NEW accounts from their Ship To
+    # state (existing accounts carry SalesTerritory__c from the buyer lookup).
+    region_rep_territories_sheet_id: str = ""
+
     pdf_output_dir: str = "/output/orders"
 
     # Nearby-stockist conflict check. Server-side Google key (Distance Matrix)
