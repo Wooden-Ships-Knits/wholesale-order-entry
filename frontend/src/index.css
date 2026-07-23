@@ -764,9 +764,9 @@ button:hover {
 }
 .notes-cell {
   max-width: 260px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Wrap long text onto multiple lines instead of truncating with "…". */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .unknown {
   color: #aaa;
