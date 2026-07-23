@@ -91,7 +91,6 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <th>Sales Territory</th>
             <th>Special Instruction</th>
             <th>New account</th>
-            <th>Salesforce account</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
             <th>Notes</th>
@@ -111,23 +110,29 @@ export default function OrderTable({ orders, onChanged, onError }) {
               <td className="notes-cell" title={o.specialInstructions || ''}>
                 {o.specialInstructions || <span className="unknown">—</span>}
               </td>
-              <td>{o.isNewAccount ? 'Yes' : 'No'}</td>
+              {/* New account = Yes stacks a "Create account" action (or the
+                  "Created ✓" state) beneath it, like the tax-cert cell. */}
               <td>
-                {o.sfAccountId ? (
-                  <span className="sf-created" title={o.sfAccountId}>
-                    Created ✓
-                  </span>
-                ) : o.isNewAccount ? (
-                  <button
-                    type="button"
-                    className="chip"
-                    disabled={creating === o.id}
-                    onClick={() => createAccount(o)}
-                  >
-                    {creating === o.id ? 'Creating…' : 'Create account'}
-                  </button>
+                {o.isNewAccount ? (
+                  <div className="cert-missing">
+                    <span>Yes</span>
+                    {o.sfAccountId ? (
+                      <span className="sf-created" title={o.sfAccountId}>
+                        Created ✓
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="chip"
+                        disabled={creating === o.id}
+                        onClick={() => createAccount(o)}
+                      >
+                        {creating === o.id ? 'Creating…' : 'Create account'}
+                      </button>
+                    )}
+                  </div>
                 ) : (
-                  <span className="unknown">—</span>
+                  'No'
                 )}
               </td>
               {/* Conflict + its email action combined into one cell.
