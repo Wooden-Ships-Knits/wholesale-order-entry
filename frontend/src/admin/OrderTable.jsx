@@ -123,11 +123,11 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <th>Order ID</th>
             <th>Account Name</th>
             <th>Sales Territory</th>
-            <th>Special Instruction</th>
             <th>New account</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
             <th>Notes</th>
+            <th>Special Instruction</th>
             <th>Decision</th>
           </tr>
         </thead>
@@ -141,9 +141,6 @@ export default function OrderTable({ orders, onChanged, onError }) {
               </td>
               <td>{o.accountName || <span className="unknown">—</span>}</td>
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
-              <td className="notes-cell" title={o.specialInstructions || ''}>
-                {o.specialInstructions || <span className="unknown">—</span>}
-              </td>
               {/* New account = Yes stacks a "Create account" action (or the
                   "Created ✓" state) beneath it, like the tax-cert cell. */}
               <td>
@@ -215,6 +212,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
               </td>
               <td className="notes-cell" title={o.notes || ''}>
                 {o.notes || <span className="unknown">—</span>}
+              </td>
+              <td className="notes-cell" title={o.specialInstructions || ''}>
+                {o.specialInstructions || <span className="unknown">—</span>}
               </td>
               <td>
                 {o.status === 'submitted' ? (

@@ -11,23 +11,23 @@ export default function Payment({ payment, setPayment }) {
           <input
             type="radio"
             name="paymentMethod"
-            checked={payment.method === 'direct'}
-            onChange={() => setPayment('method', 'direct')}
+            checked={payment.method === 'Credit Card'}
+            onChange={() => setPayment('method', 'Credit Card')}
           />
-          Direct
+          Credit Card
         </label>
         <label>
           <input
             type="radio"
             name="paymentMethod"
-            checked={payment.method === 'store'}
-            onChange={() => setPayment('method', 'store')}
+            checked={payment.method === 'PayPal'}
+            onChange={() => setPayment('method', 'PayPal')}
           />
-          Store your card
+          PayPal
         </label>
       </fieldset>
 
-      {payment.method === 'direct' && (
+      {payment.method === 'Credit Card' && (
         <>
           <fieldset className="inline-radios">
             <legend>Payment type</legend>
@@ -56,7 +56,7 @@ export default function Payment({ payment, setPayment }) {
         </>
       )}
 
-      {payment.method === 'store' && (
+      {payment.method === 'PayPal' && (
         <>
           <fieldset className="inline-radios">
             <legend>Charge approval</legend>
