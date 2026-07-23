@@ -22,3 +22,6 @@ notebooks/
 notebooks/*.ipynb
 
 venv/
+
+memory/
+.vscode/

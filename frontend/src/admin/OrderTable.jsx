@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { certUrl, getConflictEmail, pdfUrl, setOrderStatus } from './api'
 import EmailDraftModal from '../components/EmailDraftModal'
 
-// null means unanswered / not yet checked — never render that as "No".
+// Always render Yes / No (never blank) — null/undefined is treated as No.
 // `tone` tints the cell only when the answer is Yes (green/red as given).
 function YesNoCell({ value, tone }) {
-  if (value === null || value === undefined) return <td><span className="unknown">—</span></td>
-  return <td className={value ? `flag-${tone}` : undefined}>{value ? 'Yes' : 'No'}</td>
+  const yes = Boolean(value)
+  return <td className={yes ? `flag-${tone}` : undefined}>{yes ? 'Yes' : 'No'}</td>
 }
 
 export default function OrderTable({ orders, onChanged, onError }) {
@@ -119,10 +119,13 @@ export default function OrderTable({ orders, onChanged, onError }) {
                     Open
                   </a>
                 ) : o.isNewAccount ? (
-                  /* new account, no cert uploaded → offer to request one */
-                  <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
-                    Generate email
-                  </button>
+                  /* new account, no cert uploaded → show No + offer to request one */
+                  <div className="cert-missing">
+                    <span>No</span>
+                    <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
+                      Generate email
+                    </button>
+                  </div>
                 ) : (
                   <span className="unknown">—</span>
                 )}

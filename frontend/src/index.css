@@ -771,6 +771,13 @@ button:hover {
 .unknown {
   color: #aaa;
 }
+/* Tax-cert cell for a new account with no upload: "No" stacked over the button */
+.cert-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
 /* Highlight only a "Yes": green for a new account, red for a conflict. */
 .admin-table td.flag-green {
   background: rgba(46, 125, 50, 0.12);

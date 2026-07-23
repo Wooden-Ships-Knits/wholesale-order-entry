@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, getNearbyAccounts, submitOrder } from './api'
+import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, getNearbyAccounts, getTerritoryForState, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
@@ -28,6 +28,13 @@ const fileToBase64 = (file) =>
 let lineSeq = 0
 const makeLine = () => ({ id: ++lineSeq, query: '', styleName: '', color: '', qty: {} })
 const INITIAL_LINES = 3
+
+// Pull the trailing 2-letter US state code out of a "City, ST" string (the
+// \b keeps us from grabbing the last two letters of a plain word like "Canada").
+const stateFromCityState = (cityState) => {
+  const m = (cityState || '').match(/\b([A-Za-z]{2})\s*$/)
+  return m ? m[1].toUpperCase() : ''
+}
 
 export default function App() {
   const [seasons, setSeasons] = useState([])
@@ -211,6 +218,30 @@ export default function App() {
     }
   }, [shouldCheckConflict, shipTo.lat, shipTo.lng])
 
+  // Auto-assign a sales territory to a NEW account from its Ship To state:
+  // take the 2-letter code out of "City, ST" and look it up in the region/rep
+  // sheet. Existing (matched) accounts keep the SalesTerritory__c from lookup,
+  // so this only runs when isNewAccount is true.
+  const shipState = stateFromCityState(shipTo.cityState)
+  const [territoryStatus, setTerritoryStatus] = useState('')
+  useEffect(() => {
+    if (!isNewAccount || !shipState) {
+      setTerritoryStatus('')
+      return
+    }
+    let stale = false
+    getTerritoryForState(shipState)
+      .then((r) => {
+        if (stale) return
+        setForm((p) => ({ ...p, salesTerritory: r.territory || null }))
+        setTerritoryStatus(r.territory ? '' : `No sales territory is mapped for ${shipState}.`)
+      })
+      .catch(() => !stale && setTerritoryStatus(''))
+    return () => {
+      stale = true
+    }
+  }, [isNewAccount, shipState])
+
   const { totalPieces, totalAmount, perLine } = useMemo(() => computeTotals(resolved), [resolved])
   const minimums = useMemo(() => validateMinimums(resolved), [resolved])
 
@@ -355,6 +386,16 @@ export default function App() {
       />
       <Addresses billTo={billTo} shipTo={shipTo} setBillTo={setBillTo} setShipTo={setShipTo} />
 
+      {isNewAccount && (form.salesTerritory || territoryStatus) && (
+        <section className="section territory-auto">
+          <label>
+            Sales territory <span className="muted">(auto-assigned from the Ship To state)</span>
+            <input type="text" value={form.salesTerritory || ''} readOnly placeholder="—" />
+          </label>
+          {territoryStatus && <p className="field-warning">{territoryStatus}</p>}
+        </section>
+      )}
+
       <ProductLines
         rows={rows}
         lines={resolved}
@@ -383,7 +424,7 @@ export default function App() {
       {isNewAccount && <Payment payment={payment} setPayment={setPayment} />}
       {isNewAccount && <TaxExemption certFile={certFile} setCertFile={setCertFile} />}
       <Notes notes={notes} setNotes={setNotes} />
-      <TermsSignature terms={terms} setTerms={setTerms} />
+      <TermsSignature terms={terms} setTerms={setTerms} defaultCopyEmail={shipTo.email} />
 
       {conflictResult && (
         <ConflictWarning result={conflictResult} onDismiss={() => setConflictResult(null)} />
