@@ -352,7 +352,7 @@ def find_accounts(
     # Drop inactive / no-booking / conflict / OOB accounts from the buyer
     # lookup — same EXCLUDED_RANKS gate as the conflict-check candidate set
     # (decision 2026-07-18). Accounts with no rank still match.
-    excluded_ranks = ", ".join(f"'{soql_str(r)}'" for r in mapping.EXCLUDED_RANKS)
+    excluded_ranks = ", ".join(f"'{soql_str(r)}'" for r in mapping.EXCLUDED_RANKS_FIND_ACCOUNT)
     rank_filter = f"({mapping.RANK} = null OR {mapping.RANK} NOT IN ({excluded_ranks}))"
     # IsPersonAccount = FALSE keeps only business accounts. This IS a
     # person-account org, but wholesale stockists are business accounts
