@@ -41,6 +41,16 @@ SALES_ORDER_PRICEBOOK = "kugo2p__Pricebook2Id__c"
 SALES_ORDER_BILLTONAME = "kugo2p__BillToName__c"
 SALES_ORDER_WAREHOUSE = "kugo2p__Warehouse__c"
 SALES_ORDER_START_SHIP = "Start_Ship_Date__c"
+SHIP_THRU_DATE = "Ship_Thru__c"
+ESTIMATED_SHIPMENT_NAME = "Estimated_Shipment_Name__c"
+ORDER_WRITTEN_DATE = "Order_Written_Date__c"
+ORDER_TYPE = "Type__c"  # picklist: 'Season Opening Order' | 'Re-Order' | ...
+# Order-level territory picklist (distinct from Account's free-text SALES_TERRITORY).
+SALES_ORDER_TERRITORY = "kugo2p__SalesTerritory__c"
+CAMPAIGN = "Campaign__c"  # lookup -> Campaign
+COMMISSION_CROSS_CHECKED_BY = "Commission_Cross_Checked_By__c"  # picklist
+COMMISSION_CROSS_CHECKED = "Novriati"  # standing value for web orders
+CAMPAIGN_REP_NON_SHOW_NAME = "Rep - Non Show Orders"  # our 'rep-non-show' -> this Campaign
 # Org default warehouse "000 - Bali" (~59k orders). Per-store warehouses for the
 # rare >24/SKU case are left to the team to switch on the Draft (spec decision).
 WAREHOUSE_BALI_ID = "a0p900000008hZlAAI"
@@ -302,42 +312,80 @@ def build_account_create_payload(order: Any) -> dict[str, Any]:
     return {k: v for k, v in payload.items() if v not in ("", None)}
 
 
-# Ship window looks like "8/1-30" or "12/1-10"; the start is month/first-day.
-_SHIP_WINDOW_START_RE = re.compile(r"^\s*(\d{1,2})/(\d{1,2})")
+# Ship window looks like "8/1-30" or "12/1-10" — same month, start day to end day.
+_SHIP_WINDOW_RE = re.compile(r"^\s*(\d{1,2})/(\d{1,2})-(\d{1,2})")
 
 
-def start_ship_date(ship_window: str | None, season_code: str | None) -> str | None:
-    """'8/1-30' + season 'F26' -> '2026-08-01' (ISO). None if unparseable.
+def ship_window_dates(ship_window: str | None, season_code: str | None) -> dict[str, str] | None:
+    """Parse a ship window + season into the pieces the header needs.
 
-    The year comes from the season code (F26/S27 -> 2026/2027); the window only
-    carries month/day. Good enough for a Draft the team reviews.
+    '1/1-20' + 'S27' -> {start:'2027-01-01', end:'2027-01-20',
+                         name_range:'01/01 - 01/20', est:'01-01'}.
+    Year comes from the season code (F26/S27 -> 2026/2027). None if unparseable.
     """
-    m = _SHIP_WINDOW_START_RE.match(ship_window or "")
+    m = _SHIP_WINDOW_RE.match(ship_window or "")
     s = _SEASON_CODE_RE.match((season_code or "").strip())
     if not m or not s:
         return None
+    year = 2000 + int(s.group(2))
+    month, d1, d2 = int(m.group(1)), int(m.group(2)), int(m.group(3))
     try:
-        return date(2000 + int(s.group(2)), int(m.group(1)), int(m.group(2))).isoformat()
+        start, end = date(year, month, d1), date(year, month, d2)
     except ValueError:
         return None
+    return {
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "name_range": f"{month:02d}/{d1:02d} - {month:02d}/{d2:02d}",
+        "est": f"{month:02d}-{d1:02d}",
+    }
 
 
-def build_sales_order_header(order: Any, pricebook_id: str) -> dict[str, Any]:
+def build_sales_order_header(
+    order: Any,
+    pricebook_id: str,
+    *,
+    sales_territory: str | None = None,
+    campaign_id: str | None = None,
+) -> dict[str, Any]:
     """Order -> kugo2p__SalesOrder__c create fields. Name/Status/totals are left
-    to Kugamon; Written_By is set for rep orders only (empty for direct)."""
+    to Kugamon. sales_territory (already matched to the order picklist) and
+    campaign_id (already resolved to a Campaign record) are passed in by the
+    caller since they need Salesforce lookups. Blank values are dropped."""
     header: dict[str, Any] = {
         SALES_ORDER_ACCOUNT: order.sf_account_id,
         SALES_ORDER_PRICEBOOK: pricebook_id,
         SALES_ORDER_BILLTONAME: order.account_name or "",
         SALES_ORDER_WAREHOUSE: WAREHOUSE_BALI_ID,
+        INTERNAL_REP: INTERNAL_REP_USER_ID,  # Christine Poveda (constant)
+        COMMISSION_CROSS_CHECKED_BY: COMMISSION_CROSS_CHECKED,  # 'Novriati' (constant)
     }
-    ship_date = start_ship_date(order.ship_window, order.season_code)
-    if ship_date:
-        header[SALES_ORDER_START_SHIP] = ship_date
-    # Rep orders credit the writer; direct/customer orders leave it empty
-    # (decision 2026-07-22). The picklist values are the same rep names.
-    if order.filled_by == "rep" and order.order_written_by:
-        header[WRITTEN_BY] = order.order_written_by
+
+    win = ship_window_dates(order.ship_window, order.season_code)
+    if win:
+        header[SALES_ORDER_START_SHIP] = win["start"]
+        header[SHIP_THRU_DATE] = win["end"]
+        header[SALES_ORDER_NAME] = f"{order.season_code} SWEATERS {win['name_range']}"
+        header[ESTIMATED_SHIPMENT_NAME] = f"{win['est']} AIR"
+
+    # Order Written Date = the submission date (the admin table's "Date" column).
+    if getattr(order, "created_at", None):
+        header[ORDER_WRITTEN_DATE] = order.created_at.date().isoformat()
+
+    # Type + Written_By apply to rep orders only (direct/customer leave empty).
+    if order.filled_by == "rep":
+        if order.new_or_reorder == "new":
+            header[ORDER_TYPE] = "Season Opening Order"
+        elif order.new_or_reorder == "reorder":
+            header[ORDER_TYPE] = "Re-Order"
+        if order.order_written_by:
+            header[WRITTEN_BY] = order.order_written_by
+
+    if sales_territory:
+        header[SALES_ORDER_TERRITORY] = sales_territory
+    if campaign_id:
+        header[CAMPAIGN] = campaign_id
+
     return {k: v for k, v in header.items() if v not in ("", None)}
 
 

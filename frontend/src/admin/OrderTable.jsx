@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { certUrl, createSfAccount, getConflictEmail, pdfUrl, setOrderStatus } from './api'
 import EmailDraftModal from '../components/EmailDraftModal'
 
+// Salesforce My Domain — the pushed order record opens at <instance>/<recordId>.
+// Change this if the org's domain changes (e.g. a sandbox).
+const SF_INSTANCE_URL = 'https://wooden-ships.my.salesforce.com'
+
 // Always render Yes / No (never blank) — null/undefined is treated as No.
 // `tone` tints the cell only when the answer is Yes (green/red as given).
 function YesNoCell({ value, tone }) {
@@ -234,9 +238,15 @@ export default function OrderTable({ orders, onChanged, onError }) {
                       {o.status}
                     </span>
                     {o.sfOrderNumber && (
-                      <span className="sf-created" title={o.sfOrderId}>
+                      <a
+                        className="sf-created"
+                        href={`${SF_INSTANCE_URL}/${o.sfOrderId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`Open ${o.sfOrderId} in Salesforce`}
+                      >
                         {o.sfOrderNumber}
-                      </span>
+                      </a>
                     )}
                   </div>
                 )}

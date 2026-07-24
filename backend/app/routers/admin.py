@@ -139,7 +139,12 @@ def _push_order_to_salesforce(order: Order) -> None:
     if not lines:
         raise HTTPException(status_code=400, detail="This order has no line items to push.")
 
-    header = mapping.build_sales_order_header(order, pricebook_id)
+    header = mapping.build_sales_order_header(
+        order,
+        pricebook_id,
+        sales_territory=sf_client.match_order_territory(order.sales_territory),
+        campaign_id=sf_client.campaign_id_for(order.campaign),
+    )
     try:
         so_id, so_number = sf_client.create_sales_order(header, lines)
     except Exception as exc:  # header/line rejection, permission, etc.
