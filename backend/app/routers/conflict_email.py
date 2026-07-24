@@ -64,10 +64,24 @@ class ConflictEmailRequest(BaseModel):
     maxMinutes: int | None = Field(None, ge=1, le=240)
 
 
+def _address_from(order: Order) -> str | None:
+    """Single-line Ship To address for the account block, falling back to Bill
+    To. "123 Main St, Austin, TX 78701" — empty parts dropped."""
+    for street, city_state, zip_ in (
+        (order.ship_street, order.ship_city_state, order.ship_zip),
+        (order.bill_street, order.bill_city_state, order.bill_zip),
+    ):
+        parts = [p.strip() for p in (street, city_state, zip_) if p and p.strip()]
+        if parts:
+            return ", ".join(parts)
+    return None
+
+
 def _from_order(order: Order) -> dict:
     return {
         "store_name": order.buyer_name,
         "account_name": order.account_name,
+        "address": _address_from(order),
         "rep_name": order.rep,
         "sales_territory": order.sales_territory,
         "state": _state_from(order.ship_city_state, order.bill_city_state),
@@ -102,6 +116,7 @@ def conflict_email(payload: ConflictEmailRequest, db: Session = Depends(get_db))
     overrides = {
         "store_name": payload.storeName,
         "account_name": payload.accountName,
+        "address": payload.address,
         "rep_name": payload.repName,
         "sales_territory": payload.salesTerritory,
         "state": payload.state,
@@ -129,6 +144,7 @@ def conflict_email(payload: ConflictEmailRequest, db: Session = Depends(get_db))
     return conflict_template.build(
         # Prefer the store's business name; fall back to the buyer/contact name.
         store_name=fields.get("account_name") or fields.get("store_name"),
+        address=fields.get("address"),
         rep_name=fields.get("rep_name"),
         sales_territory=fields.get("sales_territory"),
         state=fields.get("state"),
