@@ -30,35 +30,6 @@ export default function Payment({ payment, setPayment }) {
       {payment.method === 'Credit Card' && (
         <>
           <fieldset className="inline-radios">
-            <legend>Payment type</legend>
-            <label>
-              <input
-                type="radio"
-                name="directPaymentType"
-                checked={payment.directType === 'card'}
-                onChange={() => setPayment('directType', 'card')}
-              />
-              Credit Card
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="directPaymentType"
-                checked={payment.directType === 'paypal'}
-                onChange={() => setPayment('directType', 'paypal')}
-              />
-              PayPal
-            </label>
-          </fieldset>
-          <p className="muted small">
-            A secure payment link will be emailed to you as the start ship date approaches.
-          </p>
-        </>
-      )}
-
-      {payment.method === 'PayPal' && (
-        <>
-          <fieldset className="inline-radios">
             <legend>Charge approval</legend>
             <label>
               <input
@@ -114,8 +85,13 @@ export default function Payment({ payment, setPayment }) {
               />
             </label>
           </div>
+        </>
+      )}
+
+      {payment.method === 'PayPal' && (
+        <>
           <p className="muted small">
-            Card details are used once by our admin team to process this order and are not stored.
+            A secure payment link will be emailed to you as the start ship date approaches.
           </p>
         </>
       )}

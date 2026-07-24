@@ -120,6 +120,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
       <table className="admin-table">
         <thead>
           <tr>
+            <th>Date</th>
             <th>Order ID</th>
             <th>Account Name</th>
             <th>Sales Territory</th>
@@ -134,6 +135,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
         <tbody>
           {orders.map((o) => (
             <tr key={o.id}>
+              <td>{new Date(o.createdAt).toLocaleString()}</td>
               <td title={o.id}>
                 <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
                   <code>{o.shortId}</code>

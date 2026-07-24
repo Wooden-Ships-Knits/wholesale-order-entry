@@ -46,8 +46,13 @@ SALES_ORDER_START_SHIP = "Start_Ship_Date__c"
 WAREHOUSE_BALI_ID = "a0p900000008hZlAAI"
 SALES_ORDER_LINE = "kugo2p__SalesOrderProductLine__c"
 SALES_ORDER_LINE_ORDER = "kugo2p__SalesOrder__c"  # parent lookup on the line
+# NB: the line's Product field references Kugamon's product-detail record, NOT
+# Product2. We store Product2 ids, so translate Product2 -> detail via the
+# detail's ReferenceProduct lookup before creating lines (1 detail per Product2).
 SALES_ORDER_LINE_PRODUCT = "kugo2p__Product__c"
 SALES_ORDER_LINE_QTY = "kugo2p__Quantity__c"
+KUGAMON_PRODUCT_DETAIL = "kugo2p__AdditionalProductDetail__c"
+KUGAMON_DETAIL_REFERENCE_PRODUCT = "kugo2p__ReferenceProduct__c"
 
 # Nearby-stockist conflict check (GET /api/accounts/nearby). Shipping geocodes
 # are Salesforce-populated (verified 2026-07-17: 4,930/6,467 accounts, accuracy
