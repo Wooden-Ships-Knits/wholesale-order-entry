@@ -318,5 +318,18 @@ def find_accounts(
         where = f"Name = '{soql_str(name.strip())}'"
     else:
         raise ValueError("email, account_id or name required")
-    soql = f"SELECT {fields} FROM {mapping.ACCOUNT} WHERE {where} ORDER BY Name LIMIT 25"
+    # Drop inactive / no-booking / conflict / OOB accounts from the buyer
+    # lookup — same EXCLUDED_RANKS gate as the conflict-check candidate set
+    # (decision 2026-07-18). Accounts with no rank still match.
+    excluded_ranks = ", ".join(f"'{soql_str(r)}'" for r in mapping.EXCLUDED_RANKS)
+    rank_filter = f"({mapping.RANK} = null OR {mapping.RANK} NOT IN ({excluded_ranks}))"
+    # IsPersonAccount = FALSE keeps only business accounts. This IS a
+    # person-account org, but wholesale stockists are business accounts
+    # (verified against the org: 4,477 of 4,484 Type='Wholesale' accounts);
+    # the filter drops DTC / consumer person accounts from the buyer lookup.
+    soql = (
+        f"SELECT {fields} FROM {mapping.ACCOUNT} "
+        f"WHERE ({where}) AND {rank_filter} AND IsPersonAccount = FALSE "
+        f"ORDER BY Name LIMIT 25"
+    )
     return query_all(soql)

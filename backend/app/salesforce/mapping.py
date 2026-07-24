@@ -69,6 +69,7 @@ EXCLUDED_RANKS = (
     "E - No Marketing",
     "X - Conflict",
     "OOB - Out of Business",
+    "NGF - Not Going Forward",
 )
 WHOLESALE_TYPE = "Wholesale"
 SHIPPING_LAT = "ShippingLatitude"
