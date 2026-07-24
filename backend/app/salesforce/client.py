@@ -91,6 +91,24 @@ def get_wholesale_pricebook_id(season_code: str) -> str | None:
     return None
 
 
+def kugamon_detail_ids(product2_ids: list[str]) -> dict[str, str]:
+    """Product2 id -> kugo2p__AdditionalProductDetail__c id.
+
+    The order line's kugo2p__Product__c references Kugamon's product-detail
+    record, not Product2 (we store Product2 ids). One detail per Product2.
+    """
+    ids = [p for p in dict.fromkeys(product2_ids) if p]
+    if not ids:
+        return {}
+    inlist = "','".join(soql_str(p) for p in ids)
+    rows = query_all(
+        f"SELECT Id, {mapping.KUGAMON_DETAIL_REFERENCE_PRODUCT} "
+        f"FROM {mapping.KUGAMON_PRODUCT_DETAIL} "
+        f"WHERE {mapping.KUGAMON_DETAIL_REFERENCE_PRODUCT} IN ('{inlist}')"
+    )
+    return {r[mapping.KUGAMON_DETAIL_REFERENCE_PRODUCT]: r["Id"] for r in rows}
+
+
 def create_sales_order(header: dict[str, Any], lines: list[dict[str, Any]]) -> tuple[str, str | None]:
     """Create a Kugamon sales order (header + lines) as a Draft.
 
@@ -105,6 +123,19 @@ def create_sales_order(header: dict[str, Any], lines: list[dict[str, Any]]) -> t
             logger.info("Salesforce session expired — re-authenticating")
             _reset_client()
             return getattr(_client(), sobject).create(data)
+
+    # Translate our stored Product2 ids to the Kugamon product-detail ids the
+    # line's Product field expects. Do this BEFORE creating the header so a
+    # missing mapping doesn't leave an orphan order.
+    product2_ids = [line.get(mapping.SALES_ORDER_LINE_PRODUCT) for line in lines]
+    detail_by_product = kugamon_detail_ids(product2_ids)
+    missing = sorted({p for p in product2_ids if p and p not in detail_by_product})
+    if missing:
+        raise RuntimeError(f"No Kugamon product detail found for Product2 id(s): {missing}")
+    lines = [
+        {**line, mapping.SALES_ORDER_LINE_PRODUCT: detail_by_product[line[mapping.SALES_ORDER_LINE_PRODUCT]]}
+        for line in lines
+    ]
 
     result = _create(mapping.SALES_ORDER, header)
     if not result.get("success"):
