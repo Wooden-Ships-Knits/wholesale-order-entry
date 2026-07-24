@@ -10,30 +10,7 @@ rep can decide how to proceed (docs/conflict-checker.md).
 """
 import re
 
-GREETING_FALLBACK = "Hi team"
 _SEASON_RE = re.compile(r"[FS]\d{2}", re.IGNORECASE)
-
-
-def _rep_from_territory(territory: str | None) -> str | None:
-    """Rep name out of a Sales Territory value like "New England - Kitty Tally"
-    -> "Kitty Tally" (everything after the " - "). None when there is no such
-    delimiter, so the caller can fall back to the rep field."""
-    if not territory or " - " not in territory:
-        return None
-    name = territory.split(" - ", 1)[1].strip()
-    return name or None
-
-
-def _greeting(rep_name: str | None, sales_territory: str | None = None) -> str:
-    """"Hi <name>," line. Prefers the rep named in the Sales Territory field
-    (kept in full, e.g. "Hi Kitty Tally"); otherwise the first name from the
-    rep field; otherwise the team fallback."""
-    territory_rep = _rep_from_territory(sales_territory)
-    if territory_rep:
-        return f"Hi {territory_rep}"
-    if rep_name and rep_name.strip():
-        return f"Hi {rep_name.strip().split()[0]}"
-    return GREETING_FALLBACK
 
 
 def _season(order_name: str | None) -> str:
@@ -59,8 +36,8 @@ def build(
     *,
     store_name: str | None = None,
     address: str | None = None,
-    rep_name: str | None = None,
-    sales_territory: str | None = None,
+    rep_name: str | None = None,  # accepted for API stability; no longer shown
+    sales_territory: str | None = None,  # accepted for API stability; no longer shown
     state: str | None = None,  # accepted for API stability; no longer shown
     neighbors: list[dict] | None = None,
     to_email: str | None = None,
@@ -79,7 +56,7 @@ def build(
     # One line per paragraph — the mail client wraps it. Two blocks keep their
     # own newlines (they are meaningful): the account block and the bullet list.
     paragraphs = [
-        f"{_greeting(rep_name, sales_territory)},",
+        "Hi,",
         "We received an order from this account.",
     ]
 

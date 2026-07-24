@@ -37,7 +37,7 @@ def test_rep_facing_draft_lists_conflicts():
     assert d["to"] == ""
     assert d["subject"] == "CONFLICT Inquiry — TAKE2 STAGING & DESIGN"
     body = d["body"]
-    assert body.startswith("Hi Jason,")
+    assert body.startswith("Hi,")
     assert "We received an order from this account." in body
     # Account block: name then address, on their own lines.
     assert "TAKE2 STAGING & DESIGN\n123 Main St, Miami, FL 33101" in body
@@ -48,31 +48,17 @@ def test_rep_facing_draft_lists_conflicts():
     assert body.endswith("Thanks!")
 
 
-def test_greeting_uses_rep_from_sales_territory():
-    # "New England - Kitty Tally" -> greet "Hi Kitty Tally" (full name),
-    # and it wins over the rep field.
+def test_greeting_is_always_plain_hi():
+    # Greeting is a fixed "Hi," — rep/territory no longer personalize it.
     d = conflict_template.build(
         store_name="Some Store",
         rep_name="Jason Miller",
         sales_territory="New England - Kitty Tally",
         neighbors=NEIGHBORS,
     )
-    assert d["body"].startswith("Hi Kitty Tally,")
-
-
-def test_greeting_falls_back_to_rep_field_without_territory_delimiter():
-    # No " - " in the territory -> fall back to the rep field's first name.
-    d = conflict_template.build(
-        rep_name="Jason Miller",
-        sales_territory="New England",
-        neighbors=[],
-    )
-    assert d["body"].startswith("Hi Jason,")
-
-
-def test_greeting_team_fallback():
-    d = conflict_template.build(neighbors=[])
-    assert d["body"].startswith("Hi team,")
+    assert d["body"].startswith("Hi,")
+    assert "Kitty Tally" not in d["body"]
+    assert "Jason" not in d["body"]
 
 
 def test_endpoint_prefers_account_name_over_buyer_name():
@@ -98,15 +84,6 @@ def test_no_conflicts_message():
     d = conflict_template.build(store_name="New Store", rep_name="Jason", neighbors=[])
     assert "No nearby stockist conflicts were found" in d["body"]
     assert "•" not in d["body"]
-
-
-def test_greeting_falls_back_without_rep():
-    assert conflict_template.build(neighbors=[])["body"].startswith("Hi team,")
-
-
-def test_rep_first_name_only():
-    body = conflict_template.build(rep_name="  jason  miller ", neighbors=[])["body"]
-    assert body.startswith("Hi jason,")
 
 
 def test_metrics_without_drive_time_show_miles_only():
