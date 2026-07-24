@@ -71,9 +71,6 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2>{draft.title || 'Email draft'}</h2>
-        {/* <p className="conflict-modal-note">
-          Review and edit the draft, then send it from wholesale@wooden-ships.com — or copy the text.
-        </p> */}
 
         <label>
           To<span className="req">*</span>

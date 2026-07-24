@@ -27,6 +27,7 @@ NEIGHBORS = [
 def test_rep_facing_draft_lists_conflicts():
     d = conflict_template.build(
         store_name="TAKE2 STAGING & DESIGN",
+        address="123 Main St, Miami, FL 33101",
         rep_name="Jason Miller",
         state="FL",
         neighbors=NEIGHBORS,
@@ -34,45 +35,30 @@ def test_rep_facing_draft_lists_conflicts():
     )
     # The email goes to the rep, whose address we don't store — admin fills it.
     assert d["to"] == ""
-    assert d["subject"] == (
-        "Wooden Ships wholesale inquiry — TAKE2 STAGING & DESIGN "
-        "(potential conflict nearby)"
-    )
+    assert d["subject"] == "CONFLICT Inquiry — TAKE2 STAGING & DESIGN"
     body = d["body"]
-    assert body.startswith("Hi Jason,")
-    assert "inquiry below from TAKE2 STAGING & DESIGN." in body
-    assert "according to the state (FL)" in body
+    assert body.startswith("Hi,")
+    assert "We received an order from this account." in body
+    # Account block: name then address, on their own lines.
+    assert "TAKE2 STAGING & DESIGN\n123 Main St, Miami, FL 33101" in body
+    assert "There are potential conflicts with the following accounts:" in body
     assert "• VAGABOND APPAREL BOUTIQUE (8 min, 2.8 miles) - Last order: F26" in body
     assert "• LADY LANELL'S (9 min, 3.6 miles) - Last order: S26" in body
-    assert "Please reach out to the account if you would like to work with them." in body
+    assert "Please review this potential conflict and let us know if we may proceed." in body
     assert body.endswith("Thanks!")
 
 
-def test_greeting_uses_rep_from_sales_territory():
-    # "New England - Kitty Tally" -> greet "Hi Kitty Tally" (full name),
-    # and it wins over the rep field.
+def test_greeting_is_always_plain_hi():
+    # Greeting is a fixed "Hi," — rep/territory no longer personalize it.
     d = conflict_template.build(
         store_name="Some Store",
         rep_name="Jason Miller",
         sales_territory="New England - Kitty Tally",
         neighbors=NEIGHBORS,
     )
-    assert d["body"].startswith("Hi Kitty Tally,")
-
-
-def test_greeting_falls_back_to_rep_field_without_territory_delimiter():
-    # No " - " in the territory -> fall back to the rep field's first name.
-    d = conflict_template.build(
-        rep_name="Jason Miller",
-        sales_territory="New England",
-        neighbors=[],
-    )
-    assert d["body"].startswith("Hi Jason,")
-
-
-def test_greeting_team_fallback():
-    d = conflict_template.build(neighbors=[])
-    assert d["body"].startswith("Hi team,")
+    assert d["body"].startswith("Hi,")
+    assert "Kitty Tally" not in d["body"]
+    assert "Jason" not in d["body"]
 
 
 def test_endpoint_prefers_account_name_over_buyer_name():
@@ -100,15 +86,6 @@ def test_no_conflicts_message():
     assert "•" not in d["body"]
 
 
-def test_greeting_falls_back_without_rep():
-    assert conflict_template.build(neighbors=[])["body"].startswith("Hi team,")
-
-
-def test_rep_first_name_only():
-    body = conflict_template.build(rep_name="  jason  miller ", neighbors=[])["body"]
-    assert body.startswith("Hi jason,")
-
-
 def test_metrics_without_drive_time_show_miles_only():
     d = conflict_template.build(
         neighbors=[
@@ -127,10 +104,17 @@ def test_season_falls_back_when_unparseable():
     assert "Last order: —" in d["body"]
 
 
-def test_state_omitted_when_unknown():
-    body = conflict_template.build(neighbors=NEIGHBORS)["body"]
-    assert "potential conflicts nearby with the following accounts:" in body
+def test_conflict_line_is_fixed_regardless_of_state():
+    # State no longer changes the conflict line — it's always the same sentence.
+    body = conflict_template.build(state="FL", neighbors=NEIGHBORS)["body"]
+    assert "There are potential conflicts with the following accounts:" in body
     assert "according to the state" not in body
+
+
+def test_account_block_omitted_without_name_or_address():
+    body = conflict_template.build(neighbors=NEIGHBORS)["body"]
+    # No store/address -> straight from the intro to the conflict line.
+    assert "We received an order from this account.\n\nThere are potential" in body
 
 
 def test_state_from_parses_city_state_and_full_address():
