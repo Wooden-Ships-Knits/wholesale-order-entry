@@ -75,12 +75,13 @@ export default function OrderTable({ orders, onChanged, onError }) {
       // Either may be empty — the admin fills in what's missing before sending.
       to: order.shipEmail || '',
       cc: order.repEmail || '',
-      subject: `New Account Info Required - ${name}`,
+      subject: `Tax Certificate Request - ${name}`,
       body:
-        'Hi Wooden Ships Retailer,\n\n' +
+        'Hi,\n\n' +
         'Thank you for your support as a new Wooden Ships Retailer! We so appreciate your support.\n\n' +
         'Please note that a copy of your Resale Certificate is required to complete your status as a ' +
-        'Wooden Ships Retailer. Please reply to this email with your state-issued Sales Tax Exemption ' +
+        'Wooden Ships Retailer.\n\n' +
+        'Please reply to this email with your state-issued Sales Tax Exemption ' +
         'form as soon as possible.\n\n' +
         'Best,\n' +
         'Wooden Ships',
@@ -129,6 +130,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <th>Account Name</th>
             <th>Sales Territory</th>
             <th>New account</th>
+            <th>Rank</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
             <th>Notes</th>
@@ -149,7 +151,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               {/* New account = Yes stacks a "Create account" action (or the
                   "Created ✓" state) beneath it, like the tax-cert cell. */}
-              <td>
+              <td className={o.isNewAccount ? 'flag-yellow' : 'flag-green'}>
                 {o.isNewAccount ? (
                   <div className="cert-missing">
                     <span>Yes</span>
@@ -174,12 +176,15 @@ export default function OrderTable({ orders, onChanged, onError }) {
               </td>
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
-              <td>
+               <td>
+                {o.rank || <span className="unknown">—</span>}
+              </td>
+              <td className={o.hasConflict ? 'flag-yellow' : 'flag-green'}>
                 {o.hasConflict ? (
                   <div className="cert-missing">
                     <span>Yes</span>
                     {o.conflictEmailSent || sentConflict.has(o.id) ? (
-                      <span className="sf-created">Sent ✓</span>
+                      <span className="sf-created">Email Sent ✓ waiting for the response</span>
                     ) : (
                       <button
                         type="button"
@@ -195,7 +200,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   'No'
                 )}
               </td>
-              <td>
+              <td className={o.hasCertificate ? 'flag-green' : o.isNewAccount ? 'flag-yellow' : undefined}>
                 {o.hasCertificate ? (
                   <a href={certUrl(o.id)} target="_blank" rel="noreferrer">
                     Open
@@ -205,7 +210,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   <div className="cert-missing">
                     <span>No</span>
                     {o.taxCertEmailSent || sentTaxCert.has(o.id) ? (
-                      <span className="sf-created">Sent ✓</span>
+                      <span className="sf-created">Email Sent ✓ waiting for the response</span>
                     ) : (
                       <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
                         Generate email

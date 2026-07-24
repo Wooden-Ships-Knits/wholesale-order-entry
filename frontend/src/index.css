@@ -842,6 +842,11 @@ button:hover {
   background: rgba(46, 125, 50, 0.12);
   font-weight: 600;
 }
+.admin-table td.flag-yellow { 
+  background: rgba(214, 170, 20, 0.14); 
+  font-weight: 600;
+}
+
 .admin-table td.flag-red {
   background: rgba(122, 40, 31, 0.12);
   font-weight: 600;
