@@ -58,9 +58,10 @@ def _metrics(neighbor: dict) -> str:
 def build(
     *,
     store_name: str | None = None,
+    address: str | None = None,
     rep_name: str | None = None,
     sales_territory: str | None = None,
-    state: str | None = None,
+    state: str | None = None,  # accepted for API stability; no longer shown
     neighbors: list[dict] | None = None,
     to_email: str | None = None,
     max_minutes: int = 20,
@@ -68,37 +69,37 @@ def build(
     """-> {to, subject, body}. Every field is optional so the draft can be
     generated from a bare conflict-check result as well as from an order."""
     store = (store_name or "").strip()
+    address = (address or "").strip()
     neighbors = neighbors or []
 
-    subject = "Wooden Ships wholesale inquiry — potential conflict nearby"
+    subject = "CONFLICT Inquiry — [store name]"
     if store:
-        subject = f"Wooden Ships wholesale inquiry — {store} (potential conflict nearby)"
+        subject = f"CONFLICT Inquiry — {store}"
 
-    store_phrase = store or "a new store"
-    conflict_line = (
-        f"There are potential conflicts according to the state ({state.strip()}) "
-        "with the following accounts:"
-        if state
-        else "There are potential conflicts nearby with the following accounts:"
-    )
-
-    # One line per paragraph — the mail client wraps it. The bullet block is the
-    # exception: its newlines are meaningful, so it is joined into one paragraph.
+    # One line per paragraph — the mail client wraps it. Two blocks keep their
+    # own newlines (they are meaningful): the account block and the bullet list.
     paragraphs = [
         f"{_greeting(rep_name, sales_territory)},",
-        f"Please see the wholesale inquiry below from {store_phrase}.",
+        "We received an order from this account.",
     ]
+
+    account_block = "\n".join(line for line in (store, address) if line)
+    if account_block:
+        paragraphs.append(account_block)
+
     if neighbors:
         bullets = "\n".join(
             f"  • {n.get('name') or '(unnamed account)'} "
             f"({_metrics(n)}) - Last order: {_season(n.get('lastOrderName'))}"
             for n in neighbors
         )
-        paragraphs.append(f"{conflict_line}\n\n{bullets}")
         paragraphs.append(
-            "Please reach out to the account if you would like to work with them."
+            "There are potential conflicts with the following accounts:"
+            f"\n\n{bullets}"
         )
-        # Add thanks
+        paragraphs.append(
+            "Please review this potential conflict and let us know if we may proceed."
+        )
         paragraphs.append("Thanks!")
     else:
         paragraphs.append("No nearby stockist conflicts were found for this inquiry.")

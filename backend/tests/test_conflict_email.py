@@ -27,6 +27,7 @@ NEIGHBORS = [
 def test_rep_facing_draft_lists_conflicts():
     d = conflict_template.build(
         store_name="TAKE2 STAGING & DESIGN",
+        address="123 Main St, Miami, FL 33101",
         rep_name="Jason Miller",
         state="FL",
         neighbors=NEIGHBORS,
@@ -34,17 +35,16 @@ def test_rep_facing_draft_lists_conflicts():
     )
     # The email goes to the rep, whose address we don't store — admin fills it.
     assert d["to"] == ""
-    assert d["subject"] == (
-        "Wooden Ships wholesale inquiry — TAKE2 STAGING & DESIGN "
-        "(potential conflict nearby)"
-    )
+    assert d["subject"] == "CONFLICT Inquiry — TAKE2 STAGING & DESIGN"
     body = d["body"]
     assert body.startswith("Hi Jason,")
-    assert "inquiry below from TAKE2 STAGING & DESIGN." in body
-    assert "according to the state (FL)" in body
+    assert "We received an order from this account." in body
+    # Account block: name then address, on their own lines.
+    assert "TAKE2 STAGING & DESIGN\n123 Main St, Miami, FL 33101" in body
+    assert "There are potential conflicts with the following accounts:" in body
     assert "• VAGABOND APPAREL BOUTIQUE (8 min, 2.8 miles) - Last order: F26" in body
     assert "• LADY LANELL'S (9 min, 3.6 miles) - Last order: S26" in body
-    assert "Please reach out to the account if you would like to work with them." in body
+    assert "Please review this potential conflict and let us know if we may proceed." in body
     assert body.endswith("Thanks!")
 
 
@@ -127,10 +127,17 @@ def test_season_falls_back_when_unparseable():
     assert "Last order: —" in d["body"]
 
 
-def test_state_omitted_when_unknown():
-    body = conflict_template.build(neighbors=NEIGHBORS)["body"]
-    assert "potential conflicts nearby with the following accounts:" in body
+def test_conflict_line_is_fixed_regardless_of_state():
+    # State no longer changes the conflict line — it's always the same sentence.
+    body = conflict_template.build(state="FL", neighbors=NEIGHBORS)["body"]
+    assert "There are potential conflicts with the following accounts:" in body
     assert "according to the state" not in body
+
+
+def test_account_block_omitted_without_name_or_address():
+    body = conflict_template.build(neighbors=NEIGHBORS)["body"]
+    # No store/address -> straight from the intro to the conflict line.
+    assert "We received an order from this account.\n\nThere are potential" in body
 
 
 def test_state_from_parses_city_state_and_full_address():
