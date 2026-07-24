@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     mail_from: str = ""  # From address; falls back to smtp_user when blank
     admin_email: str = "wholesale@wooden-ships.com"
 
+    # Admin reports (DTO / DMM). Salesforce reuses the connection above — these
+    # are the only DTO-specific values (were hardcoded in the standalone script).
+    dto_report_name: str = "Daily Total Order"  # Salesforce Report.Name to run
+    dto_recap_recipient: str = "Paola"  # greeting name in the recap email
+
     @property
     def mail_configured(self) -> bool:
         return bool(self.smtp_host and self.smtp_user and self.smtp_pass)

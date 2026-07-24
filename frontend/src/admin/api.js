@@ -37,3 +37,7 @@ export const sendEmail = (payload) => post('/api/send-email', payload)
 
 export const pdfUrl = (id) => `/api/admin/orders/${id}/pdf`
 export const certUrl = (id) => `/api/admin/orders/${id}/certificate`
+
+// Admin reports (DTO/DMM). getReport = last cached run; runReport = run now.
+export const getReport = (key) => request(`/api/admin/reports/${key}`)
+export const runReport = (key) => post(`/api/admin/reports/${key}/run`)

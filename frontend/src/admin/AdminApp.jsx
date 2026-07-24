@@ -3,10 +3,12 @@ import { getOrders, getSession, logout } from './api'
 import Login from './Login'
 import OrderTable from './OrderTable'
 import ConflictCheck from '../conflict/ConflictCheck.jsx'
+import OrderReport from './OrderReport'
 
 const TABS = [
   { value: 'orders', label: 'Orders' },
   { value: 'conflict', label: 'Conflict check' },
+  { value: 'reports', label: 'Reports' },
 ]
 
 const FILTERS = [
@@ -85,6 +87,8 @@ export default function AdminApp() {
 
       {tab === 'conflict' ? (
         <ConflictCheck embedded />
+      ) : tab === 'reports' ? (
+        <OrderReport />
       ) : (
         <>
           <div className="admin-toolbar">
