@@ -191,7 +191,7 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
             <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipUnlink('zip', v)} />
           </>
         )}
-        <Field label="Resale tax ID" value={shipTo.resaleTaxId} onChange={(v) => setShipTo('resaleTaxId', v)} />
+        <Field label="Resale tax ID" value={shipTo.resaleTaxId} onChange={(v) => setShipTo('resaleTaxId', v)} required />
       </div>
     </section>
   )

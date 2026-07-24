@@ -265,6 +265,7 @@ export default function App() {
       if (!internal.orderWrittenBy) problems.push('Internal Use: select who the order was written by.')
     }
     if (!shipTo.email) problems.push('Ship To email is required.')
+    if (!shipTo.resaleTaxId?.trim()) problems.push('Resale tax ID is required.')
     if (!terms.signatureName) problems.push('Signature is required.')
     if (!terms.accepted) problems.push('You must accept the Order Policies.')
     if (!terms.infoConfirmed) problems.push('Please confirm the order information is correct.')
