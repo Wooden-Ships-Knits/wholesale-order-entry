@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.db.models import Order, OrderItem
 from app.db.session import SessionLocal, get_db
+from app.email import order_email
 from app.geo import conflict
 from app.pdf import render as pdf_render
 from app.salesforce import client, mapping
@@ -357,15 +358,23 @@ def submit_order(
                 order.id, cert_name,
             )
 
-    # Automatic submit emails are DISABLED (2026-07-23 decision): neither the
-    # buyer order-copy nor the admin notice is sent on submission. Orders are
-    # reviewed on the /admin page instead, and PPIC sends the buyer their order
-    # confirmation from there. The opt-in checkbox + order_copy_email are still
-    # captured and persisted, so this is a one-call re-enable: restore the
-    # order_email.schedule_order_emails(...) call here (see git history) and the
-    # `from app.email import order_email` import. The order_email module and its
-    # tests are kept intact for that. Admin sending still works via
-    # POST /api/send-email (the conflict / tax-cert modal).
+    # Email the admin (wholesale@wooden-ships.com) a copy of every order
+    # (re-enabled 2026-07-24, reversing the 2026-07-23 pause). Admin copy ONLY —
+    # the buyer order-copy is intentionally not sent from here; the buyer gets
+    # their confirmation from the /admin review step instead. A background task
+    # (like the conflict check below) so a slow or failed Gmail never blocks the
+    # buyer's confirmation. The attachment is the in-memory, card-free PDF — so
+    # it sends even if the disk save above failed. Admin sending also still
+    # works on demand via POST /api/send-email.
+    email_ctx = {
+        "short_id": str(order.id)[:8],
+        "season_code": order.season_code,
+        "season_label": mapping.season_label(order.season_code),
+        "buyer_name": order.buyer_name,
+        "total_qty": total_qty,
+        "total_amount": total_amount,
+    }
+    background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename)
 
     # New accounts only: check whether an existing stockist is too close, so
     # /admin can flag it. Runs in the background — a slow Google/Salesforce
