@@ -4,6 +4,7 @@ All calls happen backend-side only. Credentials come from settings (.env).
 The session is created lazily and re-created automatically on expiry.
 """
 import logging
+import re
 import threading
 import time
 from datetime import date, timedelta
@@ -107,6 +108,48 @@ def kugamon_detail_ids(product2_ids: list[str]) -> dict[str, str]:
         f"WHERE {mapping.KUGAMON_DETAIL_REFERENCE_PRODUCT} IN ('{inlist}')"
     )
     return {r[mapping.KUGAMON_DETAIL_REFERENCE_PRODUCT]: r["Id"] for r in rows}
+
+
+def _norm_picklist(value: str | None) -> str:
+    """Whitespace-insensitive, lowercased key for picklist matching."""
+    return re.sub(r"\s+", "", value or "").lower()
+
+
+def match_order_territory(value: str | None) -> str | None:
+    """Match our sales-territory string to the order's SalesTerritory picklist,
+    ignoring spacing/case (REGION tab has 'CA/ HI', the picklist 'CA/HI'). Returns
+    the exact picklist value, or None if no match — so a mismatch skips the field
+    instead of failing the whole order create."""
+    if not value:
+        return None
+
+    def fetch() -> dict[str, str]:
+        for f in describe_fields(mapping.SALES_ORDER):
+            if f["name"] == mapping.SALES_ORDER_TERRITORY:
+                return {
+                    _norm_picklist(v["value"]): v["value"]
+                    for v in f["picklistValues"]
+                    if v.get("active", True)
+                }
+        return {}
+
+    return _cached("order_territory_picklist", fetch).get(_norm_picklist(value))
+
+
+def campaign_id_for(campaign_value: str | None) -> str | None:
+    """Resolve our order campaign value to a Campaign record id. Only the
+    'rep-non-show' option maps to a campaign ('Rep - Non Show Orders'); anything
+    else returns None (Campaign left empty)."""
+    if campaign_value != "rep-non-show":
+        return None
+
+    def fetch() -> str | None:
+        rows = query_all(
+            f"SELECT Id FROM Campaign WHERE Name = '{soql_str(mapping.CAMPAIGN_REP_NON_SHOW_NAME)}' LIMIT 1"
+        )
+        return rows[0]["Id"] if rows else None
+
+    return _cached("campaign:rep-non-show", fetch)
 
 
 def create_sales_order(header: dict[str, Any], lines: list[dict[str, Any]]) -> tuple[str, str | None]:
