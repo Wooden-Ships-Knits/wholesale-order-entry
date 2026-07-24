@@ -891,6 +891,60 @@ button:hover {
   text-align: center;
   padding: 2rem;
 }
+
+/* ---- Order report tab: DTO / DMM runner cards ---- */
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.report-card {
+  border: 1px solid #d8d4cc;
+  background: #fff;
+  padding: 1.25rem 1.5rem;
+}
+.report-card h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.05rem;
+}
+.report-card h3 {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6d6a63;
+}
+.report-run-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+}
+.report-ranat {
+  font-size: 0.8rem;
+  color: #6d6a63;
+}
+.report-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: #7a5a1f;
+  font-style: italic;
+}
+.report-box {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  background: #1d1d1b;
+  color: #e8e6e0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 3px;
+}
 .admin-login {
   max-width: 320px;
   margin: 6rem auto;
