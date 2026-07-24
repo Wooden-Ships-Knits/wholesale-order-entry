@@ -394,6 +394,9 @@ export default function App() {
         // Exemption (rep marking New / no lookup match, or a customer's first
         // order).
         showLocationSearch={isNewAccount}
+        // New customers ship to their billing address most of the time, so
+        // "Same as Bill To" defaults on for them (Ship To still editable).
+        isNewAccount={isNewAccount}
       />
 
       {isNewAccount && (form.salesTerritory || territoryStatus) && (

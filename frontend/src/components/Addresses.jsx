@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AddressMap from './AddressMap'
 
 // Format a US phone number progressively as the user types: keep only the
@@ -55,8 +55,26 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
   )
 }
 
-export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false }) {
+export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false }) {
   const [sameAsBilling, setSameAsBilling] = useState(false)
+
+  const shipHasAddress = Boolean(shipTo.street || shipTo.cityState || shipTo.zip)
+
+  // New customers usually ship to their billing address, so default the box on
+  // for them — but only while Ship To is still empty, so we never clobber an
+  // address the user already typed (e.g. a rep marking the account New after
+  // filling Ship To). Unticking sticks: once Ship To is populated this stops
+  // re-checking. Existing accounts (lookup autofills both sides) are untouched.
+  const seededRef = useRef(false)
+  useEffect(() => {
+    if (seededRef.current) return
+    if (isNewAccount && !shipHasAddress) {
+      seededRef.current = true
+      setSameAsBilling(true)
+    }
+    // shipHasAddress guards the seed; setSameAsBilling is stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNewAccount, shipHasAddress])
 
   // While checked, mirror the shared address fields from Bill To — including
   // when billing is autofilled from the account lookup after the box is ticked.
@@ -73,12 +91,18 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sameAsBilling, billTo.street, billTo.cityState, billTo.zip, billTo.lat, billTo.lng])
 
+  // Editing a mirrored Ship To field (typing, or a Ship To map search) breaks
+  // the link so the manual value isn't overwritten by later Bill To changes.
+  const setShipUnlink = (field, value) => {
+    if (sameAsBilling) setSameAsBilling(false)
+    setShipTo(field, value)
+  }
+
   // Street / City / Zip stay hidden until the address is populated — by the
   // location search (new customer picks a place) or the account lookup
   // (existing account autofills). Any one of the three being present reveals
   // the block so it can be reviewed / edited.
   const billHasAddress = Boolean(billTo.street || billTo.cityState || billTo.zip)
-  const shipHasAddress = Boolean(shipTo.street || shipTo.cityState || shipTo.zip)
 
   return (
     <section className="section addresses">
@@ -140,6 +164,9 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
             lat={shipTo.lat}
             lng={shipTo.lng}
             onPlaceSelect={(p) => {
+              // Searching a Ship To address is a manual choice — unlink so it
+              // isn't overwritten by the Bill To mirror.
+              if (sameAsBilling) setSameAsBilling(false)
               setShipTo('street', p.street)
               setShipTo('cityState', p.cityState)
               setShipTo('zip', p.zip)
@@ -154,16 +181,14 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
             <Field
               label="Street"
               value={shipTo.street}
-              onChange={(v) => setShipTo('street', v)}
-              disabled={sameAsBilling}
+              onChange={(v) => setShipUnlink('street', v)}
             />
             <Field
               label="City / State"
               value={shipTo.cityState}
-              onChange={(v) => setShipTo('cityState', v)}
-              disabled={sameAsBilling}
+              onChange={(v) => setShipUnlink('cityState', v)}
             />
-            <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipTo('zip', v)} disabled={sameAsBilling} />
+            <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipUnlink('zip', v)} />
           </>
         )}
         <Field label="Resale tax ID" value={shipTo.resaleTaxId} onChange={(v) => setShipTo('resaleTaxId', v)} />
