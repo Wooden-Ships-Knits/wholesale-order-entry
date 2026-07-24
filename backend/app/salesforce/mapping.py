@@ -71,6 +71,13 @@ EXCLUDED_RANKS = (
     "OOB - Out of Business",
     "NGF - Not Going Forward",
 )
+EXCLUDED_RANKS_FIND_ACCOUNT = (
+    "ZZ - No Booking",
+    "Z - Inactive",
+    "E - No Marketing",
+    "OOB - Out of Business",
+    "NGF - Not Going Forward",
+)
 WHOLESALE_TYPE = "Wholesale"
 SHIPPING_LAT = "ShippingLatitude"
 SHIPPING_LNG = "ShippingLongitude"
