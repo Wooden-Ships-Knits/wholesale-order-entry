@@ -80,6 +80,9 @@ def _row(o: Order) -> dict:
         "accountName": o.account_name,
         "orderCopyEmail": o.order_copy_email,
         "salesTerritory": o.sales_territory,
+        # Account rank at order time; a new account has none yet, so show the
+        # rank it will be created with (Rank C).
+        "rank": o.rank or (mapping.RANK_NEW_ACCOUNT if o.is_new_account else None),
         # Lead rep email for the territory (tax-cert CC / conflict recipient);
         # null when territory is empty or has no rep row.
         "repEmail": sheets_client.rep_email_for_territory(o.sales_territory),

@@ -151,7 +151,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               {/* New account = Yes stacks a "Create account" action (or the
                   "Created ✓" state) beneath it, like the tax-cert cell. */}
-              <td className={o.isNewAccount ? 'flag-yellow' : 'flag-green'}>
+              <td className={o.isNewAccount && !o.sfAccountId ? 'flag-yellow' : 'flag-green'}>
                 {o.isNewAccount ? (
                   <div className="cert-missing">
                     <span>Yes</span>
@@ -177,7 +177,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
                <td>
-                {o.rank || <span className="unknown">—</span>}
+                {o.rank ? o.rank.split(' - ')[0] : <span className="unknown">—</span>}
               </td>
               <td className={o.hasConflict ? 'flag-yellow' : 'flag-green'}>
                 {o.hasConflict ? (
