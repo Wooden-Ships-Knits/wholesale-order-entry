@@ -7,6 +7,7 @@ served statically: they carry buyer contact details and tax IDs.
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse
@@ -15,9 +16,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.admin.security import SESSION_KEY, AdminRequired, verify_password
+from app.ai import conflict_reply
 from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
+from app.email import inbound
 from app.pdf import render as pdf_render
 from app.salesforce import client as sf_client
 from app.salesforce import mapping
@@ -38,6 +41,13 @@ class LoginRequest(BaseModel):
 class StatusRequest(BaseModel):
     status: str
     reason: str = Field("", max_length=1000)
+
+
+class ConflictResolutionRequest(BaseModel):
+    # The rep either cleared the inquiry or confirmed a genuine territory
+    # conflict; anything else is a 422. note is optional free text.
+    outcome: Literal["cleared", "real_conflict"]
+    note: str = Field("", max_length=1000)
 
 
 # ------------------------------------------------------------------ session
@@ -93,6 +103,19 @@ def _row(o: Order) -> dict:
         # Persistent "Sent ✓" state for the admin email buttons.
         "conflictEmailSent": o.conflict_email_sent_at is not None,
         "taxCertEmailSent": o.tax_cert_email_sent_at is not None,
+        # Recorded outcome of the conflict inquiry (null = still waiting).
+        "conflictResolution": o.conflict_resolution,
+        "conflictResolvedAt": (
+            o.conflict_resolved_at.isoformat() if o.conflict_resolved_at else None
+        ),
+        "conflictResolutionNote": o.conflict_resolution_note,
+        # Classifier's suggested outcome from a captured reply (null = none yet).
+        "conflictAiOutcome": o.conflict_ai_outcome,
+        "conflictAiConfidence": (
+            float(o.conflict_ai_confidence) if o.conflict_ai_confidence is not None else None
+        ),
+        "conflictAiReason": o.conflict_ai_reason,
+        "conflictAiAt": o.conflict_ai_at.isoformat() if o.conflict_ai_at else None,
         "hasCertificate": bool(o.cert_filename),
         # Salesforce Account link: created id (null = not created yet).
         "sfAccountId": o.sf_account_id,
@@ -174,6 +197,34 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
     db.commit()
     logger.info("Order %s marked %s", str(order.id)[:8], payload.status)
     return _row(order)
+
+
+@router.post("/orders/{order_id}/conflict-resolution", dependencies=[AdminRequired])
+def set_conflict_resolution(
+    order_id: str, payload: ConflictResolutionRequest, db: Session = Depends(get_db)
+) -> dict:
+    """Record how a conflict inquiry ended so the row closes instead of sitting
+    at "waiting for the response". Purely a local status stamp — nothing is sent
+    and Salesforce is not touched."""
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    order.conflict_resolution = payload.outcome
+    order.conflict_resolution_note = payload.note or None
+    order.conflict_resolved_at = datetime.now(timezone.utc)
+    db.commit()
+    logger.info("Order %s conflict marked %s", str(order.id)[:8], payload.outcome)
+    return _row(order)
+
+
+@router.post("/poll-replies", dependencies=[AdminRequired])
+def poll_replies(db: Session = Depends(get_db)) -> dict:
+    """Capture new inbound conflict replies, then classify them into suggestions.
+    Safe to call repeatedly (and from a cron): both steps no-op when IMAP /
+    OpenAI are unconfigured, and captured replies are deduped by Message-ID."""
+    captured = inbound.run_poll(db)
+    suggested = conflict_reply.run_classify(db)
+    return {"captured": captured, "suggested": suggested}
 
 
 @router.post("/orders/{order_id}/create-account", dependencies=[AdminRequired])

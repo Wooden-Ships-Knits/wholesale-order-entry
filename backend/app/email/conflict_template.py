@@ -41,10 +41,15 @@ def build(
     state: str | None = None,  # accepted for API stability; no longer shown
     neighbors: list[dict] | None = None,
     to_email: str | None = None,
+    order_id: str | None = None,
     max_minutes: int = 20,
 ) -> dict:
     """-> {to, subject, body}. Every field is optional so the draft can be
-    generated from a bare conflict-check result as well as from an order."""
+    generated from a bare conflict-check result as well as from an order.
+
+    When order_id is given, a "[#<order_id>]" token is appended to the subject so
+    a reply can be correlated to the order even if it comes back to the bare
+    wholesale@ address without the plus-token (see app/email/inbound.py)."""
     store = (store_name or "").strip()
     address = (address or "").strip()
     neighbors = neighbors or []
@@ -52,6 +57,8 @@ def build(
     subject = "CONFLICT Inquiry — [store name]"
     if store:
         subject = f"CONFLICT Inquiry — {store}"
+    if order_id:
+        subject = f"{subject} [#conflict-{order_id}]"
 
     # One line per paragraph — the mail client wraps it. Two blocks keep their
     # own newlines (they are meaningful): the account block and the bullet list.

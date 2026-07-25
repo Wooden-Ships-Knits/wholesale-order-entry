@@ -106,11 +106,15 @@ def _conflicting_neighbors(lat: float, lng: float, max_minutes: int) -> list[dic
 @router.post("/conflict-email", dependencies=[AdminRequired])
 def conflict_email(payload: ConflictEmailRequest, db: Session = Depends(get_db)) -> dict:
     fields: dict = {}
+    order_id_token: str | None = None
     if payload.orderId:
         order = db.get(Order, payload.orderId)
         if order is None:
             raise HTTPException(status_code=404, detail="Order not found")
         fields = _from_order(order)
+        # Stamp the order token into the subject so a reply is correlatable even
+        # if it lands on the bare wholesale@ address (see app/email/inbound.py).
+        order_id_token = str(order.id)
 
     # Explicit fields override whatever the order supplied.
     overrides = {
@@ -150,5 +154,6 @@ def conflict_email(payload: ConflictEmailRequest, db: Session = Depends(get_db))
         state=fields.get("state"),
         neighbors=neighbors,
         to_email=fields.get("to_email"),
+        order_id=order_id_token,
         max_minutes=max_minutes,
     )

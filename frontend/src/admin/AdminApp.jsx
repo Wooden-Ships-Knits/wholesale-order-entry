@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getOrders, getSession, logout } from './api'
+import { getOrders, getSession, logout, pollReplies } from './api'
 import Login from './Login'
 import OrderTable from './OrderTable'
 import ConflictCheck from '../conflict/ConflictCheck.jsx'
@@ -25,6 +25,8 @@ export default function AdminApp() {
   const [filter, setFilter] = useState('submitted')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [polling, setPolling] = useState(false)
+  const [pollMsg, setPollMsg] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -49,6 +51,24 @@ export default function AdminApp() {
   useEffect(() => {
     if (authed) load()
   }, [authed, load])
+
+  // Manually run the inbound-reply capture + classifier, then refresh so any
+  // new AI suggestions show up. (Until a scheduler runs this on a cadence.)
+  async function checkReplies() {
+    setPolling(true)
+    setPollMsg('')
+    setError('')
+    try {
+      const r = await pollReplies()
+      setPollMsg(`Captured ${r.captured}, ${r.suggested} new suggestion(s).`)
+      await load()
+    } catch (err) {
+      if (err.status === 401) setAuthed(false)
+      else setError(err.message)
+    } finally {
+      setPolling(false)
+    }
+  }
 
   if (authed === null) return <p className="admin-empty">Loading…</p>
   if (!authed) return <Login onSignedIn={() => setAuthed(true)} />
@@ -105,6 +125,16 @@ export default function AdminApp() {
             <button type="button" className="link-btn" onClick={load} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </button>
+            <button
+              type="button"
+              className="link-btn"
+              onClick={checkReplies}
+              disabled={polling}
+              title="Capture new conflict replies and run the AI classifier"
+            >
+              {polling ? 'Checking…' : 'Check replies'}
+            </button>
+            {pollMsg && <span className="poll-msg">{pollMsg}</span>}
           </div>
 
           {error && <p className="admin-error">{error}</p>}

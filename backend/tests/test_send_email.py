@@ -9,6 +9,7 @@ from app.admin.security import require_admin
 from app.config import Settings
 from app.db.session import get_db
 from app.main import app
+from app.routers import send_email as send_email_router
 
 app.dependency_overrides[require_admin] = lambda: None
 client = TestClient(app)
@@ -37,14 +38,21 @@ def test_send_email_happy_path_passes_cc_to_mailer():
         resp = client.post("/api/send-email", json=PAYLOAD)
     assert resp.status_code == 200
     assert resp.json() == {"sent": True}
+    # No order behind this send → no reply-to tagging.
     send.assert_called_once_with(
-        PAYLOAD["to"], PAYLOAD["subject"], PAYLOAD["body"], cc=PAYLOAD["cc"]
+        PAYLOAD["to"], PAYLOAD["subject"], PAYLOAD["body"], cc=PAYLOAD["cc"], reply_to=None
     )
 
 
-def test_send_email_requires_cc():
-    resp = client.post("/api/send-email", json={**PAYLOAD, "cc": ""})
-    assert resp.status_code == 422
+def test_send_email_allows_empty_cc():
+    # Conflict emails have no CC (hideCc) — an empty cc must be accepted, not a
+    # 422. (A 422's list-shaped detail was surfacing as "[object Object]".)
+    with mail_configured(True), patch(
+        "app.routers.send_email.mailer.send_email", return_value=True
+    ) as send:
+        resp = client.post("/api/send-email", json={**PAYLOAD, "cc": ""})
+    assert resp.status_code == 200
+    assert send.call_args.kwargs["cc"] == ""
 
 
 def test_send_email_requires_to():
@@ -115,6 +123,36 @@ def test_send_email_stamps_tax_cert_order_on_success():
     assert order.tax_cert_email_sent_at is not None
     assert order.conflict_email_sent_at is None
     assert session.committed
+
+
+def test_conflict_send_tagged_with_plus_address_reply_to():
+    order = SimpleNamespace(conflict_email_sent_at=None, tax_cert_email_sent_at=None)
+    with _fake_db(order), mail_configured(True), patch.object(
+        send_email_router.settings, "mail_from", "wholesale@wooden-ships.com"
+    ), patch(
+        "app.routers.send_email.mailer.send_email", return_value=True
+    ) as send:
+        resp = client.post(
+            "/api/send-email", json={**PAYLOAD, "orderId": "abc", "kind": "conflict"}
+        )
+    assert resp.status_code == 200
+    assert send.call_args.kwargs["reply_to"] == "wholesale+conflict-abc@wooden-ships.com"
+
+
+def test_tax_cert_send_tagged_with_plus_address_reply_to():
+    # Tax-cert emails are tagged too, so the customer's reply (with the cert
+    # attached) correlates back to the order.
+    order = SimpleNamespace(conflict_email_sent_at=None, tax_cert_email_sent_at=None)
+    with _fake_db(order), mail_configured(True), patch.object(
+        send_email_router.settings, "mail_from", "wholesale@wooden-ships.com"
+    ), patch(
+        "app.routers.send_email.mailer.send_email", return_value=True
+    ) as send:
+        resp = client.post(
+            "/api/send-email", json={**PAYLOAD, "orderId": "abc", "kind": "tax_cert"}
+        )
+    assert resp.status_code == 200
+    assert send.call_args.kwargs["reply_to"] == "wholesale+tax_cert-abc@wooden-ships.com"
 
 
 def test_send_email_rejects_unknown_kind():

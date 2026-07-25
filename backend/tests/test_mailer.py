@@ -35,6 +35,31 @@ def test_send_email_builds_message_and_sends(monkeypatch):
     assert attachments[0].get_filename() == "order.pdf"
 
 
+def test_send_email_sets_reply_to_header(monkeypatch):
+    _configure(monkeypatch)
+    fake_smtp = MagicMock()
+    ctx_mgr = MagicMock()
+    ctx_mgr.__enter__.return_value = fake_smtp
+    with patch("app.email.mailer.smtplib.SMTP", return_value=ctx_mgr):
+        mailer.send_email(
+            "rep@wooden-ships.com", "S", "B",
+            reply_to="wholesale+conflict-abc@wooden-ships.com",
+        )
+    sent = fake_smtp.send_message.call_args[0][0]
+    assert sent["Reply-To"] == "wholesale+conflict-abc@wooden-ships.com"
+
+
+def test_send_email_omits_reply_to_when_absent(monkeypatch):
+    _configure(monkeypatch)
+    fake_smtp = MagicMock()
+    ctx_mgr = MagicMock()
+    ctx_mgr.__enter__.return_value = fake_smtp
+    with patch("app.email.mailer.smtplib.SMTP", return_value=ctx_mgr):
+        mailer.send_email("rep@wooden-ships.com", "S", "B")
+    sent = fake_smtp.send_message.call_args[0][0]
+    assert sent["Reply-To"] is None
+
+
 def test_send_email_skips_when_unconfigured(monkeypatch):
     monkeypatch.setattr(mailer.settings, "smtp_host", "")
     with patch("app.email.mailer.smtplib.SMTP") as SMTP:

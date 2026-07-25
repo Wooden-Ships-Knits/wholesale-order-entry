@@ -58,6 +58,21 @@ class Settings(BaseSettings):
     mail_from: str = ""  # From address; falls back to smtp_user when blank
     admin_email: str = "wholesale@wooden-ships.com"
 
+    # Inbound reply capture (conflict replies). IMAP over SSL to the same
+    # wholesale@ mailbox. Blank host/user/pass = disabled: run_poll() no-ops.
+    # Reps reply to a plus-addressed Reply-To (see app/email/reply_address.py),
+    # so their reply lands here carrying the order id.
+    imap_host: str = ""
+    imap_port: int = 993
+    imap_user: str = ""
+    imap_pass: str = ""
+    imap_mailbox: str = "INBOX"
+
+    # Conflict-reply classifier (OpenAI). Blank key = disabled: run_classify()
+    # no-ops. The model only ever *suggests* a resolution; a human confirms it.
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+
     # Admin reports (DTO / DMM). Salesforce reuses the connection above — these
     # are the only DTO-specific values (were hardcoded in the standalone script).
     dto_report_name: str = "Daily Total Order"  # Salesforce Report.Name to run
@@ -70,6 +85,14 @@ class Settings(BaseSettings):
     @property
     def mail_sender(self) -> str:
         return self.mail_from or self.smtp_user
+
+    @property
+    def imap_configured(self) -> bool:
+        return bool(self.imap_host and self.imap_user and self.imap_pass)
+
+    @property
+    def openai_configured(self) -> bool:
+        return bool(self.openai_api_key)
 
 
 settings = Settings()

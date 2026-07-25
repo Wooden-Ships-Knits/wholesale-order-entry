@@ -851,6 +851,20 @@ button:hover {
   background: rgba(122, 40, 31, 0.12);
   font-weight: 600;
 }
+/* AI suggestion chip in the conflict cell: a proposal awaiting Confirm. */
+.ai-suggest {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.15rem 0;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  background: rgba(63, 81, 181, 0.12);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2b3a8c;
+  cursor: default;
+}
 .decide {
   display: flex;
   gap: 0.3rem;
