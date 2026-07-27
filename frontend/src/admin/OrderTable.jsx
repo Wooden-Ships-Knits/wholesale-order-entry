@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { certUrl, createSfAccount, getConflictEmail, pdfUrl, setOrderStatus } from './api'
+import { distinctValues, rankCode } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
 // Salesforce My Domain — the pushed order record opens at <instance>/<recordId>.
@@ -13,12 +14,39 @@ function YesNoCell({ value, tone }) {
   return <td className={yes ? `flag-${tone}` : undefined}>{yes ? 'Yes' : 'No'}</td>
 }
 
-export default function OrderTable({ orders, onChanged, onError }) {
+// Tri-state dropdown for the boolean columns; '' = no filter.
+function YesNoFilter({ label, value, onChange }) {
+  return (
+    <select
+      aria-label={`Filter by ${label}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">All</option>
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select>
+  )
+}
+
+export default function OrderTable({
+  orders, // already filtered by AdminApp
+  allOrders, // unfiltered, so the dropdown options don't shrink as you filter
+  filters,
+  onFilterChange,
+  onChanged,
+  onError,
+}) {
   const [draft, setDraft] = useState(null)
   const [drafting, setDrafting] = useState(null) // id of the order being drafted
   const [creating, setCreating] = useState(null) // id of the order whose SF account is being created
   const [sentConflict, setSentConflict] = useState(() => new Set()) // orders whose conflict email was sent
   const [sentTaxCert, setSentTaxCert] = useState(() => new Set()) // orders whose tax-cert email was sent
+
+  // Dropdown options come from the unfiltered rows: picking a territory must
+  // not remove the other territories from the list you picked it from.
+  const territories = useMemo(() => distinctValues(allOrders, (o) => o.salesTerritory), [allOrders])
+  const ranks = useMemo(() => distinctValues(allOrders, (o) => rankCode(o.rank)), [allOrders])
 
   // Create the Salesforce Business Account for a new-account order. This is a
   // live-org write, so confirm first; the backend is idempotent as a backstop.
@@ -115,8 +143,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
     }
   }
 
-  if (!orders.length) return <p className="admin-empty">No orders yet.</p>
-
+  // No early return on an empty list: the filter row lives in <thead>, so
+  // bailing out here would hide the very controls needed to undo a filter that
+  // matched nothing. The empty state is a row inside <tbody> instead.
   return (
     <>
       {draft && (
@@ -137,8 +166,133 @@ export default function OrderTable({ orders, onChanged, onError }) {
             <th>Special Instruction</th>
             <th>Decision</th>
           </tr>
+          {/* Per-column filters. Every cell is controlled by one key of the
+              `filters` object owned by AdminApp; '' means "no filter". The
+              Decision column reuses the toolbar's status filter (server-side)
+              so there is only ever one status control. */}
+          <tr className="filter-row">
+            <th>
+              {/* <label> wraps each input, so the word is also the accessible
+                  name and clicking it focuses the field. */}
+              <div className="filter-range">
+                <label>
+                  <span>From</span>
+                  <input
+                    type="date"
+                    value={filters.dateFrom}
+                    max={filters.dateTo || undefined}
+                    onChange={(e) => onFilterChange('dateFrom', e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>To</span>
+                  <input
+                    type="date"
+                    value={filters.dateTo}
+                    min={filters.dateFrom || undefined}
+                    onChange={(e) => onFilterChange('dateTo', e.target.value)}
+                  />
+                </label>
+              </div>
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="ID"
+                aria-label="Filter by order ID"
+                value={filters.shortId}
+                onChange={(e) => onFilterChange('shortId', e.target.value)}
+              />
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="Search…"
+                aria-label="Filter by account name"
+                value={filters.accountName}
+                onChange={(e) => onFilterChange('accountName', e.target.value)}
+              />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by sales territory"
+                value={filters.territory}
+                onChange={(e) => onFilterChange('territory', e.target.value)}
+              >
+                <option value="">All</option>
+                {territories.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <YesNoFilter
+                label="new account"
+                value={filters.newAccount}
+                onChange={(v) => onFilterChange('newAccount', v)}
+              />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by rank"
+                value={filters.rank}
+                onChange={(e) => onFilterChange('rank', e.target.value)}
+              >
+                <option value="">All</option>
+                {ranks.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <YesNoFilter
+                label="potential conflict"
+                value={filters.conflict}
+                onChange={(v) => onFilterChange('conflict', v)}
+              />
+            </th>
+            <th>
+              <YesNoFilter
+                label="tax certificate"
+                value={filters.certificate}
+                onChange={(v) => onFilterChange('certificate', v)}
+              />
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="Search…"
+                aria-label="Filter by notes"
+                value={filters.notes}
+                onChange={(e) => onFilterChange('notes', e.target.value)}
+              />
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="Search…"
+                aria-label="Filter by special instruction"
+                value={filters.specialInstructions}
+                onChange={(e) => onFilterChange('specialInstructions', e.target.value)}
+              />
+            </th>
+            {/* Decision: no filter here — the toolbar chips above already
+                filter by status, server-side. */}
+            <th aria-hidden="true" />
+          </tr>
         </thead>
         <tbody>
+          {!orders.length && (
+            <tr>
+              <td className="admin-empty-row" colSpan={11}>
+                {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
+              </td>
+            </tr>
+          )}
           {orders.map((o) => (
             <tr key={o.id}>
               <td>{new Date(o.createdAt).toLocaleString()}</td>
