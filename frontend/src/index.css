@@ -647,6 +647,29 @@ button:hover {
   .signature-grid {
     grid-template-columns: 1fr;
   }
+
+  /* The header needs two more resets to actually stack:
+     1. grid-template-areas itself declares 3 columns ('filled . total'), so
+        grid-template-columns: 1fr alone leaves the grid 3 wide.
+     2. Clearing the areas is not enough either — a `grid-area: filled` with no
+        matching named line resolves against the implicit lines, which puts
+        EVERY child in the same cell, drawing the fields on top of each other.
+        The children must go back to auto placement. */
+  .header-grid {
+    grid-template-areas: none;
+  }
+  .ha-filled,
+  .ha-total,
+  .ha-date,
+  .ha-season,
+  .ha-ship {
+    grid-area: auto;
+  }
+  /* Right-aligned only makes sense beside "Filled by"; once stacked, it reads
+     as a stray value floating away from its label. */
+  .ha-total {
+    text-align: left;
+  }
   .internal-use {
     padding: 1.25rem 1rem;
   }
@@ -664,13 +687,9 @@ button:hover {
     padding: 1rem 0.85rem;
   }
 
-  /* Header fields stack in natural source order (drop the 3-column areas). */
+  /* Header already stacks at <=720px; just tighten the rhythm on a handset. */
   .header-grid {
-    grid-template-areas: none;
     gap: 0.9rem;
-  }
-  .ha-total {
-    text-align: left;
   }
 
   /* 16px keeps iOS Safari from auto-zooming when a field gets focus. */
