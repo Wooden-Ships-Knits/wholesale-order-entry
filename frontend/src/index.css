@@ -815,6 +815,70 @@ button:hover {
   font-size: 0.75rem;
   margin-top: 0.15rem;
 }
+/* Second header row: one filter control per column. Lighter than the label row
+   above it so the two read as separate bands. */
+.admin-table .filter-row th {
+  background: #f7f5f1;
+  padding: 0.4rem 0.5rem;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  /* the header row above already draws the divider */
+  border-top: none;
+}
+.admin-table .filter-row input,
+.admin-table .filter-row select {
+  width: 100%;
+  min-width: 0; /* let inputs shrink inside narrow columns instead of forcing overflow */
+  box-sizing: border-box;
+  margin-top: 0; /* the global `label input` rule adds one; it misaligns From/To */
+  padding: 0.25rem 0.35rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px solid #cfcabf;
+}
+.admin-table .filter-row input:focus,
+.admin-table .filter-row select:focus {
+  outline: none;
+  border-color: #1a1a1a;
+}
+/* Date column holds a from/to pair, stacked so neither is unusably narrow. */
+.filter-range {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 11rem;
+}
+/* "From"/"To" sits inline before its input; the fixed label width keeps the
+   two date fields left-aligned with each other. */
+.filter-range label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+.filter-range label span {
+  flex: none;
+  width: 2.2rem;
+  color: #6b6862;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+/* "3 of 47 orders" beside the status chips */
+.filter-count {
+  color: #6b6862;
+  font-size: 0.8rem;
+}
+/* Filters matched nothing — a row inside <tbody>, so the filter controls in
+   <thead> stay on screen and reachable. */
+.admin-empty-row {
+  padding: 1.5rem;
+  text-align: center;
+  color: #888;
+}
 .notes-cell {
   max-width: 260px;
   /* Wrap long text onto multiple lines instead of truncating with "…". */
