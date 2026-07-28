@@ -241,10 +241,10 @@ export default function OrderTable({
             <th>Account Name</th>
             <th>Sales Territory</th>
             <th>New account</th>
-            <th>Payment</th>
             <th>Rank</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
+            <th>Payment</th>
             <th>Notes</th>
             <th>Special Instruction</th>
             <th>Decision</th>
@@ -319,17 +319,6 @@ export default function OrderTable({
             </th>
             <th>
               <select
-                aria-label="Filter by payment method"
-                value={filters.paymentMethod}
-                onChange={(e) => onFilterChange('paymentMethod', e.target.value)}
-              >
-                <option value="">All</option>
-                <option value="Credit Card">Credit Card</option>
-                <option value="PayPal">PayPal</option>
-              </select>
-            </th>
-            <th>
-              <select
                 aria-label="Filter by rank"
                 value={filters.rank}
                 onChange={(e) => onFilterChange('rank', e.target.value)}
@@ -355,6 +344,17 @@ export default function OrderTable({
                 value={filters.certificate}
                 onChange={(v) => onFilterChange('certificate', v)}
               />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by payment method"
+                value={filters.paymentMethod}
+                onChange={(e) => onFilterChange('paymentMethod', e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="PayPal">PayPal</option>
+              </select>
             </th>
             <th>
               <input
@@ -405,7 +405,6 @@ export default function OrderTable({
                 creating={creating === o.id}
                 onCreate={() => createAccount(o)}
               />
-              <PaymentCell order={o} />
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
                <td>
@@ -453,6 +452,7 @@ export default function OrderTable({
                   <span className="unknown">—</span>
                 )}
               </td>
+              <PaymentCell order={o} />
               <td className="notes-cell" title={o.notes || ''}>
                 {o.notes || <span className="unknown">—</span>}
               </td>
