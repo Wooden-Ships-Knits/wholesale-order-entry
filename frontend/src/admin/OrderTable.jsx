@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { certUrl, createSfAccount, getConflictEmail, pdfUrl, setOrderStatus } from './api'
+import { cardPdfUrl, certUrl, createSfAccount, getConflictEmail, pdfUrl, setOrderStatus } from './api'
 import { distinctValues, rankCode } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
@@ -12,6 +12,88 @@ const SF_INSTANCE_URL = 'https://wooden-ships.my.salesforce.com'
 function YesNoCell({ value, tone }) {
   const yes = Boolean(value)
   return <td className={yes ? `flag-${tone}` : undefined}>{yes ? 'Yes' : 'No'}</td>
+}
+
+/** The "New account" cell.
+ *
+ * Yes/No comes from `accountExists` — whether a Salesforce account with this
+ * store name was found — not from the buyer's "is this your first order?"
+ * answer. A store Salesforce has never heard of is new, whatever anyone ticked.
+ *
+ * "Created ✓" is keyed on sfAccountCreated, NOT sfAccountId: the id is also set
+ * at submit time from the buyer's own lookup, so keying on it claimed
+ * "Created ✓" for accounts nobody made and hid the button when it was needed.
+ */
+function NewAccountCell({ order: o, creating, onCreate }) {
+  // Created here → always Yes / Created ✓, checked BEFORE the name lookup.
+  // Creating the account puts the store in Salesforce, so the lookup would
+  // then report "exists" and flip this row to No — erasing the fact that it
+  // was a new account we made. This order was new; that doesn't change.
+  if (o.sfAccountCreated) {
+    return (
+      <td className="flag-green">
+        <div className="cert-missing">
+          <span>Yes</span>
+          <span className="sf-created" title={o.sfAccountId}>
+            Created ✓
+          </span>
+        </div>
+      </td>
+    )
+  }
+
+  // accountExists null = lookup didn't run / failed. Fall back to the buyer's
+  // answer, but say so — an unverified guess must not read as a verdict.
+  const unverified = o.accountExists == null
+  const isNew = unverified ? Boolean(o.isNewAccount) : !o.accountExists
+
+  if (!isNew) return <td className="flag-green">No</td>
+
+  return (
+    <td className="flag-yellow">
+      <div className="cert-missing">
+        <span>Yes</span>
+        {unverified && <span className="sub">unverified</span>}
+        <button type="button" className="chip" disabled={creating} onClick={onCreate}>
+          {creating ? 'Creating…' : 'Create account'}
+        </button>
+      </div>
+    </td>
+  )
+}
+
+/** Payment cell: which Kugamon record type to pick, plus the card summary and
+ *  a link to the admin copy showing the full number.
+ *
+ *  The number itself is never in this response — `Open card` fetches it from
+ *  the encrypted copy, which is purged on Accept/Decline. */
+function PaymentCell({ order: o }) {
+  if (!o.paymentMethod) return <td><span className="unknown">—</span></td>
+
+  const isCard = o.paymentMethod === 'Credit Card'
+  return (
+    <td>
+      <div className="cert-missing">
+        <span>{o.paymentMethod}</span>
+        {isCard && (o.cardLast4 || o.cardExp) && (
+          <span className="sub">
+            {o.cardLast4 ? `•••• ${o.cardLast4}` : ''}
+            {o.cardExp ? `  exp ${o.cardExp}` : ''}
+          </span>
+        )}
+        {isCard && o.cardName && <span className="sub">{o.cardName}</span>}
+        {isCard &&
+          (o.hasCardCopy ? (
+            <a className="chip" href={cardPdfUrl(o.id)} target="_blank" rel="noreferrer">
+              Open card
+            </a>
+          ) : (
+            <span className="sub">card purged</span>
+          ))}
+        {o.approvalBeforeCharge === true && <span className="sub">approval first</span>}
+      </div>
+    </td>
+  )
 }
 
 // Tri-state dropdown for the boolean columns; '' = no filter.
@@ -159,6 +241,7 @@ export default function OrderTable({
             <th>Account Name</th>
             <th>Sales Territory</th>
             <th>New account</th>
+            <th>Payment</th>
             <th>Rank</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
@@ -236,6 +319,17 @@ export default function OrderTable({
             </th>
             <th>
               <select
+                aria-label="Filter by payment method"
+                value={filters.paymentMethod}
+                onChange={(e) => onFilterChange('paymentMethod', e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="PayPal">PayPal</option>
+              </select>
+            </th>
+            <th>
+              <select
                 aria-label="Filter by rank"
                 value={filters.rank}
                 onChange={(e) => onFilterChange('rank', e.target.value)}
@@ -288,7 +382,7 @@ export default function OrderTable({
         <tbody>
           {!orders.length && (
             <tr>
-              <td className="admin-empty-row" colSpan={11}>
+              <td className="admin-empty-row" colSpan={12}>
                 {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
               </td>
             </tr>
@@ -303,31 +397,15 @@ export default function OrderTable({
               </td>
               <td>{o.accountName || <span className="unknown">—</span>}</td>
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
-              {/* New account = Yes stacks a "Create account" action (or the
-                  "Created ✓" state) beneath it, like the tax-cert cell. */}
-              <td className={o.isNewAccount && !o.sfAccountId ? 'flag-yellow' : 'flag-green'}>
-                {o.isNewAccount ? (
-                  <div className="cert-missing">
-                    <span>Yes</span>
-                    {o.sfAccountId ? (
-                      <span className="sf-created" title={o.sfAccountId}>
-                        Created ✓
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="chip"
-                        disabled={creating === o.id}
-                        onClick={() => createAccount(o)}
-                      >
-                        {creating === o.id ? 'Creating…' : 'Create account'}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  'No'
-                )}
-              </td>
+              {/* New account: answered by the submit-time Salesforce check, not
+                  by the buyer's "first order" answer. Yes stacks a "Create
+                  account" action (or "Created ✓") beneath it. */}
+              <NewAccountCell
+                order={o}
+                creating={creating === o.id}
+                onCreate={() => createAccount(o)}
+              />
+              <PaymentCell order={o} />
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
                <td>

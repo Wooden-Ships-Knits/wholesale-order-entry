@@ -117,7 +117,9 @@ frontend/src/
   components/            OrderHeader, Addresses, AddressMap, BuyerLookup,
                          ProductLines, Payment, TaxExemption, TermsSignature,
                          InternalUse, Notes, ConflictWarning, Footer
-  admin/                 AdminApp, Login, OrderTable, api.js  (the /admin page)
+  admin/                 AdminApp, Login, OrderTable, OrderReport,
+                         filterOrders.js, api.js  (the /admin page)
+  conflict/              ConflictCheck  (the admin "Conflict check" tab)
 backend/app/
   main.py                FastAPI app + middleware + router wiring
   config.py              settings (pydantic-settings)
@@ -144,7 +146,7 @@ signed-in session.
 | GET | `/seasons` | Season codes (currently the 2 most recent) |
 | GET | `/ship-windows?season=F26` | Per-season ship windows (Google Sheet) |
 | GET | `/products?season=F26` | Products + prices for a season (Salesforce) |
-| GET | `/accounts?email=…` / `?name=…` / `?accountId=…` | Buyer lookup (name = partial store-name match) |
+| GET | `/accounts?email=…` / `?name=…` / `?accountId=…` | Buyer lookup (name = **exact** whole-name match, case-insensitive) |
 | GET | `/reps` | Active sales reps (`Salesperson__c` picklist) |
 | GET | `/territories` | Distinct `SalesTerritory__c` values |
 | GET | `/order-writers` | `Written_By__c` picklist (Internal Use dropdowns) |
@@ -198,10 +200,91 @@ a `GOOGLE_MAPS_SERVER_API_KEY`, the check degrades to straight-line distance
 
 ## Admin monitoring page
 
-`/admin` — password-gated. Columns: Order ID, PDF (opens in-tab), New account,
-Potential conflict, Tax certificate, Notes, Accept/Decline. Files are streamed
-through authenticated endpoints (never served statically, since they carry buyer
-and tax data).
+`/admin` — password-gated, three tabs: **Orders** (the monitoring table),
+**Conflict check**, and **Reports**.
+
+The Orders table columns: Date, Order ID (links to the PDF), Account Name, Sales
+Territory, New account, Rank, Potential conflict, Tax certificate, Notes, Special
+Instruction, Decision. Files are streamed through authenticated endpoints (never
+served statically, since they carry buyer and tax data).
+
+### "New account" and the Create account button
+
+**Yes/No comes from Salesforce, not from what the buyer ticked.** Loading the
+table runs one batched query for every store name on the page:
+
+```sql
+SELECT Name FROM Account WHERE Name IN (…) AND IsPersonAccount = FALSE
+```
+
+Name found → the stockist exists → **No**. Not found → **Yes**, with the
+**Create account** button (or **Created ✓** once made). A store Salesforce has
+never heard of is new whatever the buyer answered — which is the point: the
+form's *"is this your first order?"* answer proved unreliable.
+
+Notes on that query:
+
+- **Exact, whole-name, case-insensitive** (SOQL `=` semantics), and matched on
+  name **only**. An earlier version also matched on buying email; that made a
+  new store (`HOOKERSAAS`) match an unrelated existing one (`HOOKERS`) through a
+  shared email and wrongly reported it as not new. Store names are unique in
+  this org — name alone is the right key.
+- It does **not** reuse `find_accounts`, which hides inactive / no-booking /
+  conflict / OOB accounts by rank. Those rows matter most here: hiding one
+  reports an existing stockist as new and invites a duplicate.
+- Batched and cached (5 min), so it costs one Salesforce call per page load, not
+  one per order.
+- If the lookup fails, rows fall back to the buyer's answer and are marked
+  *unverified* — never a wrong "already exists", which would hide the button.
+
+> **Do not use `sf_account_id` to mean "an account was created."** It is also
+> set at submit time from the buyer's own lookup, so an order can carry an
+> account id without anything having been created. Only `sf_account_created_at`
+> means created — that's what both the cell and the create-account guard key on.
+
+`isNewAccount()` in `frontend/src/admin/filterOrders.js` is the single source of
+truth for this verdict, shared by the cell and its column filter so the two
+can't drift.
+
+> **Do not use `sf_account_id` to mean "an account was created."** It is also
+> set at submit time from the buyer's own lookup, so an order can carry an
+> account id without anything having been created. Only `sf_account_created_at`
+> means created — that's what both the cell and the create-account guard key on.
+> Getting this wrong made the column report "Created ✓" for accounts nobody
+> made, and hid the Create account button exactly when it was needed.
+
+**Accept is gated on the same check.** If no Salesforce account exists with this
+store name and none was created here, Accept is refused — otherwise it would
+file the order under whichever store the buyer happened to look up.
+
+### Filtering the table
+
+Two layers, deliberately separate:
+
+- **Status chips** (Awaiting review / Accepted / Declined / All) filter
+  **server-side** — they become `?status_filter=` on `/api/admin/orders`. This is
+  the only status control; the Decision column has no filter of its own.
+- **Column filters** — the second header row filters **client-side** across the
+  loaded rows: a Date *From*/*To* range, text search on Order ID (short id or
+  full uuid), Account Name, Notes and Special Instruction, and dropdowns for
+  Sales Territory, Rank, New account, Potential conflict and Tax certificate.
+
+The toolbar shows `N of M orders` with a **Clear filters** button whenever a
+column filter is active, so a filtered view can't be mistaken for an empty one.
+
+Logic lives in `frontend/src/admin/filterOrders.js`, kept out of the components
+so it stays testable. Two things to know if you touch it:
+
+- Dates compare on the **local** calendar day, matching what the Date cell
+  renders. Using `toISOString()` would push evening orders into the next UTC day
+  and drop them from a filter on their own visible date.
+- Dropdown options are derived from the **unfiltered** rows. Deriving them from
+  the visible rows would remove every other territory from the list the moment
+  you picked one.
+
+Filtering only sees rows already loaded — `/api/admin/orders` caps at 100
+(max 500). If that cap is ever raised past a few thousand, move the predicates
+into the endpoint as query params; the UI shape stays the same.
 
 **Set the admin password:**
 

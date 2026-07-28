@@ -14,6 +14,7 @@ export const EMPTY_FILTERS = {
   accountName: '',
   territory: '',
   newAccount: '', // '' | 'yes' | 'no'
+  paymentMethod: '', // '' | 'Credit Card' | 'PayPal'
   rank: '', // rank code only ('A', 'B', 'C'…)
   conflict: '', // '' | 'yes' | 'no'
   certificate: '', // '' | 'yes' | 'no'
@@ -38,6 +39,19 @@ export function toDayString(iso) {
 export function rankCode(rank) {
   return rank ? rank.split(' - ')[0].trim() : ''
 }
+
+/** Is this a new account? Shared by the New account cell and its column filter
+ *  — if the two ever derive it separately they drift, and filtering "Yes" hides
+ *  rows the table shows as Yes.
+ *
+ *  A store Salesforce doesn't have is new. accountExists null means the lookup
+ *  didn't run, so fall back to what the buyer answered. */
+export function isNewAccount(o) {
+  if (o.sfAccountCreated) return true // we made it; the lookup now finds it
+  if (o.accountExists == null) return Boolean(o.isNewAccount)
+  return !o.accountExists
+}
+
 
 const contains = (value, query) => String(value ?? '').toLowerCase().includes(query)
 
@@ -66,7 +80,8 @@ export function filterOrders(orders, f) {
     if (shortId && !contains(o.shortId, shortId) && !contains(o.id, shortId)) return false
     if (accountName && !contains(o.accountName, accountName)) return false
     if (f.territory && o.salesTerritory !== f.territory) return false
-    if (!matchesYesNo(f.newAccount, o.isNewAccount)) return false
+    if (!matchesYesNo(f.newAccount, isNewAccount(o))) return false
+    if (f.paymentMethod && o.paymentMethod !== f.paymentMethod) return false
     if (f.rank && rankCode(o.rank) !== f.rank) return false
     if (!matchesYesNo(f.conflict, o.hasConflict)) return false
     if (!matchesYesNo(f.certificate, o.hasCertificate)) return false

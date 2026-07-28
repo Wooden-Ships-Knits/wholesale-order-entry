@@ -36,6 +36,9 @@ export const getConflictEmail = (payload) => post('/api/conflict-email', payload
 export const sendEmail = (payload) => post('/api/send-email', payload)
 
 export const pdfUrl = (id) => `/api/admin/orders/${id}/pdf`
+// Admin copy showing the full card number, for keying into Salesforce. Rendered
+// per request from the encrypted copy — never stored unencrypted or emailed.
+export const cardPdfUrl = (id) => `/api/admin/orders/${id}/pdf?full=1`
 export const certUrl = (id) => `/api/admin/orders/${id}/certificate`
 
 // Admin reports (DTO/DMM). getReport = last cached run; runReport = run now.
