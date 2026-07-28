@@ -371,6 +371,38 @@ def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
     return _cached("geocoded_accounts", fetch)
 
 
+def existing_account_names(names: list[str]) -> set[str]:
+    """Which of these store names already exist in Salesforce?
+
+    Answers "is this a new account?" for the admin table: a name that comes back
+    is an existing stockist, one that doesn't is new. Returns the matched names
+    case-folded, since SOQL `=` on text is case-insensitive but Python `in` is not.
+
+    One batched IN query for the whole page rather than one per order — the
+    result is only as fresh as the 5-minute cache, which is fine for a review
+    screen and keeps this off the Salesforce API quota.
+
+    Deliberately NOT find_accounts(): that one hides inactive / no-booking /
+    conflict / OOB accounts (EXCLUDED_RANKS) because they shouldn't be offered
+    to a buyer picking their store. Here those rows matter most — hiding them
+    reports an existing stockist as new and invites a duplicate account.
+    """
+    wanted = sorted({n.strip() for n in names if n and n.strip()})
+    if not wanted:
+        return set()
+
+    def fetch() -> set[str]:
+        inlist = "','".join(soql_str(n) for n in wanted)
+        # IsPersonAccount = FALSE: wholesale stockists are business accounts.
+        rows = query_all(
+            f"SELECT Name FROM {mapping.ACCOUNT} "
+            f"WHERE Name IN ('{inlist}') AND IsPersonAccount = FALSE"
+        )
+        return {(r.get("Name") or "").strip().casefold() for r in rows}
+
+    return _cached(f"account_names:{'|'.join(wanted)}", fetch)
+
+
 def find_accounts(
     email: str | None = None,
     account_id: str | None = None,

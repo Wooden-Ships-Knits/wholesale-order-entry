@@ -31,6 +31,16 @@ class Settings(BaseSettings):
 
     pdf_output_dir: str = "/output/orders"
 
+    # Encrypts the admin-copy order PDF (the only artefact showing the full card
+    # number) while it waits for the monitoring team — see CLAUDE.md rule 1.
+    # 32 random bytes, base64:
+    #   python3 -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"
+    # Blank = no admin copy is kept at all; the card is discarded at submit.
+    card_encryption_key: str = ""
+    # Admin copies are purged this many days after submit even if the order was
+    # never accepted or declined, so cards never linger.
+    card_retention_days: int = 14
+
     # Nearby-stockist conflict check. Server-side Google key (Distance Matrix)
     # — NOT the browser key in frontend/.env; IP-restrict it. Empty = the
     # endpoint degrades to straight-line distances.
