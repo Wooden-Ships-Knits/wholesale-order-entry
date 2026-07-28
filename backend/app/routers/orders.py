@@ -19,6 +19,7 @@ from decimal import Decimal
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app import crypto
 from app.config import settings
 from app.db.models import Order, OrderItem
 from app.db.session import SessionLocal, get_db
@@ -234,6 +235,7 @@ def submit_order(
         approval_before_charge=payload.payment.approval_before_charge,
         card_name=payload.payment.card_name,
         card_last4=card_last4,
+        card_exp=payload.payment.exp_date or None,
         cert_required_ack=payload.tax_exemption.rep_notified,
         cert_sending_ack=payload.tax_exemption.sending_cert,
         cert_on_file=payload.tax_exemption.cert_on_file,
@@ -321,11 +323,34 @@ def submit_order(
             }
             for i in order_items
         ],
-        # No card data reaches the template: the PDF shows the payment method
-        # only, so the number/name/CVV never leave this request.
+        # Card block is set per-copy below. CVV is never passed to either.
+        "card": None,
+    }
+
+    # Two renders from one template:
+    #   masked — number shown as "•••• 1234". Saved to disk and emailed.
+    #   admin  — full number, for the monitoring team to key into Salesforce.
+    #            Encrypted immediately, held in the DB, never written to disk
+    #            and never emailed. See CLAUDE.md rule 1.
+    masked_card = {
+        "name": order.card_name or None,
+        "number": f"•••• {card_last4}" if card_last4 else None,
+        "exp": order.card_exp or None,
+        "full": False,
     }
     try:
+        pdf_context["card"] = masked_card
         pdf_bytes = pdf_render.render_order_pdf(pdf_context)
+
+        # Only worth keeping an admin copy if there is a card AND a key to
+        # protect it with; without a key the number is simply discarded.
+        if card_digits and crypto.configured():
+            pdf_context["card"] = {**masked_card, "number": card_digits, "full": True}
+            order.card_pdf_enc = crypto.encrypt(pdf_render.render_order_pdf(pdf_context))
+        elif card_digits:
+            logger.warning(
+                "CARD_ENCRYPTION_KEY not set — no admin card copy kept for this order"
+            )
     except Exception:
         logger.exception("PDF rendering failed for order attempt (season=%s)", payload.season)
         raise HTTPException(
@@ -333,7 +358,10 @@ def submit_order(
             detail="The order could not be processed (PDF generation failed). Please try again.",
         )
     finally:
-        pdf_context["payment"] = None  # drop card data reference immediately
+        # Drop every in-memory reference to the number before the request ends.
+        pdf_context["card"] = None
+        pdf_context["payment"] = None
+        card_digits = ""
 
     db.add(order)
     db.commit()

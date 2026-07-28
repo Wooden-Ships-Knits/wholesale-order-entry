@@ -1,13 +1,25 @@
-"""SQLAlchemy models. NO card number / CVV columns — ever (CLAUDE.md rule 1).
+"""SQLAlchemy models. NO CVV column — ever, in any form (CLAUDE.md rule 1).
 
-Only card_name and card_last4 may persist; the full card number and CVV live
-transiently in the request payload for PDF rendering (Phase 4) and are dropped.
+card_name, card_last4 and card_exp persist in the clear. The full card number
+is never stored as a column: it exists only inside card_pdf_enc, the encrypted
+admin-copy PDF, which is purged once the monitoring team has keyed the card
+into Salesforce. CVV is read by nothing and stored nowhere.
 """
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, Text, func
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    Numeric,
+    Text,
+    func,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -51,6 +63,14 @@ class Order(Base):
     approval_before_charge: Mapped[bool | None] = mapped_column(Boolean)
     card_name: Mapped[str | None] = mapped_column(Text)
     card_last4: Mapped[str | None] = mapped_column(Text)
+    # Expiry is cardholder data, not sensitive authentication data — safe to
+    # keep in the clear (unlike the number, and unlike CVV which is never kept).
+    card_exp: Mapped[str | None] = mapped_column(Text)
+    # The admin-copy PDF showing the full card number, AES-256-GCM encrypted
+    # (app/crypto.py). Held only until the monitoring team keys the card into
+    # Salesforce: purged on Accept/Decline and by the retention sweep. NEVER
+    # written to disk, emailed, or logged. null = no card kept / already purged.
+    card_pdf_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
 
     # tax exemption acknowledgements + uploaded certificate
     cert_required_ack: Mapped[bool | None] = mapped_column(Boolean)
