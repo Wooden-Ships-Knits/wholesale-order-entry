@@ -1,5 +1,14 @@
-import { useMemo, useState } from 'react'
-import { cardPdfUrl, certUrl, createSfAccount, getConflictEmail, pdfUrl, setOrderStatus } from './api'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  cardPdfUrl,
+  certUrl,
+  createSfAccount,
+  getConflictEmail,
+  pdfUrl,
+  setOrderAccount,
+  setOrderStatus,
+  suggestAccounts,
+} from './api'
 import { distinctValues, rankCode } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
@@ -57,6 +66,120 @@ function NewAccountCell({ order: o, creating, onCreate }) {
         <button type="button" className="chip" disabled={creating} onClick={onCreate}>
           {creating ? 'Creating…' : 'Create account'}
         </button>
+      </div>
+    </td>
+  )
+}
+
+/** Account name cell, editable while the order is still awaiting review.
+ *
+ * Reps can't always find the right store — a franchise has one account per
+ * location and the lookup is an exact name match — so orders arrive linked to
+ * the wrong account or to none. Correcting it here sets the Salesforce account
+ * id as well as the name; without the id the Accept push has nothing to file
+ * the order against.
+ */
+function AccountNameCell({ order: o, onChanged, onError }) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState(o.accountName || '')
+  const [hits, setHits] = useState([])
+  const [saving, setSaving] = useState(false)
+
+  // Admin page is authenticated, so search-as-you-type is fine here (on the
+  // public form it would expose the stockist list).
+  useEffect(() => {
+    if (!editing || text.trim().length < 2) {
+      setHits([])
+      return
+    }
+    const id = setTimeout(async () => {
+      try {
+        const { suggestions } = await suggestAccounts(text)
+        setHits(suggestions)
+      } catch {
+        setHits([]) // a failed search shouldn't block typing a free-text name
+      }
+    }, 250)
+    return () => clearTimeout(id)
+  }, [editing, text])
+
+  async function save(accountName, accountId) {
+    setSaving(true)
+    try {
+      await setOrderAccount(o.id, accountName, accountId)
+      setEditing(false)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!editing) {
+    return (
+      <td>
+        <div className="cert-missing">
+          <span>{o.accountName || <span className="unknown">—</span>}</span>
+          {/* Once accepted the order is in Salesforce under a specific
+              account; relinking here would only desync the two. */}
+          {o.status === 'submitted' && (
+            <button type="button" className="link-btn inline" onClick={() => setEditing(true)}>
+              Change
+            </button>
+          )}
+        </div>
+      </td>
+    )
+  }
+
+  return (
+    <td>
+      <div className="account-edit">
+        <input
+          type="text"
+          value={text}
+          autoFocus
+          disabled={saving}
+          placeholder="Store name"
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && setEditing(false)}
+        />
+        {hits.length > 0 && (
+          <ul className="account-hits">
+            {hits.map((h) => (
+              <li key={h.accountId}>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => save(h.name, h.accountId)}
+                  title={[h.salesTerritory, h.rank].filter(Boolean).join(' · ')}
+                >
+                  <span className="suggestion-name">{h.name}</span>
+                  <span className="suggestion-where">
+                    {[h.cityState, h.salesTerritory].filter(Boolean).join(' · ')}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="account-edit-actions">
+          {/* Saving without picking sends no id; the backend still resolves the
+              typed name against Salesforce (names are unique) and only treats
+              it as a new store when nothing matches. So this is just "Save". */}
+          <button
+            type="button"
+            className="chip"
+            disabled={saving || !text.trim()}
+            onClick={() => save(text.trim(), null)}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button type="button" className="link-btn inline" onClick={() => setEditing(false)}>
+            Cancel
+          </button>
+        </div>
       </div>
     </td>
   )
@@ -395,7 +518,7 @@ export default function OrderTable({
                   <code>{o.shortId}</code>
                 </a>
               </td>
-              <td>{o.accountName || <span className="unknown">—</span>}</td>
+              <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               {/* New account: answered by the submit-time Salesforce check, not
                   by the buyer's "first order" answer. Yes stacks a "Create

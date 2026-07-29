@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update
@@ -20,6 +20,8 @@ from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
 from app.pdf import render as pdf_render
+from app.routers.accounts import account_city_state
+from app.salesforce import account_search
 from app.salesforce import client as sf_client
 from app.salesforce import mapping
 from app.sheets import client as sheets_client
@@ -125,6 +127,20 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         "statusReason": o.status_reason,
         "statusAt": o.status_at.isoformat() if o.status_at else None,
     }
+
+
+def _account_exists(order: Order) -> bool | None:
+    """Does Salesforce already have a store with this order's account name?
+    None when it can't be determined (no name, or the lookup failed) — the UI
+    then falls back to the buyer's answer and marks it unverified."""
+    name = (order.account_name or "").strip()
+    if not name:
+        return None
+    try:
+        return name.casefold() in sf_client.existing_account_names([name])
+    except Exception:
+        logger.exception("Account-name check failed for order %s", str(order.id)[:8])
+        return None
 
 
 def _purge_expired_card_copies(db: Session) -> None:
@@ -261,6 +277,115 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
     db.commit()
     logger.info("Order %s marked %s", str(order.id)[:8], payload.status)
     return _row(order)
+
+
+@router.get("/accounts/suggest", dependencies=[AdminRequired])
+def admin_suggest_accounts(
+    q: str = Query(..., min_length=2, max_length=120),
+    limit: int = Query(10, ge=1, le=25),
+) -> dict:
+    """Store-name search for the admin's account picker.
+
+    Richer than the buyer-facing one and NOT rank-filtered: an admin picking
+    between nine "SCOUT & MOLLY'S" locations needs the city and territory to
+    choose, and may legitimately need to link an order to a store the buyer
+    lookup hides (inactive, no-booking). This route is behind AdminRequired.
+    """
+    hits = account_search.search(client.account_search_index(), q, limit)
+    return {
+        "suggestions": [
+            {
+                "accountId": r["Id"],
+                "name": r.get("Name"),
+                "cityState": account_city_state(r),
+                "rank": r.get(mapping.RANK),
+                "salesTerritory": r.get(mapping.SALES_TERRITORY),
+            }
+            for r in hits
+        ]
+    }
+
+
+class AccountLinkRequest(BaseModel):
+    account_name: str = Field(min_length=1, max_length=255)
+    # Salesforce Account Id when a suggestion was picked; null when the admin
+    # typed a name that matches nothing (i.e. it really is a new store).
+    account_id: str | None = Field(None, min_length=15, max_length=18)
+
+
+@router.post("/orders/{order_id}/account", dependencies=[AdminRequired])
+def relink_account(order_id: str, payload: AccountLinkRequest, db: Session = Depends(get_db)) -> dict:
+    """Correct which store an order belongs to.
+
+    Reps can't always find the right account — a franchise like Scout & Molly
+    has one row per location and the exact-name lookup finds none of them — so
+    orders arrive attached to the wrong store or to none. This is where that
+    gets fixed, before the order reaches Salesforce.
+
+    Territory, rank and special instructions are account attributes copied onto
+    the order at submit, so they follow the new link; leaving them would mean an
+    order that reads "Nashville" while routing to the Midwest rep. Addresses are
+    NOT touched — the rep entered where it actually ships, which is order data.
+    """
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    # After Accept the order exists in Salesforce under a specific account;
+    # rewriting it here would only desync the two.
+    if order.status != "submitted":
+        raise HTTPException(
+            status_code=409,
+            detail=f"This order is already {order.status} — its account can no longer be changed.",
+        )
+
+    before = (order.account_name, order.sf_account_id)
+
+    # include_excluded: the admin picker deliberately offers inactive / OOB /
+    # no-marketing stores, so resolving the pick has to see them too. Filtering
+    # here made such an account look absent from Salesforce, and the order was
+    # silently downgraded to "new" with its territory and rank wiped.
+    typed = payload.account_name.strip()
+    if payload.account_id:
+        records = sf_client.find_accounts(account_id=payload.account_id, include_excluded=True)
+    else:
+        # No id means the admin typed rather than picked — but a typed name can
+        # still BE an account. Store names are unique in this org, so resolve it
+        # by name before concluding the store is new; otherwise correcting a
+        # name by hand would silently drop the link, territory and rank.
+        records = sf_client.find_accounts(name=typed, include_excluded=True)
+        if len(records) > 1:
+            raise HTTPException(
+                status_code=409,
+                detail=f'Several accounts are named "{typed}" — pick one from the suggestions instead.',
+            )
+
+    if records:
+        acct = mapping.map_account(records[0])
+        order.account_name = acct["name"] or typed
+        order.sf_account_id = acct["accountId"]
+        order.sales_territory = acct.get("salesTerritory")
+        order.rank = acct.get("rank")
+        order.special_instructions = acct.get("specialInstructions")
+    elif payload.account_id:
+        # An id was given but Salesforce no longer returns it — don't silently
+        # fall back to "new store", the admin meant to link something specific.
+        raise HTTPException(status_code=404, detail="That Salesforce account could not be loaded.")
+    else:
+        # Genuinely not in Salesforce: a new store. Clearing the id makes the
+        # New account column say Yes and brings back the Create account button;
+        # territory/rank/instructions belonged to the old link, so they go too.
+        order.account_name = typed
+        order.sf_account_id = None
+        order.sales_territory = None
+        order.rank = None
+        order.special_instructions = None
+
+    db.commit()
+    logger.info(
+        "Order %s account relinked: %r/%s -> %r/%s",
+        str(order.id)[:8], before[0], before[1], order.account_name, order.sf_account_id,
+    )
+    return _row(order, _account_exists(order))
 
 
 @router.post("/orders/{order_id}/create-account", dependencies=[AdminRequired])
