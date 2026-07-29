@@ -6,7 +6,10 @@ PDF_OUTPUT_DIR, a bind-mounted directory outside the web root.
 """
 import logging
 import re
+from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -18,6 +21,41 @@ _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent),
     autoescape=select_autoescape(["html"]),
 )
+
+
+def _longdate(value: Any) -> str:
+    """'July 28, 2026' — never a numeric date.
+
+    Bali reads 07/28 as day 7 of month 28-ish and the US reads it as July 28;
+    spelling the month out removes the ambiguity entirely. Accepts a date,
+    datetime, ISO string or None so a missing value renders as an em dash
+    instead of blowing up the render (the PDF is built before the DB commit,
+    so an exception here fails the buyer's whole submission).
+    """
+    if not value:
+        return "—"
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value).date()
+        except ValueError:
+            return value  # already formatted, or something we can't parse
+    if isinstance(value, datetime):
+        value = value.date()
+    if isinstance(value, date):
+        # %-d avoids a zero-padded day ("July 08"); portable on Linux/macOS.
+        return f"{value:%B} {value.day}, {value.year}"
+    return str(value)
+
+
+def _money(value: Any) -> str:
+    """'1,675.00' — thousands separated, always two decimals."""
+    if value is None:
+        return "0.00"
+    return f"{Decimal(str(value)):,.2f}"
+
+
+_env.filters["longdate"] = _longdate
+_env.filters["money"] = _money
 
 
 def render_order_pdf(context: dict) -> bytes:
