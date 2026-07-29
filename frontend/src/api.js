@@ -44,6 +44,12 @@ export const lookupAccounts = (query) => {
   return get(`/api/accounts?${param}=${encodeURIComponent(q)}`)
 }
 
+// Closest store-name matches, used when the exact lookup finds nothing —
+// a franchise like "Scout & Molly" has one account per location, so the name
+// a rep types matches none of them exactly. Returns id/name/city only.
+export const suggestAccounts = (query) =>
+  get(`/api/accounts/suggest?q=${encodeURIComponent(query.trim())}`)
+
 // New-customer stockist conflict check (see docs/conflict-checker.md).
 // Server defaults apply: k=5 neighbors, 20-minute drive threshold.
 export const getNearbyAccounts = (lat, lng) =>

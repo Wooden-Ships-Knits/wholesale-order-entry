@@ -834,6 +834,82 @@ button:hover {
   font-size: 0.75rem;
   margin-top: 0.15rem;
 }
+
+/* ---- store-name suggestions (order form + admin account picker) ---- */
+/* Name over city/state on two lines: nine "SCOUT & MOLLY'S" rows are
+   indistinguishable by name, so the location has to be readable at a glance. */
+.suggestion-list,
+.account-hits {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 1px solid #d8d4cc;
+  background: #fff;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+.suggestion-list li + li,
+.account-hits li + li {
+  border-top: 1px solid #eceae5;
+}
+.suggestion-list button,
+.account-hits button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  /* the global dark-button rule would make this text white on white */
+  color: #1d1d1b;
+  font: inherit;
+}
+.suggestion-list button:hover,
+.account-hits button:hover {
+  background: #f3f0ea;
+}
+.suggestion-name {
+  display: block;
+  font-size: 0.9rem;
+}
+.suggestion-where {
+  display: block;
+  color: #6b6862;
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+.suggestion-none {
+  padding: 0.5rem 0.7rem;
+  color: #8a867d;
+  font-size: 0.8rem;
+  border-top: 1px solid #eceae5;
+}
+
+/* Admin account picker: narrower type, actions under the field. */
+.account-edit input {
+  width: 100%;
+  min-width: 11rem;
+  box-sizing: border-box;
+  margin-top: 0;
+  padding: 0.3rem 0.4rem;
+  font: inherit;
+  font-size: 0.82rem;
+}
+.account-edit .account-hits {
+  font-size: 0.82rem;
+  max-height: 12rem;
+}
+.account-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+/* .link-btn has margin-left:auto for the toolbar; undo it inside cells. */
+.link-btn.inline {
+  margin-left: 0;
+}
 /* Second header row: one filter control per column. Lighter than the label row
    above it so the two read as separate bands. */
 .admin-table .filter-row th {

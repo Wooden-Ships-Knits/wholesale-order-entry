@@ -73,6 +73,13 @@ class Settings(BaseSettings):
     dto_report_name: str = "Daily Total Order"  # Salesforce Report.Name to run
     dto_recap_recipient: str = "Paola"  # greeting name in the recap email
 
+    # DMM (Daily Morning Meeting). Was hardcoded in the standalone script.
+    dmm_report_name: str = "UNPAID DAILY MORNING MEETING"
+    dmm_recap_recipient: str = "Paola"
+    # Google Sheet behind the DMM report: the "WHOLESALE Paid Open Orders" tab
+    # (today's shipping plan) and the "Email Schedule" tab (rep chase dates).
+    problem_list_reps_sheet_id: str = ""
+
     @property
     def mail_configured(self) -> bool:
         return bool(self.smtp_host and self.smtp_user and self.smtp_pass)
