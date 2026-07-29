@@ -291,7 +291,7 @@ def admin_suggest_accounts(
     choose, and may legitimately need to link an order to a store the buyer
     lookup hides (inactive, no-booking). This route is behind AdminRequired.
     """
-    hits = account_search.search(client.account_search_index(), q, limit)
+    hits = account_search.search(sf_client.account_search_index(), q, limit)
     return {
         "suggestions": [
             {
