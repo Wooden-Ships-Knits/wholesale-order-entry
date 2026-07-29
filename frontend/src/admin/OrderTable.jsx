@@ -335,6 +335,7 @@ export default function OrderTable({
   const [draft, setDraft] = useState(null)
   const [drafting, setDrafting] = useState(null) // id of the order being drafted
   const [creating, setCreating] = useState(null) // id of the order whose SF account is being created
+  const [resolving, setResolving] = useState(null) // id of the order whose conflict is being resolved
   const [sentConflict, setSentConflict] = useState(() => new Set()) // orders whose conflict email was sent
   const [sentTaxCert, setSentTaxCert] = useState(() => new Set()) // orders whose tax-cert email was sent
 
@@ -382,6 +383,28 @@ export default function OrderTable({
     }
   }
 
+  // Record how a conflict inquiry ended (cleared / real conflict) so the row
+  // closes. A note is optional (prefilled when confirming an AI suggestion);
+  // cancelling the prompt aborts without saving.
+  async function resolveConflict(order, outcome, defaultNote = '') {
+    const note = window.prompt(
+      outcome === 'cleared'
+        ? 'Mark CLEARED — safe to proceed. Optional note (e.g. what the rep said):'
+        : 'Mark REAL CONFLICT. Optional note (e.g. what the rep said):',
+      defaultNote,
+    )
+    if (note === null) return // cancelled
+    setResolving(order.id)
+    try {
+      await setConflictResolution(order.id, outcome, note)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setResolving(null)
+    }
+  }
+
   function handleSent() {
     if (draft?.conflictOrderId) {
       setSentConflict((prev) => new Set(prev).add(draft.conflictOrderId))
@@ -400,7 +423,10 @@ export default function OrderTable({
       // Either may be empty — the admin fills in what's missing before sending.
       to: order.shipEmail || '',
       cc: order.repEmail || '',
-      subject: `Tax Certificate Request - ${name}`,
+      // Token lets the customer's reply (with the cert attached) correlate back
+      // to this order even if it lands on the bare wholesale@ address — matches
+      // the backend conflict-email format ([#<kind>-<id>]). See docs/reply-tracking.md.
+      subject: `Tax Certificate Request - ${name} [#tax_cert-${order.id}]`,
       body:
         'Hi,\n\n' +
         'Thank you for your support as a new Wooden Ships Retailer! We so appreciate your support.\n\n' +
@@ -660,23 +686,86 @@ export default function OrderTable({
                <td>
                 {o.rank ? o.rank.split(' - ')[0] : <span className="unknown">—</span>}
               </td>
-              <td className={o.hasConflict ? 'flag-yellow' : 'flag-green'}>
+              {/* Conflict cell. Once resolved, the outcome tints the cell
+                  (green cleared / red real-conflict) and the note is on hover. */}
+              <td
+                className={
+                  o.conflictResolution === 'cleared'
+                    ? 'flag-green'
+                    : o.conflictResolution === 'real_conflict'
+                      ? 'flag-red'
+                      : o.hasConflict
+                        ? 'flag-yellow'
+                        : 'flag-green'
+                }
+              >
                 {o.hasConflict ? (
-                  <div className="cert-missing">
-                    <span>Yes</span>
-                    {o.conflictEmailSent || sentConflict.has(o.id) ? (
-                      <span className="sf-created">Email Sent ✓ waiting for the response</span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="chip"
-                        disabled={drafting === o.id}
-                        onClick={() => draftEmail(o)}
-                      >
-                        {drafting === o.id ? 'Generating…' : 'Generate email'}
-                      </button>
-                    )}
-                  </div>
+                  o.conflictResolution ? (
+                    <span className="sf-created" title={o.conflictResolutionNote || ''}>
+                      {o.conflictResolution === 'cleared'
+                        ? 'Resolved ✓ Cleared'
+                        : 'Resolved ✓ Real conflict'}
+                    </span>
+                  ) : (
+                    <div className="cert-missing">
+                      <span>Yes</span>
+                      {o.conflictEmailSent || sentConflict.has(o.id) ? (
+                        <>
+                          <span className="sf-created">Email Sent ✓ waiting for the response</span>
+                          {/* AI suggestion from a captured rep reply. A proposal
+                              only — Confirm records it (note prefilled with the
+                              reason). "unclear" shows nothing. */}
+                          {o.conflictAiOutcome && o.conflictAiOutcome !== 'unclear' && (
+                            <div className="ai-suggest" title={o.conflictAiReason || ''}>
+                              <span>
+                                AI: {o.conflictAiOutcome === 'cleared' ? 'Cleared' : 'Real conflict'}
+                                {o.conflictAiConfidence != null
+                                  ? ` (${Math.round(o.conflictAiConfidence * 100)}%)`
+                                  : ''}
+                              </span>
+                              <button
+                                type="button"
+                                className="chip"
+                                disabled={resolving === o.id}
+                                onClick={() =>
+                                  resolveConflict(o, o.conflictAiOutcome, o.conflictAiReason || '')
+                                }
+                              >
+                                Confirm
+                              </button>
+                            </div>
+                          )}
+                          <div className="decide">
+                            <button
+                              type="button"
+                              className="chip"
+                              disabled={resolving === o.id}
+                              onClick={() => resolveConflict(o, 'cleared')}
+                            >
+                              Cleared
+                            </button>
+                            <button
+                              type="button"
+                              className="chip"
+                              disabled={resolving === o.id}
+                              onClick={() => resolveConflict(o, 'real_conflict')}
+                            >
+                              Real conflict
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="chip"
+                          disabled={drafting === o.id}
+                          onClick={() => draftEmail(o)}
+                        >
+                          {drafting === o.id ? 'Generating…' : 'Generate email'}
+                        </button>
+                      )}
+                    </div>
+                  )
                 ) : (
                   'No'
                 )}

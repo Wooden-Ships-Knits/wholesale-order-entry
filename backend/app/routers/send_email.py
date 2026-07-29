@@ -22,7 +22,7 @@ from app.admin.security import AdminRequired
 from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
-from app.email import mailer
+from app.email import mailer, reply_address
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +36,14 @@ _SENT_COLUMN = {
 
 
 class SendEmailRequest(BaseModel):
-    """To and CC are both required (mirrored on the client); subject/body may
-    be empty. CC is comma-separated to match the modal's single input. orderId
-    + kind are optional — when both are given, a successful send is recorded on
-    that order."""
+    """To is required (mirrored on the client); CC is optional — conflict emails
+    have no CC (they go to the rep only), so an empty cc must be accepted.
+    subject/body may be empty. CC is comma-separated to match the modal's single
+    input. orderId + kind are optional — when both are given, a successful send
+    is recorded on that order."""
 
     to: str = Field(min_length=1, max_length=254)
-    cc: str = Field(min_length=1, max_length=1000)
+    cc: str = Field("", max_length=1000)
     subject: str = Field("", max_length=500)
     body: str = Field("", max_length=20000)
     orderId: str | None = Field(None, max_length=36)
@@ -58,7 +59,15 @@ def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db))
 
     to = payload.to.strip()
     cc = payload.cc.strip()
-    sent = mailer.send_email(to, payload.subject, payload.body, cc=cc)
+    # Tag with a plus-addressed Reply-To so the reply routes back correlated to
+    # this order (see app/email/reply_address.py): a rep's conflict decision, or
+    # a customer's tax-cert reply carrying the certificate attachment.
+    reply_to = None
+    if payload.orderId and payload.kind in ("conflict", "tax_cert"):
+        reply_to = reply_address.build_reply_to(
+            payload.orderId, payload.kind, settings.mail_sender
+        )
+    sent = mailer.send_email(to, payload.subject, payload.body, cc=cc, reply_to=reply_to)
     if not sent:
         raise HTTPException(status_code=502, detail="The email could not be sent.")
 

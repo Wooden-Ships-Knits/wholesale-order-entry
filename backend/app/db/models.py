@@ -124,6 +124,21 @@ class Order(Base):
     conflict_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     tax_cert_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # Admin's recorded outcome of a conflict inquiry, set from /admin once the
+    # rep responds. null = still waiting. "cleared" = ok to proceed;
+    # "real_conflict" = a genuine territory conflict. The note is free text.
+    conflict_resolution: Mapped[str | None] = mapped_column(Text)
+    conflict_resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    conflict_resolution_note: Mapped[str | None] = mapped_column(Text)
+
+    # AI-suggested outcome from a captured rep reply (see app/ai/conflict_reply).
+    # A suggestion only — surfaced in /admin for a human to confirm; confirming
+    # sets conflict_resolution above. outcome: cleared | real_conflict | unclear.
+    conflict_ai_outcome: Mapped[str | None] = mapped_column(Text)
+    conflict_ai_confidence: Mapped[Decimal | None] = mapped_column(Numeric(3, 2))
+    conflict_ai_reason: Mapped[str | None] = mapped_column(Text)
+    conflict_ai_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     # totals / status
     total_qty: Mapped[int] = mapped_column(Integer)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
@@ -138,6 +153,34 @@ class Order(Base):
     items: Mapped[list["OrderItem"]] = relationship(
         back_populates="order", cascade="all, delete-orphan"
     )
+
+
+class InboundReply(Base):
+    """A reply captured from the wholesale@ mailbox and correlated to an order
+    via the plus-address token. Currently only conflict replies. The classifier
+    (next slice) reads unprocessed rows to suggest a resolution."""
+
+    __tablename__ = "inbound_replies"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("orders.id", ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(Text)  # "conflict"
+    from_address: Mapped[str | None] = mapped_column(Text)
+    subject: Mapped[str | None] = mapped_column(Text)
+    # Truncated plain-text body — enough for classification / display, not the
+    # whole thread (keep stored PII minimal).
+    snippet: Mapped[str | None] = mapped_column(Text)
+    # RFC822 Message-ID: dedupes re-fetches of the same message. Unique.
+    message_id: Mapped[str | None] = mapped_column(Text, unique=True)
+    received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    # Set once the classifier has read this reply, so a re-poll doesn't re-run
+    # the model on it. null = not yet classified.
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class OrderItem(Base):

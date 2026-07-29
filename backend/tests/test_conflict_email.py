@@ -48,6 +48,20 @@ def test_rep_facing_draft_lists_conflicts():
     assert body.endswith("Thanks!")
 
 
+def test_build_appends_order_token_to_subject():
+    # The token lets a reply be correlated to the order even if it comes back to
+    # the bare wholesale@ address (no plus-token). See app/email/inbound.py.
+    oid = "9548e8ee-1234-4abc-8def-0123456789ab"
+    d = conflict_template.build(store_name="TES2", order_id=oid, neighbors=NEIGHBORS)
+    # Kind-tagged so a tax-cert subject token can't be mistaken for a conflict.
+    assert d["subject"] == f"CONFLICT Inquiry — TES2 [#conflict-{oid}]"
+
+
+def test_build_without_order_id_has_no_token():
+    d = conflict_template.build(store_name="TES2", neighbors=NEIGHBORS)
+    assert "[#" not in d["subject"]
+
+
 def test_greeting_is_always_plain_hi():
     # Greeting is a fixed "Hi," — rep/territory no longer personalize it.
     d = conflict_template.build(

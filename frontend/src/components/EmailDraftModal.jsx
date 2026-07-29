@@ -1,5 +1,14 @@
 import { useState } from 'react'
 
+// FastAPI errors put `detail` as a string, or a list of {msg,...} objects for
+// 422 validation errors. Render either as readable text (never "[object Object]").
+function detailToMessage(detail, fallback) {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) return detail.map((d) => d?.msg || JSON.stringify(d)).join('; ')
+  if (detail && typeof detail === 'object') return detail.msg || JSON.stringify(detail)
+  return fallback
+}
+
 /**
  * Popup showing an email draft (conflict-inquiry from POST /api/conflict-email,
  * or a tax-certificate request). The draft is editable; "Send Mail" hands it to
@@ -50,7 +59,7 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
       })
       if (!res.ok) {
         const b = await res.json().catch(() => ({}))
-        throw new Error(b.detail || `Send failed (${res.status})`)
+        throw new Error(detailToMessage(b.detail, `Send failed (${res.status})`))
       }
       setSent(true)
       onSent?.()
