@@ -6,6 +6,7 @@ import {
   getConflictEmail,
   getOrderShipWindows,
   pdfUrl,
+  setConflictResolution,
   setOrderAccount,
   setOrderShipWindow,
   setOrderStatus,
