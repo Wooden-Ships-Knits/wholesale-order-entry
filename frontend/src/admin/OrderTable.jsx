@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
+  cardPdfUrl,
   certUrl,
   createSfAccount,
   getConflictEmail,
+  getOrderShipWindows,
   pdfUrl,
-  setConflictResolution,
+  setOrderAccount,
+  setOrderShipWindow,
   setOrderStatus,
+  suggestAccounts,
 } from './api'
+import { distinctValues, rankCode } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
 // Salesforce My Domain — the pushed order record opens at <instance>/<recordId>.
@@ -20,13 +25,326 @@ function YesNoCell({ value, tone }) {
   return <td className={yes ? `flag-${tone}` : undefined}>{yes ? 'Yes' : 'No'}</td>
 }
 
-export default function OrderTable({ orders, onChanged, onError }) {
+/** The "New account" cell.
+ *
+ * Yes/No comes from `accountExists` — whether a Salesforce account with this
+ * store name was found — not from the buyer's "is this your first order?"
+ * answer. A store Salesforce has never heard of is new, whatever anyone ticked.
+ *
+ * "Created ✓" is keyed on sfAccountCreated, NOT sfAccountId: the id is also set
+ * at submit time from the buyer's own lookup, so keying on it claimed
+ * "Created ✓" for accounts nobody made and hid the button when it was needed.
+ */
+function NewAccountCell({ order: o, creating, onCreate }) {
+  // Created here → always Yes / Created ✓, checked BEFORE the name lookup.
+  // Creating the account puts the store in Salesforce, so the lookup would
+  // then report "exists" and flip this row to No — erasing the fact that it
+  // was a new account we made. This order was new; that doesn't change.
+  if (o.sfAccountCreated) {
+    return (
+      <td className="flag-green">
+        <div className="cert-missing">
+          <span>Yes</span>
+          <span className="sf-created" title={o.sfAccountId}>
+            Created ✓
+          </span>
+        </div>
+      </td>
+    )
+  }
+
+  // accountExists null = lookup didn't run / failed. Fall back to the buyer's
+  // answer, but say so — an unverified guess must not read as a verdict.
+  const unverified = o.accountExists == null
+  const isNew = unverified ? Boolean(o.isNewAccount) : !o.accountExists
+
+  if (!isNew) return <td className="flag-green">No</td>
+
+  return (
+    <td className="flag-yellow">
+      <div className="cert-missing">
+        <span>Yes</span>
+        {unverified && <span className="sub">unverified</span>}
+        <button type="button" className="chip" disabled={creating} onClick={onCreate}>
+          {creating ? 'Creating…' : 'Create account'}
+        </button>
+      </div>
+    </td>
+  )
+}
+
+/** Account name cell, editable while the order is still awaiting review.
+ *
+ * Reps can't always find the right store — a franchise has one account per
+ * location and the lookup is an exact name match — so orders arrive linked to
+ * the wrong account or to none. Correcting it here sets the Salesforce account
+ * id as well as the name; without the id the Accept push has nothing to file
+ * the order against.
+ */
+function AccountNameCell({ order: o, onChanged, onError }) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState(o.accountName || '')
+  const [hits, setHits] = useState([])
+  const [saving, setSaving] = useState(false)
+
+  // Admin page is authenticated, so search-as-you-type is fine here (on the
+  // public form it would expose the stockist list).
+  useEffect(() => {
+    if (!editing || text.trim().length < 2) {
+      setHits([])
+      return
+    }
+    const id = setTimeout(async () => {
+      try {
+        const { suggestions } = await suggestAccounts(text)
+        setHits(suggestions)
+      } catch {
+        setHits([]) // a failed search shouldn't block typing a free-text name
+      }
+    }, 250)
+    return () => clearTimeout(id)
+  }, [editing, text])
+
+  async function save(accountName, accountId) {
+    setSaving(true)
+    try {
+      await setOrderAccount(o.id, accountName, accountId)
+      setEditing(false)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!editing) {
+    return (
+      <td>
+        <div className="cert-missing">
+          <span>{o.accountName || <span className="unknown">—</span>}</span>
+          {/* Once accepted the order is in Salesforce under a specific
+              account; relinking here would only desync the two. */}
+          {o.status === 'submitted' && (
+            <button type="button" className="link-btn inline" onClick={() => setEditing(true)}>
+              Change
+            </button>
+          )}
+        </div>
+      </td>
+    )
+  }
+
+  return (
+    <td>
+      <div className="account-edit">
+        <input
+          type="text"
+          value={text}
+          autoFocus
+          disabled={saving}
+          placeholder="Store name"
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && setEditing(false)}
+        />
+        {hits.length > 0 && (
+          <ul className="account-hits">
+            {hits.map((h) => (
+              <li key={h.accountId}>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => save(h.name, h.accountId)}
+                  title={[h.salesTerritory, h.rank].filter(Boolean).join(' · ')}
+                >
+                  <span className="suggestion-name">{h.name}</span>
+                  <span className="suggestion-where">
+                    {[h.cityState, h.salesTerritory].filter(Boolean).join(' · ')}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="account-edit-actions">
+          {/* Saving without picking sends no id; the backend still resolves the
+              typed name against Salesforce (names are unique) and only treats
+              it as a new store when nothing matches. So this is just "Save". */}
+          <button
+            type="button"
+            className="chip"
+            disabled={saving || !text.trim()}
+            onClick={() => save(text.trim(), null)}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button type="button" className="link-btn inline" onClick={() => setEditing(false)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </td>
+  )
+}
+
+/** Ship window cell, editable while the order is still awaiting review.
+ *
+ * Options are the live list for this order's own season, so a window that has
+ * since sold out (struck through in the planning sheet) isn't offered. The
+ * season itself is deliberately not editable — line prices and Salesforce
+ * product ids were resolved from that season's price book at submit.
+ */
+function ShipWindowCell({ order: o, onChanged, onError }) {
+  const [editing, setEditing] = useState(false)
+  const [options, setOptions] = useState(null) // null = still loading
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!editing) return
+    let stale = false
+    getOrderShipWindows(o.id)
+      .then((d) => !stale && setOptions(d.shipWindows || []))
+      .catch((err) => {
+        if (stale) return
+        setOptions([])
+        onError(err.message)
+      })
+    return () => {
+      stale = true
+    }
+  }, [editing, o.id])
+
+  async function save(value) {
+    if (!value || value === o.shipWindow) {
+      setEditing(false)
+      return
+    }
+    setSaving(true)
+    try {
+      await setOrderShipWindow(o.id, value)
+      setEditing(false)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!editing) {
+    return (
+      <td>
+        <div className="cert-missing">
+          <span>{o.shipWindow || <span className="unknown">—</span>}</span>
+          {o.status === 'submitted' && (
+            <button type="button" className="link-btn inline" onClick={() => setEditing(true)}>
+              Change
+            </button>
+          )}
+        </div>
+      </td>
+    )
+  }
+
+  return (
+    <td>
+      <div className="cert-missing">
+        <select
+          autoFocus
+          disabled={saving || options === null}
+          defaultValue={o.shipWindow || ''}
+          onChange={(e) => save(e.target.value)}
+        >
+          <option value="">{options === null ? 'Loading…' : 'Select a ship window…'}</option>
+          {/* The current value may no longer be offered (window since closed);
+              keep it listed so the dropdown doesn't silently blank it. */}
+          {o.shipWindow && !(options || []).includes(o.shipWindow) && (
+            <option value={o.shipWindow}>{o.shipWindow} (current)</option>
+          )}
+          {(options || []).map((w) => (
+            <option key={w} value={w}>
+              {w}
+            </option>
+          ))}
+        </select>
+        <button type="button" className="link-btn inline" onClick={() => setEditing(false)}>
+          Cancel
+        </button>
+      </div>
+    </td>
+  )
+}
+
+/** Payment cell: which Kugamon record type to pick, plus the card summary and
+ *  a link to the admin copy showing the full number.
+ *
+ *  The number itself is never in this response — `Open card` fetches it from
+ *  the encrypted copy, which is purged on Accept/Decline. */
+function PaymentCell({ order: o }) {
+  if (!o.paymentMethod) return <td><span className="unknown">—</span></td>
+
+  const isCard = o.paymentMethod === 'Credit Card'
+  return (
+    <td>
+      <div className="cert-missing">
+        <span>{o.paymentMethod}</span>
+        {isCard && (o.cardLast4 || o.cardExp) && (
+          <span className="sub">
+            {o.cardLast4 ? `•••• ${o.cardLast4}` : ''}
+            {o.cardExp ? `  exp ${o.cardExp}` : ''}
+          </span>
+        )}
+        {isCard && o.cardName && <span className="sub">{o.cardName}</span>}
+        {isCard &&
+          (o.hasCardCopy ? (
+            <a className="chip" href={cardPdfUrl(o.id)} target="_blank" rel="noreferrer">
+              Open card
+            </a>
+          ) : (
+            <span className="sub">card purged</span>
+          ))}
+        {o.approvalBeforeCharge === true && <span className="sub">approval first</span>}
+      </div>
+    </td>
+  )
+}
+
+// Tri-state dropdown for the boolean columns; '' = no filter.
+function YesNoFilter({ label, value, onChange }) {
+  return (
+    <select
+      aria-label={`Filter by ${label}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">All</option>
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select>
+  )
+}
+
+export default function OrderTable({
+  orders, // already filtered by AdminApp
+  allOrders, // unfiltered, so the dropdown options don't shrink as you filter
+  filters,
+  onFilterChange,
+  onChanged,
+  onError,
+}) {
   const [draft, setDraft] = useState(null)
   const [drafting, setDrafting] = useState(null) // id of the order being drafted
   const [creating, setCreating] = useState(null) // id of the order whose SF account is being created
   const [resolving, setResolving] = useState(null) // id of the order whose conflict is being resolved
   const [sentConflict, setSentConflict] = useState(() => new Set()) // orders whose conflict email was sent
   const [sentTaxCert, setSentTaxCert] = useState(() => new Set()) // orders whose tax-cert email was sent
+
+  // Dropdown options come from the unfiltered rows: picking a territory must
+  // not remove the other territories from the list you picked it from.
+  const territories = useMemo(() => distinctValues(allOrders, (o) => o.salesTerritory), [allOrders])
+  const ranks = useMemo(() => distinctValues(allOrders, (o) => rankCode(o.rank)), [allOrders])
+  const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
+  const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
 
   // Create the Salesforce Business Account for a new-account order. This is a
   // live-org write, so confirm first; the backend is idempotent as a backstop.
@@ -148,8 +466,9 @@ export default function OrderTable({ orders, onChanged, onError }) {
     }
   }
 
-  if (!orders.length) return <p className="admin-empty">No orders yet.</p>
-
+  // No early return on an empty list: the filter row lives in <thead>, so
+  // bailing out here would hide the very controls needed to undo a filter that
+  // matched nothing. The empty state is a row inside <tbody> instead.
   return (
     <>
       {draft && (
@@ -160,18 +479,185 @@ export default function OrderTable({ orders, onChanged, onError }) {
           <tr>
             <th>Date</th>
             <th>Order ID</th>
+            <th>Season</th>
+            <th>Shipping Window</th>
             <th>Account Name</th>
             <th>Sales Territory</th>
             <th>New account</th>
             <th>Rank</th>
             <th>Potential conflict</th>
             <th>Tax certificate</th>
+            <th>Payment</th>
             <th>Notes</th>
             <th>Special Instruction</th>
             <th>Decision</th>
           </tr>
+          {/* Per-column filters. Every cell is controlled by one key of the
+              `filters` object owned by AdminApp; '' means "no filter". The
+              Decision column reuses the toolbar's status filter (server-side)
+              so there is only ever one status control. */}
+          <tr className="filter-row">
+            <th>
+              {/* <label> wraps each input, so the word is also the accessible
+                  name and clicking it focuses the field. */}
+              <div className="filter-range">
+                <label>
+                  <span>From</span>
+                  <input
+                    type="date"
+                    value={filters.dateFrom}
+                    max={filters.dateTo || undefined}
+                    onChange={(e) => onFilterChange('dateFrom', e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>To</span>
+                  <input
+                    type="date"
+                    value={filters.dateTo}
+                    min={filters.dateFrom || undefined}
+                    onChange={(e) => onFilterChange('dateTo', e.target.value)}
+                  />
+                </label>
+              </div>
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="ID"
+                aria-label="Filter by order ID"
+                value={filters.shortId}
+                onChange={(e) => onFilterChange('shortId', e.target.value)}
+              />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by season"
+                value={filters.season}
+                onChange={(e) => onFilterChange('season', e.target.value)}
+              >
+                <option value="">All</option>
+                {seasons.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <select
+                aria-label="Filter by shipping window"
+                value={filters.shipWindow}
+                onChange={(e) => onFilterChange('shipWindow', e.target.value)}
+              >
+                <option value="">All</option>
+                {shipWindows.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="Search…"
+                aria-label="Filter by account name"
+                value={filters.accountName}
+                onChange={(e) => onFilterChange('accountName', e.target.value)}
+              />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by sales territory"
+                value={filters.territory}
+                onChange={(e) => onFilterChange('territory', e.target.value)}
+              >
+                <option value="">All</option>
+                {territories.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <YesNoFilter
+                label="new account"
+                value={filters.newAccount}
+                onChange={(v) => onFilterChange('newAccount', v)}
+              />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by rank"
+                value={filters.rank}
+                onChange={(e) => onFilterChange('rank', e.target.value)}
+              >
+                <option value="">All</option>
+                {ranks.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <YesNoFilter
+                label="potential conflict"
+                value={filters.conflict}
+                onChange={(v) => onFilterChange('conflict', v)}
+              />
+            </th>
+            <th>
+              <YesNoFilter
+                label="tax certificate"
+                value={filters.certificate}
+                onChange={(v) => onFilterChange('certificate', v)}
+              />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by payment method"
+                value={filters.paymentMethod}
+                onChange={(e) => onFilterChange('paymentMethod', e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="PayPal">PayPal</option>
+              </select>
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="Search…"
+                aria-label="Filter by notes"
+                value={filters.notes}
+                onChange={(e) => onFilterChange('notes', e.target.value)}
+              />
+            </th>
+            <th>
+              <input
+                type="search"
+                placeholder="Search…"
+                aria-label="Filter by special instruction"
+                value={filters.specialInstructions}
+                onChange={(e) => onFilterChange('specialInstructions', e.target.value)}
+              />
+            </th>
+            {/* Decision: no filter here — the toolbar chips above already
+                filter by status, server-side. */}
+            <th aria-hidden="true" />
+          </tr>
         </thead>
         <tbody>
+          {!orders.length && (
+            <tr>
+              <td className="admin-empty-row" colSpan={14}>
+                {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
+              </td>
+            </tr>
+          )}
           {orders.map((o) => (
             <tr key={o.id}>
               <td>{new Date(o.createdAt).toLocaleString()}</td>
@@ -180,37 +666,25 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   <code>{o.shortId}</code>
                 </a>
               </td>
-              <td>{o.accountName || <span className="unknown">—</span>}</td>
+              {/* Season is read-only: prices and Salesforce product ids were
+                  resolved from this season's price book when the order was
+                  submitted, so changing it would misprice every line. */}
+              <td>{o.seasonCode || <span className="unknown">—</span>}</td>
+              <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
+              <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
-              {/* New account = Yes stacks a "Create account" action (or the
-                  "Created ✓" state) beneath it, like the tax-cert cell. */}
-              <td className={o.isNewAccount ? 'flag-yellow' : 'flag-green'}>
-                {o.isNewAccount ? (
-                  <div className="cert-missing">
-                    <span>Yes</span>
-                    {o.sfAccountId ? (
-                      <span className="sf-created" title={o.sfAccountId}>
-                        Created ✓
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="chip"
-                        disabled={creating === o.id}
-                        onClick={() => createAccount(o)}
-                      >
-                        {creating === o.id ? 'Creating…' : 'Create account'}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  'No'
-                )}
-              </td>
+              {/* New account: answered by the submit-time Salesforce check, not
+                  by the buyer's "first order" answer. Yes stacks a "Create
+                  account" action (or "Created ✓") beneath it. */}
+              <NewAccountCell
+                order={o}
+                creating={creating === o.id}
+                onCreate={() => createAccount(o)}
+              />
               {/* Conflict + its email action combined into one cell.
                   No conflict (or not yet checked) shows "No" — never blank. */}
                <td>
-                {o.rank || <span className="unknown">—</span>}
+                {o.rank ? o.rank.split(' - ')[0] : <span className="unknown">—</span>}
               </td>
               {/* Conflict cell. Once resolved, the outcome tints the cell
                   (green cleared / red real-conflict) and the note is on hover. */}
@@ -317,6 +791,7 @@ export default function OrderTable({ orders, onChanged, onError }) {
                   <span className="unknown">—</span>
                 )}
               </td>
+              <PaymentCell order={o} />
               <td className="notes-cell" title={o.notes || ''}>
                 {o.notes || <span className="unknown">—</span>}
               </td>

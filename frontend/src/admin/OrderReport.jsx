@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getReport, runReport } from './api'
 
 // The automation reports surfaced in /admin. `ready` = the backend runner
-// exists (backend/app/routers/reports.py _RUNNERS); DMM is not ported yet.
+// exists (backend/app/routers/reports.py _RUNNERS).
 const REPORTS = [
   {
     key: 'dto',
@@ -13,9 +13,10 @@ const REPORTS = [
   },
   {
     key: 'dmm',
-    ready: false,
+    ready: true,
     title: 'DMM — Daily Morning Meeting',
-    description: "Pull today's summary of unpaid sales orders and draft the recap text.",
+    description:
+      "Pull today's shipping plan and unpaid open orders, and draft the morning-meeting recap.",
   },
 ]
 

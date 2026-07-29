@@ -10,15 +10,17 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 
 from app.admin.security import AdminRequired
+from app.reports.daily_morning_meeting import recap as dmm
 from app.reports.daily_total_order import recap as dto
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/reports")
 
-# report key -> its run() function. Add "dmm" here once that report is ported.
+# report key -> its run() function, each returning {"recap": str, "log": [...]}.
 _RUNNERS = {
     "dto": dto.run,
+    "dmm": dmm.run,
 }
 
 # report key -> last run: {"ran": True, "recap": str, "log": [...], "ranAt": iso}

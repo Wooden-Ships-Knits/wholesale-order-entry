@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 
 from app.config import settings
 from app.geo import conflict
-from app.salesforce import client, mapping
+from app.salesforce import account_search, client, mapping
 
 router = APIRouter()
 
@@ -23,6 +23,40 @@ def nearby_accounts(
     # keep showing "no drive times" after the key is fixed.
     response.headers["Cache-Control"] = "no-store"
     return conflict.find_nearby(lat, lng, k, maxMinutes or settings.conflict_max_minutes)
+
+
+def account_city_state(rec: dict) -> str:
+    """'Nashville, TN' — the only way to tell franchise locations apart."""
+    return ", ".join(p for p in (rec.get("ShippingCity"), rec.get("ShippingState")) if p)
+
+
+@router.get("/accounts/suggest")
+def suggest_accounts(
+    q: str = Query(..., min_length=2, max_length=120),
+    limit: int = Query(10, ge=1, le=25),
+) -> dict:
+    """Closest store-name matches, for when the exact lookup finds nothing.
+
+    Payload is deliberately minimal — id, name, city/state. No email, tax id,
+    rank or account notes: those load only when the buyer actively selects an
+    account (GET /accounts?accountId=), not while they are still searching.
+
+    Inactive / no-booking / OOB / not-going-forward accounts are excluded, the
+    same rule the exact lookup uses — a buyer must not be able to order for a
+    store that is closed.
+    """
+    rows = [
+        r
+        for r in client.account_search_index()
+        if (r.get(mapping.RANK) or "") not in mapping.EXCLUDED_RANKS_FIND_ACCOUNT
+    ]
+    hits = account_search.search(rows, q, limit)
+    return {
+        "suggestions": [
+            {"accountId": r["Id"], "name": r.get("Name"), "cityState": account_city_state(r)}
+            for r in hits
+        ]
+    }
 
 
 @router.get("/accounts")

@@ -31,6 +31,16 @@ class Settings(BaseSettings):
 
     pdf_output_dir: str = "/output/orders"
 
+    # Encrypts the admin-copy order PDF (the only artefact showing the full card
+    # number) while it waits for the monitoring team — see CLAUDE.md rule 1.
+    # 32 random bytes, base64:
+    #   python3 -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"
+    # Blank = no admin copy is kept at all; the card is discarded at submit.
+    card_encryption_key: str = ""
+    # Admin copies are purged this many days after submit even if the order was
+    # never accepted or declined, so cards never linger.
+    card_retention_days: int = 14
+
     # Nearby-stockist conflict check. Server-side Google key (Distance Matrix)
     # — NOT the browser key in frontend/.env; IP-restrict it. Empty = the
     # endpoint degrades to straight-line distances.
@@ -77,6 +87,13 @@ class Settings(BaseSettings):
     # are the only DTO-specific values (were hardcoded in the standalone script).
     dto_report_name: str = "Daily Total Order"  # Salesforce Report.Name to run
     dto_recap_recipient: str = "Paola"  # greeting name in the recap email
+
+    # DMM (Daily Morning Meeting). Was hardcoded in the standalone script.
+    dmm_report_name: str = "UNPAID DAILY MORNING MEETING"
+    dmm_recap_recipient: str = "Paola"
+    # Google Sheet behind the DMM report: the "WHOLESALE Paid Open Orders" tab
+    # (today's shipping plan) and the "Email Schedule" tab (rep chase dates).
+    problem_list_reps_sheet_id: str = ""
 
     @property
     def mail_configured(self) -> bool:

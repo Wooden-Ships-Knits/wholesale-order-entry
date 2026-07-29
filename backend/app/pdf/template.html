@@ -116,14 +116,30 @@
       <td><span class="lbl">Filled by</span><span class="val">
         {% if order.filled_by == "rep" %}Sales rep{% elif order.filled_by == "customer" %}Customer{% else %}—{% endif %}
       </span></td>
-      <td><span class="lbl">Payment by</span><span class="val">
-        {% if order.payment_method == "direct" %}Buyer pays (link){% elif order.payment_method == "store" %}Card on file{% else %}—{% endif %}
-      </span></td>
+      <td><span class="lbl">Payment by</span><span class="val">{{ order.payment_method or "—" }}</span></td>
       <td><span class="lbl">Charge approval</span><span class="val">
-        {% if order.payment_method != "store" or order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
+        {% if order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
       </span></td>
     </tr>
   </table>
+
+  {#
+    Card block. `card.number` is masked (•••• 1234) on the copy that is stored
+    and emailed, and only shown in full on the admin copy, which is encrypted
+    at rest and never leaves an authenticated request. CVV is never passed in.
+  #}
+  {% if card %}
+  <table class="grid">
+    <tr>
+      <td style="width:34%"><span class="lbl">Name on card</span><span class="val">{{ card.name or "—" }}</span></td>
+      <td style="width:44%">
+        <span class="lbl">Card number{% if card.full %} (admin copy){% endif %}</span>
+        <span class="val">{{ card.number or "—" }}</span>
+      </td>
+      <td style="width:22%"><span class="lbl">Expires</span><span class="val">{{ card.exp or "—" }}</span></td>
+    </tr>
+  </table>
+  {% endif %}
 
   <!-- ══════════════════════ bill to / ship to ══════════════════════ -->
   <table class="grid">
@@ -196,6 +212,21 @@
           <span style="font-size:7pt;">{{ order.cert_filename }}</span>
           {% else %}☐ No certificate uploaded with this order{% endif %}
         </div>
+      </td>
+    </tr>
+    {# Payment terms. Full width rather than tucked into the policies column:
+       this is the paragraph the buyer is accepting with their signature below,
+       and it must match the wording on the web form (TermsSignature.jsx). #}
+    <tr>
+      <td colspan="3">
+        <h3>Payment terms</h3>
+        <p class="tight">
+          All Orders are always <span class="hl">Net Due prior to shipment</span>.
+          <strong>We do not offer net terms.</strong> Please let us know within
+          <strong>10 days</strong> if you do not agree to these terms. If we don't hear from
+          you, we'll understand this as an acceptance of the terms and will proceed to
+          purchase the yarn. Cancelled orders incur a <span class="hl">15% Restocking Fee</span>.
+        </p>
       </td>
     </tr>
   </table>

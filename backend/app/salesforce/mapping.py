@@ -133,6 +133,7 @@ ACCOUNT_FIELDS = (
     SALESPERSON,
     SALES_TERRITORY,
     SPECIAL_INSTRUCTIONS,
+    RANK,
 )
 
 # ------------------------------------------------------- seasons / price books
@@ -260,6 +261,7 @@ def map_account(rec: dict[str, Any]) -> dict[str, Any]:
         "rep": rec.get("Salesperson__c"),
         "salesTerritory": rec.get(SALES_TERRITORY),
         "specialInstructions": rec.get(SPECIAL_INSTRUCTIONS),
+        "rank": rec.get(RANK),
         "certificateOnFile": _certificate_on_file(rec),
     }
 

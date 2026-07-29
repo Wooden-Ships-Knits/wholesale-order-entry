@@ -45,6 +45,21 @@ export const setConflictResolution = (id, outcome, note = '') =>
 // Capture new inbound conflict replies and classify them. Returns
 // { captured, suggested }. No-op server-side if IMAP/OpenAI aren't configured.
 export const pollReplies = () => post('/api/admin/poll-replies')
+// Store-name search for the account picker. Admin-only, so it carries rank and
+// territory too — needed to choose between franchise locations.
+export const suggestAccounts = (q) =>
+  request(`/api/admin/accounts/suggest?q=${encodeURIComponent(q.trim())}`)
+
+// Correct which store an order belongs to. accountId null = the typed name
+// matches nothing, i.e. it really is a new store.
+export const setOrderAccount = (id, accountName, accountId = null) =>
+  post(`/api/admin/orders/${id}/account`, { account_name: accountName, account_id: accountId })
+
+// Ship window: the live list for this order's season, then the change itself.
+// The season isn't editable — prices were resolved from its price book.
+export const getOrderShipWindows = (id) => request(`/api/admin/orders/${id}/ship-windows`)
+export const setOrderShipWindow = (id, shipWindow) =>
+  post(`/api/admin/orders/${id}/ship-window`, { ship_window: shipWindow })
 
 // Draft of the "we already have a stockist nearby" email. Pass { orderId } from
 // the order table, or the store details from the conflict-check tab.
@@ -54,6 +69,9 @@ export const getConflictEmail = (payload) => post('/api/conflict-email', payload
 export const sendEmail = (payload) => post('/api/send-email', payload)
 
 export const pdfUrl = (id) => `/api/admin/orders/${id}/pdf`
+// Admin copy showing the full card number, for keying into Salesforce. Rendered
+// per request from the encrypted copy — never stored unencrypted or emailed.
+export const cardPdfUrl = (id) => `/api/admin/orders/${id}/pdf?full=1`
 export const certUrl = (id) => `/api/admin/orders/${id}/certificate`
 
 // Admin reports (DTO/DMM). getReport = last cached run; runReport = run now.

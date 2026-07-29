@@ -371,10 +371,67 @@ def list_geocoded_wholesale_accounts() -> list[dict[str, Any]]:
     return _cached("geocoded_accounts", fetch)
 
 
+def existing_account_names(names: list[str]) -> set[str]:
+    """Which of these store names already exist in Salesforce?
+
+    Answers "is this a new account?" for the admin table: a name that comes back
+    is an existing stockist, one that doesn't is new. Returns the matched names
+    case-folded, since SOQL `=` on text is case-insensitive but Python `in` is not.
+
+    One batched IN query for the whole page rather than one per order — the
+    result is only as fresh as the 5-minute cache, which is fine for a review
+    screen and keeps this off the Salesforce API quota.
+
+    Deliberately NOT find_accounts(): that one hides inactive / no-booking /
+    conflict / OOB accounts (EXCLUDED_RANKS) because they shouldn't be offered
+    to a buyer picking their store. Here those rows matter most — hiding them
+    reports an existing stockist as new and invites a duplicate account.
+    """
+    wanted = sorted({n.strip() for n in names if n and n.strip()})
+    if not wanted:
+        return set()
+
+    def fetch() -> set[str]:
+        inlist = "','".join(soql_str(n) for n in wanted)
+        # IsPersonAccount = FALSE: wholesale stockists are business accounts.
+        rows = query_all(
+            f"SELECT Name FROM {mapping.ACCOUNT} "
+            f"WHERE Name IN ('{inlist}') AND IsPersonAccount = FALSE"
+        )
+        return {(r.get("Name") or "").strip().casefold() for r in rows}
+
+    return _cached(f"account_names:{'|'.join(wanted)}", fetch)
+
+
+def account_search_index() -> list[dict[str, Any]]:
+    """Every business account, with just the fields store-name search needs.
+
+    One query per cache window (~4.5k rows) instead of one per keystroke:
+    the matching itself happens in Python (app/salesforce/account_search.py)
+    because SOQL cannot fold case, strip possessives or match on word order.
+
+    Deliberately unfiltered — callers apply their own rank rules. The buyer
+    lookup hides inactive/OOB stores; the admin picker shows them, so an admin
+    can knowingly link an order to one.
+    """
+    def fetch() -> list[dict[str, Any]]:
+        soql = (
+            f"SELECT Id, Name, ShippingCity, ShippingState, {mapping.RANK}, "
+            f"{mapping.SALES_TERRITORY} FROM {mapping.ACCOUNT} "
+            "WHERE IsPersonAccount = FALSE"
+        )
+        rows = query_all(soql)
+        logger.info("Account search index refreshed: %d accounts", len(rows))
+        return rows
+
+    return _cached("account_search_index", fetch)
+
+
 def find_accounts(
     email: str | None = None,
     account_id: str | None = None,
     name: str | None = None,
+    include_excluded: bool = False,
 ) -> list[dict[str, Any]]:
     """Buyer lookup on Account (person-account org). Returns all candidates.
 
@@ -382,6 +439,13 @@ def find_accounts(
     not a substring — SOQL `=` on text is case-insensitive, so casing is
     forgiven but partial words are not. Identical names still return every
     candidate so the frontend can show the "which one?" dropdown, same as email.
+
+    include_excluded=True keeps inactive / no-booking / no-marketing / OOB / NGF
+    accounts in the result. The buyer lookup wants them hidden — you can't order
+    for a closed store — but the admin account picker shows them, so resolving
+    an admin's choice has to be able to see them too. Without this, linking an
+    order to e.g. a "E - No Marketing" store silently looked like "not in
+    Salesforce" and wiped the order's territory and rank.
     """
     fields = ", ".join(mapping.ACCOUNT_FIELDS)
     if email:
@@ -395,15 +459,17 @@ def find_accounts(
     # Drop inactive / no-booking / conflict / OOB accounts from the buyer
     # lookup — same EXCLUDED_RANKS gate as the conflict-check candidate set
     # (decision 2026-07-18). Accounts with no rank still match.
-    excluded_ranks = ", ".join(f"'{soql_str(r)}'" for r in mapping.EXCLUDED_RANKS_FIND_ACCOUNT)
-    rank_filter = f"({mapping.RANK} = null OR {mapping.RANK} NOT IN ({excluded_ranks}))"
+    rank_filter = ""
+    if not include_excluded:
+        excluded_ranks = ", ".join(f"'{soql_str(r)}'" for r in mapping.EXCLUDED_RANKS_FIND_ACCOUNT)
+        rank_filter = f" AND ({mapping.RANK} = null OR {mapping.RANK} NOT IN ({excluded_ranks}))"
     # IsPersonAccount = FALSE keeps only business accounts. This IS a
     # person-account org, but wholesale stockists are business accounts
     # (verified against the org: 4,477 of 4,484 Type='Wholesale' accounts);
     # the filter drops DTC / consumer person accounts from the buyer lookup.
     soql = (
         f"SELECT {fields} FROM {mapping.ACCOUNT} "
-        f"WHERE ({where}) AND {rank_filter} AND IsPersonAccount = FALSE "
+        f"WHERE ({where}){rank_filter} AND IsPersonAccount = FALSE "
         f"ORDER BY Name LIMIT 25"
     )
     return query_all(soql)

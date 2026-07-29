@@ -52,6 +52,42 @@ def _client() -> Any:
         return _service
 
 
+def get_values(
+    spreadsheet_id: str,
+    worksheet_name: str,
+    value_render_option: str = "FORMATTED_VALUE",
+) -> list[list[str]]:
+    """Every populated row of one worksheet, as a rectangular list of strings.
+
+    The generic reader the DMM report needs — the ship-window `_read` above is
+    tied to one spreadsheet and reads cell formatting, which this doesn't.
+
+    Rows are padded to the widest row: the Sheets API drops trailing empty
+    cells, so rows come back ragged and `DataFrame(rows[1:], columns=rows[0])`
+    would raise on any row shorter than its header.
+
+    value_render_option="UNFORMATTED_VALUE" yields raw values — dates arrive as
+    Google serial numbers, which is what the email-schedule parsing expects.
+    """
+    result = (
+        _client()
+        .spreadsheets()
+        .values()
+        .get(
+            spreadsheetId=spreadsheet_id,
+            range=f"'{worksheet_name}'",
+            valueRenderOption=value_render_option,
+        )
+        .execute()
+    )
+    rows = result.get("values", [])
+    if not rows:
+        logger.warning("Worksheet %r in %s is empty", worksheet_name, spreadsheet_id[:8])
+        return []
+    width = max(len(r) for r in rows)
+    return [list(r) + [""] * (width - len(r)) for r in rows]
+
+
 def _read(season_code: str) -> list[list[tuple[str, bool]]]:
     """Rows for one season's worksheet as (value, struck) cells.
 

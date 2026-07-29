@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
-import { getOrders, getSession, logout, pollReplies } from './api'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { getOrders, getSession, logout } from './api'
+import { EMPTY_FILTERS, filterOrders, hasActiveFilters } from './filterOrders'
 import Login from './Login'
 import OrderTable from './OrderTable'
 import ConflictCheck from '../conflict/ConflictCheck.jsx'
@@ -23,10 +24,20 @@ export default function AdminApp() {
   const [tab, setTab] = useState('orders')
   const [orders, setOrders] = useState([])
   const [filter, setFilter] = useState('submitted')
+  // Per-column filters, one object rather than one useState per column so that
+  // "Clear" is a single assignment and the whole set is easy to hand around.
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [polling, setPolling] = useState(false)
   const [pollMsg, setPollMsg] = useState('')
+
+  const setField = (key, value) => setFilters((f) => ({ ...f, [key]: value }))
+
+  // Derived, not state: the visible rows are always a function of (orders,
+  // filters), so there is nothing to keep in sync.
+  const visibleOrders = useMemo(() => filterOrders(orders, filters), [orders, filters])
+  const filtered = hasActiveFilters(filters)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -122,6 +133,16 @@ export default function AdminApp() {
                 {f.label}
               </button>
             ))}
+            {/* Row count + reset, so an active filter can never be mistaken
+                for "there are no more orders". */}
+            <span className="filter-count">
+              {filtered ? `${visibleOrders.length} of ${orders.length}` : orders.length} orders
+            </span>
+            {filtered && (
+              <button type="button" className="chip" onClick={() => setFilters(EMPTY_FILTERS)}>
+                Clear filters
+              </button>
+            )}
             <button type="button" className="link-btn" onClick={load} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </button>
@@ -139,7 +160,15 @@ export default function AdminApp() {
 
           {error && <p className="admin-error">{error}</p>}
 
-          <OrderTable orders={orders} onChanged={load} onError={setError} />
+          <OrderTable
+            orders={visibleOrders}
+            allOrders={orders}
+            filters={filters}
+            onFilterChange={setField}
+            onChanged={load}
+            onError={setError}
+          />
+
         </>
       )}
     </main>

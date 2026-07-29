@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(grep -n \"^label\\\\|^ *label {\\\\|, *label\" src/index.css)",
+      "Bash(npx vite *)"
     ]
   }
 }
