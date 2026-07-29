@@ -17,13 +17,15 @@
   table { width: 100%; border-collapse: collapse; }
   .grid td, .grid th { border: 0.75pt solid #1d1d1b; padding: 3pt 5pt; vertical-align: top; }
 
-  /* label above value, as on the printed form */
+  /* Label above value, as on the printed form. Full black rather than grey:
+     these are scan-targets on a filled-in sheet, and at 6.5pt a mid-grey
+     bold reads as light — the labels have to find the eye before the values. */
   .lbl {
     display: block;
-    font-size: 6.5pt;
+    font-size: 7pt;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #4c4a45;
+    color: #1d1d1b;
     font-weight: bold;
   }
   .val { font-size: 9pt; }
@@ -96,11 +98,13 @@
       </td>
       <td class="ctr">
         <span class="lbl">Order date</span>
-        <span class="val">{{ order.order_date or "—" }}</span>
+        <span class="val">{{ order.order_date | longdate }}</span>
       </td>
       <td class="ctr">
-        <span class="lbl">Order total $$</span>
-        <span class="val"><strong>{{ "%.2f" % order.total_amount }}</strong></span>
+        {# The $ belongs against the figure, not stranded in the label — as
+           "Order total $$" it wrapped onto its own line above the number. #}
+        <span class="lbl">Order total</span>
+        <span class="val"><strong>${{ order.total_amount | money }}</strong></span>
       </td>
       {# split defensively: mapping.season_label() falls back to the bare code
          (one word) if the regex misses, and an IndexError here would fail the
@@ -237,7 +241,7 @@
       <td style="width:55%"><span class="lbl">Buyer's signature</span>
         <span class="signature">{{ order.signature_name or "—" }}</span></td>
       <td style="width:25%"><span class="lbl">Date</span>
-        <span class="val">{{ order.signature_date or "—" }}</span></td>
+        <span class="val">{{ order.signature_date | longdate }}</span></td>
       <td style="width:20%"><span class="lbl">Terms accepted</span>
         <span class="val">{{ "☑ Yes" if order.terms_accepted else "☐ No" }}</span></td>
     </tr>
@@ -286,8 +290,8 @@
         <td class="num">{{ it.qty_sm or "" }}</td>
         <td class="num">{{ it.qty_ml or "" }}</td>
         <td class="num">{{ it.line_qty }}</td>
-        <td class="num">{{ "%.2f" % it.unit_price }}</td>
-        <td class="num">{{ "%.2f" % it.line_total }}</td>
+        <td class="num">{{ it.unit_price | money }}</td>
+        <td class="num">{{ it.line_total | money }}</td>
       </tr>
       {% endfor %}
       {# keep the ruled-form look when an order has only a few lines #}
@@ -300,7 +304,7 @@
         <td colspan="6"></td>
         <td class="num">{{ order.total_qty }}</td>
         <td></td>
-        <td class="num">{{ "%.2f" % order.total_amount }}</td>
+        <td class="num">{{ order.total_amount | money }}</td>
       </tr>
     </tfoot>
   </table>
