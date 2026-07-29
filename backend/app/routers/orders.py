@@ -281,6 +281,9 @@ def submit_order(
             "approval_before_charge": order.approval_before_charge,
             "cert_filename": order.cert_filename,
             "created_at": created_at.strftime("%Y-%m-%d %H:%M UTC"),
+            # The store the order is for — Bill To / Ship To name on the PDF.
+            # Distinct from buyer_name, which is the person placing it.
+            "account_name": order.account_name,
             "buyer_name": order.buyer_name,
             "bill_street": order.bill_street,
             "bill_city_state": order.bill_city_state,
