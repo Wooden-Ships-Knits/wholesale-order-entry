@@ -38,6 +38,12 @@ export const suggestAccounts = (q) =>
 export const setOrderAccount = (id, accountName, accountId = null) =>
   post(`/api/admin/orders/${id}/account`, { account_name: accountName, account_id: accountId })
 
+// Ship window: the live list for this order's season, then the change itself.
+// The season isn't editable — prices were resolved from its price book.
+export const getOrderShipWindows = (id) => request(`/api/admin/orders/${id}/ship-windows`)
+export const setOrderShipWindow = (id, shipWindow) =>
+  post(`/api/admin/orders/${id}/ship-window`, { ship_window: shipWindow })
+
 // Draft of the "we already have a stockist nearby" email. Pass { orderId } from
 // the order table, or the store details from the conflict-check tab.
 export const getConflictEmail = (payload) => post('/api/conflict-email', payload)

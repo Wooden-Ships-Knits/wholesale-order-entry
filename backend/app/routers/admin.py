@@ -85,6 +85,9 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         "shortId": str(o.id)[:8],
         "createdAt": o.created_at.isoformat() if o.created_at else None,
         "seasonCode": o.season_code,
+        # Buyer-selected ship window. Editable from /admin (the season is not —
+        # changing it would invalidate every line item's price book).
+        "shipWindow": o.ship_window,
         "accountName": o.account_name,
         "orderCopyEmail": o.order_copy_email,
         "salesTerritory": o.sales_territory,
@@ -385,6 +388,59 @@ def relink_account(order_id: str, payload: AccountLinkRequest, db: Session = Dep
         "Order %s account relinked: %r/%s -> %r/%s",
         str(order.id)[:8], before[0], before[1], order.account_name, order.sf_account_id,
     )
+    return _row(order, _account_exists(order))
+
+
+class ShipWindowRequest(BaseModel):
+    ship_window: str = Field(min_length=1, max_length=120)
+
+
+@router.get("/orders/{order_id}/ship-windows", dependencies=[AdminRequired])
+def order_ship_windows(order_id: str, db: Session = Depends(get_db)) -> dict:
+    """Ship windows the admin may choose for this order — the live list for the
+    order's own season, so a window that has sold out is no longer offered."""
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"shipWindows": sheets_client.list_ship_windows(order.season_code)}
+
+
+@router.post("/orders/{order_id}/ship-window", dependencies=[AdminRequired])
+def set_ship_window(
+    order_id: str, payload: ShipWindowRequest, db: Session = Depends(get_db)
+) -> dict:
+    """Change an order's ship window.
+
+    Only the window: the season stays fixed because prices and Salesforce
+    product ids were resolved from that season's price book at submit, so
+    changing it would leave every line item priced against the wrong book.
+    """
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    # Once accepted the window is on the Kugamon order in Salesforce; editing
+    # here afterwards would leave the two disagreeing.
+    if order.status != "submitted":
+        raise HTTPException(
+            status_code=409,
+            detail=f"This order is already {order.status} — its ship window can no longer be changed.",
+        )
+
+    window = payload.ship_window.strip()
+    # Validate against the season's live list so a typo can't reach Salesforce.
+    # If the sheet is unreachable the list comes back empty — allow the edit
+    # rather than block the admin on an outage.
+    allowed = sheets_client.list_ship_windows(order.season_code)
+    if allowed and window not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f'"{window}" is not an available ship window for {order.season_code}.',
+        )
+
+    before = order.ship_window
+    order.ship_window = window
+    db.commit()
+    logger.info("Order %s ship window: %r -> %r", str(order.id)[:8], before, window)
     return _row(order, _account_exists(order))
 
 

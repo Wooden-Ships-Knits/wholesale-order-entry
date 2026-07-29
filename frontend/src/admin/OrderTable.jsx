@@ -4,8 +4,10 @@ import {
   certUrl,
   createSfAccount,
   getConflictEmail,
+  getOrderShipWindows,
   pdfUrl,
   setOrderAccount,
+  setOrderShipWindow,
   setOrderStatus,
   suggestAccounts,
 } from './api'
@@ -185,6 +187,94 @@ function AccountNameCell({ order: o, onChanged, onError }) {
   )
 }
 
+/** Ship window cell, editable while the order is still awaiting review.
+ *
+ * Options are the live list for this order's own season, so a window that has
+ * since sold out (struck through in the planning sheet) isn't offered. The
+ * season itself is deliberately not editable — line prices and Salesforce
+ * product ids were resolved from that season's price book at submit.
+ */
+function ShipWindowCell({ order: o, onChanged, onError }) {
+  const [editing, setEditing] = useState(false)
+  const [options, setOptions] = useState(null) // null = still loading
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!editing) return
+    let stale = false
+    getOrderShipWindows(o.id)
+      .then((d) => !stale && setOptions(d.shipWindows || []))
+      .catch((err) => {
+        if (stale) return
+        setOptions([])
+        onError(err.message)
+      })
+    return () => {
+      stale = true
+    }
+  }, [editing, o.id])
+
+  async function save(value) {
+    if (!value || value === o.shipWindow) {
+      setEditing(false)
+      return
+    }
+    setSaving(true)
+    try {
+      await setOrderShipWindow(o.id, value)
+      setEditing(false)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!editing) {
+    return (
+      <td>
+        <div className="cert-missing">
+          <span>{o.shipWindow || <span className="unknown">—</span>}</span>
+          {o.status === 'submitted' && (
+            <button type="button" className="link-btn inline" onClick={() => setEditing(true)}>
+              Change
+            </button>
+          )}
+        </div>
+      </td>
+    )
+  }
+
+  return (
+    <td>
+      <div className="cert-missing">
+        <select
+          autoFocus
+          disabled={saving || options === null}
+          defaultValue={o.shipWindow || ''}
+          onChange={(e) => save(e.target.value)}
+        >
+          <option value="">{options === null ? 'Loading…' : 'Select a ship window…'}</option>
+          {/* The current value may no longer be offered (window since closed);
+              keep it listed so the dropdown doesn't silently blank it. */}
+          {o.shipWindow && !(options || []).includes(o.shipWindow) && (
+            <option value={o.shipWindow}>{o.shipWindow} (current)</option>
+          )}
+          {(options || []).map((w) => (
+            <option key={w} value={w}>
+              {w}
+            </option>
+          ))}
+        </select>
+        <button type="button" className="link-btn inline" onClick={() => setEditing(false)}>
+          Cancel
+        </button>
+      </div>
+    </td>
+  )
+}
+
 /** Payment cell: which Kugamon record type to pick, plus the card summary and
  *  a link to the admin copy showing the full number.
  *
@@ -252,6 +342,8 @@ export default function OrderTable({
   // not remove the other territories from the list you picked it from.
   const territories = useMemo(() => distinctValues(allOrders, (o) => o.salesTerritory), [allOrders])
   const ranks = useMemo(() => distinctValues(allOrders, (o) => rankCode(o.rank)), [allOrders])
+  const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
+  const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
 
   // Create the Salesforce Business Account for a new-account order. This is a
   // live-org write, so confirm first; the backend is idempotent as a backstop.
@@ -361,6 +453,8 @@ export default function OrderTable({
           <tr>
             <th>Date</th>
             <th>Order ID</th>
+            <th>Season</th>
+            <th>Shipping Window</th>
             <th>Account Name</th>
             <th>Sales Territory</th>
             <th>New account</th>
@@ -409,6 +503,34 @@ export default function OrderTable({
                 value={filters.shortId}
                 onChange={(e) => onFilterChange('shortId', e.target.value)}
               />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by season"
+                value={filters.season}
+                onChange={(e) => onFilterChange('season', e.target.value)}
+              >
+                <option value="">All</option>
+                {seasons.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <select
+                aria-label="Filter by shipping window"
+                value={filters.shipWindow}
+                onChange={(e) => onFilterChange('shipWindow', e.target.value)}
+              >
+                <option value="">All</option>
+                {shipWindows.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
             </th>
             <th>
               <input
@@ -505,7 +627,7 @@ export default function OrderTable({
         <tbody>
           {!orders.length && (
             <tr>
-              <td className="admin-empty-row" colSpan={12}>
+              <td className="admin-empty-row" colSpan={14}>
                 {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
               </td>
             </tr>
@@ -518,6 +640,11 @@ export default function OrderTable({
                   <code>{o.shortId}</code>
                 </a>
               </td>
+              {/* Season is read-only: prices and Salesforce product ids were
+                  resolved from this season's price book when the order was
+                  submitted, so changing it would misprice every line. */}
+              <td>{o.seasonCode || <span className="unknown">—</span>}</td>
+              <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
               <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               {/* New account: answered by the submit-time Salesforce check, not

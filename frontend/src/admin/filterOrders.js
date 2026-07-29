@@ -11,6 +11,8 @@ export const EMPTY_FILTERS = {
   dateFrom: '', // 'YYYY-MM-DD' straight out of <input type="date">
   dateTo: '',
   shortId: '',
+  season: '',
+  shipWindow: '',
   accountName: '',
   territory: '',
   newAccount: '', // '' | 'yes' | 'no'
@@ -78,6 +80,8 @@ export function filterOrders(orders, f) {
 
     // Match the full uuid too, so an id pasted from an email finds its row.
     if (shortId && !contains(o.shortId, shortId) && !contains(o.id, shortId)) return false
+    if (f.season && o.seasonCode !== f.season) return false
+    if (f.shipWindow && o.shipWindow !== f.shipWindow) return false
     if (accountName && !contains(o.accountName, accountName)) return false
     if (f.territory && o.salesTerritory !== f.territory) return false
     if (!matchesYesNo(f.newAccount, isNewAccount(o))) return false
