@@ -323,7 +323,11 @@ export default function App() {
         certOnFile,
         certFile: certFilePayload,
       },
-      terms,
+      // orderCopyEmail must be null, not '', when the copy box is unticked:
+      // the field never renders in that case so it keeps its '' initial value,
+      // and the backend's EmailStr|None accepts an address or null but not an
+      // empty string — it rejected the whole order with "must have an @-sign".
+      terms: { ...terms, orderCopyEmail: terms.orderCopyEmail || null },
       internal,
       notes,
       items,
