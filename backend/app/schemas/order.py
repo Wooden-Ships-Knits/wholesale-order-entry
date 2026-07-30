@@ -8,6 +8,7 @@ import base64
 import binascii
 from datetime import date
 from pathlib import PurePosixPath
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator, model_validator
 from pydantic.alias_generators import to_camel
@@ -94,6 +95,20 @@ class Terms(CamelModel):
     accepted: bool = False
     order_copy: bool = False
     order_copy_email: EmailStr | None = None
+
+    @field_validator("order_copy_email", mode="before")
+    @classmethod
+    def _blank_copy_email_is_none(cls, value: Any) -> Any:
+        """Treat "" as "not given".
+
+        EmailStr|None accepts an address or null but NOT an empty string, and a
+        skipped optional field arrives as "" from an HTML input. That rejected
+        the entire order with "must have an @-sign" whenever the buyer left the
+        order-copy box unticked — a required-field error on an optional field.
+        """
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @model_validator(mode="after")
     def _require_copy_email(self) -> "Terms":
