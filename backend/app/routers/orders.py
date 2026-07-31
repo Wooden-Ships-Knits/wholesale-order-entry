@@ -402,6 +402,9 @@ def submit_order(
         "short_id": str(order.id)[:8],
         "season_code": order.season_code,
         "season_label": mapping.season_label(order.season_code),
+        # The store is what identifies an order in the admin inbox — buyer
+        # first names repeat across stores and Gmail truncates the subject.
+        "account_name": order.account_name,
         "buyer_name": order.buyer_name,
         "total_qty": total_qty,
         "total_amount": total_amount,

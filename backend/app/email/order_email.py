@@ -8,9 +8,19 @@ from app.config import settings
 from app.email import mailer
 
 
+def _store(ctx: dict) -> str:
+    """The store this order is for, which is how the team identifies it.
+
+    Falls back to the buyer only when there is no account name — older orders
+    predate the field, and a person's name is better than an empty subject.
+    """
+    return (ctx.get("account_name") or "").strip() or ctx.get("buyer_name") or "—"
+
+
 def _summary(ctx: dict) -> str:
     return (
         f"Order: {ctx['short_id']}\n"
+        f"Store: {_store(ctx)}\n"
         f"Season: {ctx['season_label']} ({ctx['season_code']})\n"
         f"Buyer: {ctx['buyer_name']}\n"
         f"Total pieces: {ctx['total_qty']}\n"
@@ -19,8 +29,10 @@ def _summary(ctx: dict) -> str:
 
 
 def admin_email(ctx: dict) -> tuple[str, str]:
+    # Store first: Gmail truncates the subject, and buyer first names repeat
+    # across stores ("Deborah" four times over is unscannable).
     subject = (
-        f"New wholesale order — {ctx['buyer_name']} "
+        f"New wholesale order — {_store(ctx)} "
         f"({ctx['season_code']}) — {ctx['total_qty']} pcs"
     )
     body = "A new wholesale order was submitted.\n\n" + _summary(ctx) + "\nThe order form PDF is attached."

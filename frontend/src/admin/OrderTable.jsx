@@ -661,7 +661,25 @@ export default function OrderTable({
           )}
           {orders.map((o) => (
             <tr key={o.id}>
-              <td>{new Date(o.createdAt).toLocaleString()}</td>
+              {/* Date over time, so the column stops forcing its width on the
+                  whole table. Month name rather than 7/31 — the Jakarta and US
+                  teams read a numeric date in opposite orders. Seconds dropped;
+                  nobody reviews orders to the second. */}
+              <td className="date-cell">
+                <span>
+                  {new Date(o.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+                <span className="sub">
+                  {new Date(o.createdAt).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </td>
               <td title={o.id}>
                 <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
                   <code>{o.shortId}</code>
