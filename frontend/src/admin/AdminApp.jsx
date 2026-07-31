@@ -5,11 +5,13 @@ import Login from './Login'
 import OrderTable from './OrderTable'
 import ConflictCheck from '../conflict/ConflictCheck.jsx'
 import OrderReport from './OrderReport'
+import PaymentNotice from './PaymentNotice'
 
 const TABS = [
   { value: 'orders', label: 'Orders' },
   { value: 'conflict', label: 'Conflict check' },
   { value: 'reports', label: 'Reports' },
+  { value: 'notice', label: 'Payment notice'},
 ]
 
 const FILTERS = [
@@ -120,6 +122,8 @@ export default function AdminApp() {
         <ConflictCheck embedded />
       ) : tab === 'reports' ? (
         <OrderReport />
+      ) : tab === 'notice' ? (
+        <PaymentNotice />
       ) : (
         <>
           <div className="admin-toolbar">

@@ -974,8 +974,21 @@ button:hover {
   text-align: center;
   color: #888;
 }
+/* Date over time on two lines. The width cap is what frees the space —
+   "7/31/2026, 5:10:43 AM" on one line was the widest thing in the column and
+   pushed every other column narrower. */
+.date-cell {
+  width: 7.5rem;
+  white-space: nowrap;
+}
+.date-cell span {
+  display: block;
+}
 .notes-cell {
-  max-width: 260px;
+  /* Widened from 260px with the space reclaimed from the date column — notes
+     are free text and were wrapping into a tall, narrow ribbon. */
+  min-width: 220px;
+  max-width: 340px;
   /* Wrap long text onto multiple lines instead of truncating with "…". */
   white-space: normal;
   overflow-wrap: anywhere;
