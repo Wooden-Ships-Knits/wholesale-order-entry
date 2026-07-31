@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update
@@ -21,7 +21,7 @@ from app.ai import conflict_reply
 from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
-from app.email import inbound
+from app.email import inbound, order_email
 from app.pdf import render as pdf_render
 from app.routers.accounts import account_city_state
 from app.salesforce import account_search
@@ -302,6 +302,9 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
         logger.info("Card copy purged for order %s (%s)", str(order.id)[:8], payload.status)
     db.commit()
     logger.info("Order %s marked %s", str(order.id)[:8], payload.status)
+    # No buyer email on Accept/Decline yet — the only automatic buyer mail is
+    # the order copy at submit. A confirmation (and especially a decline) is a
+    # relationship message the team words itself via the email draft modal.
     return _row(order)
 
 

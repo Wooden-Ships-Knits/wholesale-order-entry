@@ -392,12 +392,12 @@ def submit_order(
 
     # Email the admin (wholesale@wooden-ships.com) a copy of every order
     # (re-enabled 2026-07-24, reversing the 2026-07-23 pause). Admin copy ONLY —
-    # the buyer order-copy is intentionally not sent from here; the buyer gets
-    # their confirmation from the /admin review step instead. A background task
-    # (like the conflict check below) so a slow or failed Gmail never blocks the
-    # buyer's confirmation. The attachment is the in-memory, card-free PDF — so
-    # it sends even if the disk save above failed. Admin sending also still
-    # works on demand via POST /api/send-email.
+    # and the buyer's own copy when they asked for one. Both are background
+    # tasks (like the conflict check below) so a slow or failed Gmail never
+    # blocks the buyer's confirmation screen. The attachment is the in-memory,
+    # card-masked PDF — so it sends even if the disk save above failed.
+    # Accept/Decline still emails the buyer nothing; the team words that itself
+    # through the draft modal (POST /api/send-email).
     email_ctx = {
         "short_id": str(order.id)[:8],
         "season_code": order.season_code,
@@ -410,6 +410,15 @@ def submit_order(
         "total_amount": total_amount,
     }
     background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename)
+
+    # Buyer's own copy, only when they ticked the box on the form. The
+    # attachment is the same in-memory, card-masked PDF, so it sends even if
+    # the disk write above failed. Explicitly a records copy, not a
+    # confirmation — the order is still reviewed in /admin and may be declined.
+    if order.order_copy_email:
+        background.add_task(
+            order_email.send_buyer_copy, order.order_copy_email, email_ctx, pdf_bytes, filename
+        )
 
     # New accounts only: check whether an existing stockist is too close, so
     # /admin can flag it. Runs in the background — a slow Google/Salesforce
