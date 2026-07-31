@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   cardPdfUrl,
   certUrl,
@@ -347,6 +347,23 @@ export default function OrderTable({
   const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
   const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
 
+  // Both header rows are sticky, so the filter row has to sit exactly at the
+  // label row's height. That height isn't knowable in CSS — labels wrap
+  // differently as column widths, zoom and the loaded font change — so measure
+  // it and publish it as --admin-head-h. A ResizeObserver keeps it right when
+  // the window resizes or a column grows.
+  const headRowRef = useRef(null)
+  useEffect(() => {
+    const row = headRowRef.current
+    if (!row) return
+    const table = row.closest('table')
+    const sync = () => table?.style.setProperty('--admin-head-h', `${row.offsetHeight}px`)
+    sync()
+    const observer = new ResizeObserver(sync)
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [])
+
   // Create the Salesforce Business Account for a new-account order. This is a
   // live-org write, so confirm first; the backend is idempotent as a backstop.
   async function createAccount(order) {
@@ -477,7 +494,7 @@ export default function OrderTable({
       )}
       <table className="admin-table">
         <thead>
-          <tr>
+          <tr ref={headRowRef}>
             <th>Date</th>
             <th>Order ID</th>
             <th>Season</th>

@@ -130,6 +130,18 @@ label,
   display: block;
 }
 
+/* Helper text inside a <label>. The label rule above sets uppercase and
+   letter-spacing, and both inherit — without resetting them a sentence renders
+   as SHOUTED WIDELY SPACED CAPS. */
+.order-copy-note {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #6b6862;
+  margin: 0.35rem 0 0;
+}
+
 label input,
 label select,
 .match-select {
@@ -822,6 +834,35 @@ button:hover {
   letter-spacing: 0.06em;
   border: 1px solid #d8d4cc;
   padding: 0.7rem 0.9rem;
+}
+
+/* Sticky header. Fourteen columns and a long list — once the labels scroll
+   away a row is unreadable, and the filter row is where the work happens.
+   Both header rows pin; the filter row sits directly under the labels.
+
+   --admin-head-h is written by OrderTable from the label row's measured
+   height. It can't be a constant: the labels wrap differently depending on
+   column widths, zoom and font loading, and being a few px out either overlaps
+   the two rows or leaves a gap that table rows show through. */
+.admin-table {
+  --admin-head-h: 3.7rem; /* fallback until the measurement lands */
+}
+.admin-table thead th {
+  position: sticky;
+  z-index: 2;
+  /* border-collapse detaches borders from the cell, so a sticky th loses its
+     grid lines while scrolling. Redraw them inside the cell instead. */
+  box-shadow: inset 0 0 0 1px #d8d4cc;
+}
+.admin-table thead tr:first-child th {
+  top: 0;
+  /* above the filter row, so a wrapped label can't show through it */
+  z-index: 3;
+}
+.admin-table .filter-row th {
+  top: var(--admin-head-h);
+  /* soft edge so the frozen header reads as a layer above the rows */
+  box-shadow: inset 0 0 0 1px #d8d4cc, 0 3px 5px -2px rgba(29, 29, 27, 0.18);
 }
 .admin-table td {
   border: 1px solid #e2ded6;

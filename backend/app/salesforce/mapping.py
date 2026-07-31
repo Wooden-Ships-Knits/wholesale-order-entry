@@ -38,9 +38,20 @@ WRITTEN_BY = "Written_By__c"
 # Header (kugo2p__SalesOrder__c) + lines (kugo2p__SalesOrderProductLine__c),
 # all createable-verified 2026-07-23. Name/Status are NOT createable (auto).
 SALES_ORDER_PRICEBOOK = "kugo2p__Pricebook2Id__c"
+# Kugamon keeps the price book NAME in its own writable text field, and the
+# Edit Lines tab prices from that, not from the lookup above. Setting only the
+# lookup left the name at "Standard Price Book", so lines came out at retail
+# even though the header pointed at "S27 Wholesale" — the monitoring team was
+# fixing this by hand on every pushed order (confirmed 2026-07-31). Always set
+# both, from the same season, so they cannot disagree.
+SALES_ORDER_PRICEBOOK_NAME = "kugo2p__PriceBookName__c"
 SALES_ORDER_BILLTONAME = "kugo2p__BillToName__c"
 SALES_ORDER_WAREHOUSE = "kugo2p__Warehouse__c"
 SALES_ORDER_START_SHIP = "Start_Ship_Date__c"
+# Last 4 of the card, so the team can tell which stored card an order should be
+# charged against. Safe to send: last4 is not cardholder data on its own, and
+# the full number is never in the payload (CLAUDE.md rule 1). string(4) in SF.
+SALES_ORDER_CC_LAST4 = "Use_CC_Ending_in__c"
 SHIP_THRU_DATE = "Ship_Thru__c"
 ESTIMATED_SHIPMENT_NAME = "Estimated_Shipment_Name__c"
 ORDER_WRITTEN_DATE = "Order_Written_Date__c"
@@ -61,6 +72,10 @@ SALES_ORDER_LINE_ORDER = "kugo2p__SalesOrder__c"  # parent lookup on the line
 # detail's ReferenceProduct lookup before creating lines (1 detail per Product2).
 SALES_ORDER_LINE_PRODUCT = "kugo2p__Product__c"
 SALES_ORDER_LINE_QTY = "kugo2p__Quantity__c"
+# Date Required lives on the LINE — the header's kugo2p__DateRequired__c is a
+# rollup and is not createable. Left unset, Kugamon defaults it; we set it to
+# the order's start ship date so the two agree.
+SALES_ORDER_LINE_DATE_REQUIRED = "kugo2p__DateRequired__c"
 KUGAMON_PRODUCT_DETAIL = "kugo2p__AdditionalProductDetail__c"
 KUGAMON_DETAIL_REFERENCE_PRODUCT = "kugo2p__ReferenceProduct__c"
 
@@ -365,6 +380,8 @@ def build_sales_order_header(
     header: dict[str, Any] = {
         SALES_ORDER_ACCOUNT: order.sf_account_id,
         SALES_ORDER_PRICEBOOK: pricebook_id,
+        # Same season as the id above — this is the name the id was looked up by.
+        SALES_ORDER_PRICEBOOK_NAME: pricebook_name_for_season(order.season_code),
         SALES_ORDER_BILLTONAME: order.account_name or "",
         SALES_ORDER_WAREHOUSE: WAREHOUSE_BALI_ID,
         INTERNAL_REP: INTERNAL_REP_USER_ID,  # Christine Poveda (constant)
@@ -381,6 +398,11 @@ def build_sales_order_header(
     # Order Written Date = the submission date (the admin table's "Date" column).
     if getattr(order, "created_at", None):
         header[ORDER_WRITTEN_DATE] = order.created_at.date().isoformat()
+
+    # Which stored card to charge. Only the last 4 — never the number itself.
+    # Blank for PayPal orders, which have no card.
+    if getattr(order, "card_last4", None):
+        header[SALES_ORDER_CC_LAST4] = order.card_last4
 
     # Type + Written_By apply to rep orders only (direct/customer leave empty).
     if order.filled_by == "rep":
@@ -400,8 +422,17 @@ def build_sales_order_header(
 
 
 def build_sales_order_lines(order: Any) -> list[dict[str, Any]]:
-    """Order items -> one line per size with qty > 0 (product + quantity only;
-    Kugamon prices from the header's price book)."""
+    """Order items -> one line per size with qty > 0 (product, quantity and the
+    date required; Kugamon prices from the header's price book).
+
+    Date Required is set to the order's START SHIP date. The header field of the
+    same name is a rollup of these lines and can't be written directly, so this
+    is the only way to control it — left unset, Kugamon supplies its own default
+    and the header disagrees with Start Ship Date.
+    """
+    win = ship_window_dates(order.ship_window, order.season_code)
+    date_required = win["start"] if win else None
+
     lines: list[dict[str, Any]] = []
     for item in order.items:
         for product_id, qty in (
@@ -410,7 +441,12 @@ def build_sales_order_lines(order: Any) -> list[dict[str, Any]]:
             (item.sf_product_id_ml, item.qty_ml),
         ):
             if product_id and qty:
-                lines.append({SALES_ORDER_LINE_PRODUCT: product_id, SALES_ORDER_LINE_QTY: qty})
+                line = {SALES_ORDER_LINE_PRODUCT: product_id, SALES_ORDER_LINE_QTY: qty}
+                # Omitted rather than sent null when the ship window can't be
+                # parsed — a null would blank Kugamon's own default too.
+                if date_required:
+                    line[SALES_ORDER_LINE_DATE_REQUIRED] = date_required
+                lines.append(line)
     return lines
 
 

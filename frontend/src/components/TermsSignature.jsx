@@ -106,6 +106,14 @@ export default function TermsSignature({ terms, setTerms, defaultCopyEmail }) {
             value={terms.orderCopyEmail}
             onChange={(e) => setTerms('orderCopyEmail', e.target.value)}
           />
+          {/* Sets expectations at the moment of submitting: the copy is a
+              receipt of what was sent, not an approval. "Once reviewed" says
+              the order can still be declined without spelling that out at the
+              point of submission. */}
+          <p className="order-copy-note">
+            A copy for your records — not an order confirmation. We'll email you once your
+            order has been reviewed.
+          </p>
         </label>
       )}
 
