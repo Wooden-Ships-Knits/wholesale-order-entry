@@ -10,6 +10,7 @@ from app.routers import (
     admin,
     conflict_email,
     health,
+    notices,
     orders,
     products,
     reports,
@@ -54,3 +55,4 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(conflict_email.router, prefix="/api")
 app.include_router(send_email.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(notices.router, prefix="/api")

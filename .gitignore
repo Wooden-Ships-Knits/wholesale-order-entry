@@ -25,3 +25,7 @@ venv/
 .claude/
 memory/
 .vscode/
+
+
+#under development
+notices/

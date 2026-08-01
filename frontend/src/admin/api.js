@@ -74,6 +74,21 @@ export const pdfUrl = (id) => `/api/admin/orders/${id}/pdf`
 export const cardPdfUrl = (id) => `/api/admin/orders/${id}/pdf?full=1`
 export const certUrl = (id) => `/api/admin/orders/${id}/certificate`
 
+// Every season with a wholesale price book, newest first. limit=0 opts out of
+// the 2-season cap the order form uses — notices are built for past seasons.
+export const getAllSeasons = () => request('/api/seasons?limit=0')
+
+// ---- Payment notice cards ----
+// Photos stream from Drive while the card is drawn, so there is nothing to
+// pre-download — one request builds the cards.
+export const runNotice = (seasonCode, soNumbers) =>
+  post('/api/admin/notices/run', { season_code: seasonCode, so_numbers: soNumbers })
+export const getNoticeCards = () => request('/api/admin/notices/cards')
+// <img src> — the route is authenticated, and the session cookie rides along
+// with the image request the same way it does for the order PDFs.
+export const noticeCardUrl = (name) =>
+  `/api/admin/notices/cards/${encodeURIComponent(name)}`
+
 // Admin reports (DTO/DMM). getReport = last cached run; runReport = run now.
 export const getReport = (key) => request(`/api/admin/reports/${key}`)
 export const runReport = (key) => post(`/api/admin/reports/${key}/run`)

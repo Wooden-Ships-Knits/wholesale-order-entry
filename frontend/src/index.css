@@ -738,6 +738,55 @@ button:hover {
   }
 }
 
+/* ---- Payment notice tab ---- */
+.notice-controls {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin: 0.75rem 0 1rem;
+  flex-wrap: wrap;
+}
+.notice-controls label {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.8rem;
+}
+.notice-so {
+  flex: 1;
+  min-width: 18rem;
+}
+.notice-so textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+}
+/* Cards are ~7000px wide; the browser scales them down for the preview and the
+   link opens the original. */
+.notice-cards {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.notice-cards img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #d8d4cc;
+  background: #fff;
+}
+.notice-cards span {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  color: #6b6862;
+}
+
 /* ============================================================ admin page */
 .admin {
   /* Wide table with many columns — use most of the screen, capped so it
