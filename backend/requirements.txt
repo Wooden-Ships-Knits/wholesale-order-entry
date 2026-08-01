@@ -16,3 +16,5 @@ weasyprint>=61,<67
 pandas>=2.2,<3
 # Conflict-reply classifier (see app/ai/conflict_reply.py).
 openai>=1.40,<2
+matplotlib>=3.8,<4
+pillow>=10,<12

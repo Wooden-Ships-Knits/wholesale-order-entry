@@ -110,6 +110,20 @@ class Settings(BaseSettings):
     @property
     def openai_configured(self) -> bool:
         return bool(self.openai_api_key)
-
+    
+    # ---- Payment notice card builder (app/notices) ----
+    # Images live on the company shared drive; the service account in
+    # google_credentials_path is a Viewer there, so the same code works on the
+    # VM (which has no Drive mount) as it does locally.
+    drive_shared_drive_name: str = "PTIF SERVER"
+    # Folder PATHS inside that drive, walked segment by segment. The season code
+    # is appended at run time, e.g. ".../LIBRARY MODEL IMAGE" + "/S27".
+    notice_style_images_dir: str = "PPIC/CC OC Salesforce/LIBRARY MODEL IMAGE"
+    notice_swatch_images_dir: str = (
+        "PPIC/AUTOMATION/Payment Notice 5/Payment Notice 5/thumbnails/swatch-color"
+    )
+    # Where synced Drive files are cached, and where finished cards are written.
+    notice_cache_dir: str = "/output/notices/cache"
+    notice_output_dir: str = "/output/notices"
 
 settings = Settings()
