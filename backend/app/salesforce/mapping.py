@@ -166,7 +166,7 @@ _SEASON_CODE_RE = re.compile(r"^([FS])(\d{2})$")
 # The order form has exactly these size columns (PRD §5.5; decision 2026-07-14:
 # X/L SKUs exist in the org but are NOT orderable on the web form).
 SIZES = ("X/S", "S/M", "M/L")
-SIZE_KEYS = {"X/S": "xs", "S/M": "sm", "M/L": "ml"}
+SIZE_KEYS = {"X/S": "xs", "S/M": "sm", "M/L": "ml", "XS": "xs", "SM":"sm", "ML":"ml","XL":"xl"}
 
 
 def season_from_pricebook_name(book_name: str) -> str | None:
