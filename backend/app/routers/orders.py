@@ -372,7 +372,17 @@ def submit_order(
         "total_qty": total_qty,
         "total_amount": total_amount,
     }
-    background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename)
+    # The territory's lead rep always gets the order PDF, CC'd on the notice
+    # above — for a customer-filled order this is the rep finding out it came
+    # in at all. None when the territory is unknown or has no rep row; the
+    # notice still goes to the team.
+    rep_cc = sheets_client.rep_email_for_territory(order.sales_territory)
+    if not rep_cc:
+        logger.info(
+            "No rep email for territory %r — order %s notice sent without a rep copy",
+            order.sales_territory, str(order.id)[:8],
+        )
+    background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename, cc=rep_cc)
 
     # Buyer's own copy, only when they ticked the box on the form. The
     # attachment is the same in-memory, card-masked PDF, so it sends even if

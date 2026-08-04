@@ -1525,3 +1525,22 @@ button:hover {
 .sig-unsent {
   color: #b03a2e;
 }
+
+/* Read-only values in the sign page's header grid — same weight as a filled
+   input's text, but plainly not a field. */
+.sign-readonly {
+  display: block;
+  margin-top: 0.25rem;
+  padding: 0.45rem 0;
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #1d1d1b;
+}
+
+/* The sign page nests Payment inside its own section, so the inner section's
+   border and padding would double up. */
+.sign-page .section .section {
+  border-bottom: none;
+  padding-bottom: 0;
+}

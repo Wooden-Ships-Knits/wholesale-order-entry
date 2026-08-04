@@ -6,8 +6,11 @@
 // The server re-prices and re-validates everything anyway (routers/sign.py) —
 // this is the mirror, not the authority.
 import { useEffect, useMemo, useState } from 'react'
-import { getOrderToSign, getProducts, signOrder } from '../api'
+import { getOrderToSign, getProducts, getShipWindows, signOrder } from '../api'
 import { catalogKey, computeTotals, validateMinimums } from '../validation'
+import Addresses from '../components/Addresses'
+import Notes from '../components/Notes'
+import Payment from '../components/Payment'
 import ProductLines from '../components/ProductLines'
 
 const money = (n) =>
@@ -32,8 +35,28 @@ export default function SignPage({ token }) {
   const [loading, setLoading] = useState(true)
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [loadError, setLoadError] = useState('')
+  // Editable copies of the order, seeded once the GET lands. Same shapes the
+  // order form uses so Addresses / Payment / Notes drop straight in.
+  const [billTo, setBillToState] = useState(null)
+  const [shipTo, setShipToState] = useState(null)
+  const [orderDate, setOrderDate] = useState('')
+  const [shipWindow, setShipWindow] = useState('')
+  const [shipWindows, setShipWindows] = useState([])
+  const [poNumber, setPoNumber] = useState('')
+  const [notes, setNotes] = useState('')
+  // Card number is NEVER prefilled — it isn't stored (rule 1). The buyer keeps
+  // the card on file unless they tick "use a different card", which reveals
+  // empty fields rather than pretending we know the number.
+  const [payment, setPaymentState] = useState({
+    method: '', approvalBeforeCharge: null, cardNumber: '', cardName: '', expDate: '', cvv: '',
+  })
+  const [replaceCard, setReplaceCard] = useState(false)
+
   const [signatureName, setSignatureName] = useState('')
   const [accepted, setAccepted] = useState(false)
+  // Mirrors the order form's second acknowledgement. Client-side only, like on
+  // the form: the backend has no info_confirmed field, it gates submission.
+  const [confirmed, setConfirmed] = useState(false)
   // Rep-filled orders never showed the buyer the order-copy option (the whole
   // policies section is customer-only on the form), so it lives here too.
   const [orderCopy, setOrderCopy] = useState(false)
@@ -49,6 +72,24 @@ export default function SignPage({ token }) {
         if (cancelled) return
         setOrder(data)
         setLines(data.items.length ? data.items.map(lineFromItem) : [makeLine()])
+        setBillToState({ ...data.billTo })
+        setShipToState({ ...data.shipTo })
+        setOrderDate(data.orderDate || '')
+        setShipWindow(data.shipWindow || '')
+        setPoNumber(data.poNumber || '')
+        setNotes(data.notes || '')
+        setPaymentState((p) => ({
+          ...p,
+          method: data.payment.method || '',
+          approvalBeforeCharge: data.payment.approvalBeforeCharge,
+          cardName: data.payment.cardName || '',
+          expDate: data.payment.cardExp || '',
+        }))
+        // Ship windows for this season, so the buyer picks from the live list
+        // rather than typing something the team can't ship to.
+        getShipWindows(data.season)
+          .then((d) => !cancelled && setShipWindows(d.shipWindows))
+          .catch(() => !cancelled && setShipWindows([]))
         // The catalog is what makes the lines editable — without it every line
         // stays unmatched and the totals read zero.
         setLoadingProducts(true)
@@ -100,6 +141,7 @@ export default function SignPage({ token }) {
     const problems = []
     if (!signatureName.trim()) problems.push('Please type your full name to sign.')
     if (!accepted) problems.push('Please accept the Order Policies.')
+    if (!confirmed) problems.push('Please confirm the order information is correct.')
     if (orderCopy && !orderCopyEmail.trim())
       problems.push('Please enter an email address for your copy.')
     problems.push(...minimums.errors)
@@ -124,6 +166,17 @@ export default function SignPage({ token }) {
         signatureName: signatureName.trim(),
         items,
         orderCopyEmail: orderCopy ? orderCopyEmail.trim() : null,
+        billTo,
+        shipTo,
+        orderDate: orderDate || null,
+        shipWindow,
+        poNumber,
+        notes,
+        // Card fields only travel when the buyer actually replaced the card;
+        // otherwise we send the metadata and the stored card stands.
+        payment: replaceCard
+          ? payment
+          : { ...payment, cardNumber: '', cvv: '' },
       })
       setDone(res)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -201,50 +254,64 @@ export default function SignPage({ token }) {
         </p>
       </header>
 
-      <section className="section sign-summary">
-        <div className="sign-summary-grid">
-          <div>
-            <h3>Bill to</h3>
-            <p>
-              {order.accountName}
-              <br />
-              {order.billTo.street}
-              <br />
-              {order.billTo.cityState} {order.billTo.zip}
-              <br />
-              {order.billTo.tel}
-            </p>
+      {/* Order header. Store and season are read-only: reassigning the store
+          is an admin action, and the season fixes the price book every line was
+          costed against. Everything else here is the buyer's to correct. */}
+      <section className="section">
+        <div className="header-grid sign-header-grid">
+          <div className="ha-filled">
+            <span className="field-label">Account</span>
+            <span className="sign-readonly">{order.accountName || order.buyerName || '—'}</span>
           </div>
-          <div>
-            <h3>Ship to</h3>
-            <p>
-              {order.accountName}
-              <br />
-              {order.shipTo.street}
-              <br />
-              {order.shipTo.cityState} {order.shipTo.zip}
-              <br />
-              {order.shipTo.email}
-            </p>
+          <label className="ha-po">
+            PO # (optional)
+            <input type="text" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} />
+          </label>
+          <div className="ha-total">
+            <span className="field-label">Order total</span>
+            <span className="order-total">{money(totalAmount)}</span>
           </div>
-          <div>
-            <h3>Payment</h3>
-            <p>
-              {order.payment.method || '—'}
-              {order.payment.cardLast4 ? (
-                <>
-                  <br />
-                  •••• {order.payment.cardLast4}
-                </>
-              ) : null}
-            </p>
+          <label className="ha-date">
+            Order date
+            <input
+              type="date"
+              value={orderDate}
+              onChange={(e) => setOrderDate(e.target.value)}
+            />
+          </label>
+          <div className="ha-season">
+            <span className="field-label">Collection / season</span>
+            <span className="sign-readonly">{order.seasonLabel}</span>
           </div>
+          <label className="ha-ship">
+            Ship window
+            <select value={shipWindow} onChange={(e) => setShipWindow(e.target.value)}>
+              {/* The stored window may not be in the live list any more; keep
+                  it as an option so opening the page can't silently change it. */}
+              {shipWindow && !shipWindows.includes(shipWindow) && (
+                <option value={shipWindow}>{shipWindow}</option>
+              )}
+              {shipWindows.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
-        <p className="sign-note">
-          If any of these details are wrong, reply to our email rather than signing — they
-          can't be changed on this page.
-        </p>
+        {order.shipWindowNote && <p className="ship-window-note">{order.shipWindowNote}</p>}
       </section>
+
+      {billTo && shipTo && (
+        <Addresses
+          billTo={billTo}
+          shipTo={shipTo}
+          setBillTo={(k, v) => setBillToState((p) => ({ ...p, [k]: v }))}
+          setShipTo={(k, v) => setShipToState((p) => ({ ...p, [k]: v }))}
+          showLocationSearch
+          isNewAccount={false}
+        />
+      )}
 
       {loadError && <div className="error-banner">{loadError}</div>}
 
@@ -261,6 +328,43 @@ export default function SignPage({ token }) {
         loading={loadingProducts}
         seasonSelected
       />
+
+      {/* Payment. The card on file is shown as its last 4 — the number itself
+          is never stored, so it can't be prefilled. Ticking "use a different
+          card" reveals the real fields; leaving it alone keeps the card the
+          team already has. */}
+      <section className="section">
+        <h2>Payment</h2>
+        <p className="sign-note" style={{ marginTop: 0 }}>
+          {order.payment.cardLast4
+            ? `On file: ${order.payment.method || 'Card'} ending •••• ${order.payment.cardLast4}${
+                order.payment.cardExp ? `, expires ${order.payment.cardExp}` : ''
+              }`
+            : 'No card on file for this order.'}
+        </p>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={replaceCard}
+            onChange={(e) => {
+              setReplaceCard(e.target.checked)
+              // Never leave a half-typed number behind when it's hidden again.
+              if (!e.target.checked) {
+                setPaymentState((p) => ({ ...p, cardNumber: '', cvv: '' }))
+              }
+            }}
+          />
+          <span>Use a different card</span>
+        </label>
+        {replaceCard && (
+          <Payment
+            payment={payment}
+            setPayment={(k, v) => setPaymentState((p) => ({ ...p, [k]: v }))}
+          />
+        )}
+      </section>
+
+      <Notes notes={notes} setNotes={setNotes} />
 
       {minimums.errors.length > 0 && (
         <div className="validation-panel">
@@ -312,6 +416,16 @@ export default function SignPage({ token }) {
           />
           <span>
             I have read and accept the Order Policies.<span className="req">*</span>
+          </span>
+        </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+          />
+          <span>
+            I confirm all the order information is correct.<span className="req">*</span>
           </span>
         </label>
 
