@@ -47,6 +47,7 @@
       <td><span class="label">Filled by</span>
         {% if order.filled_by == "rep" %}Sales rep{% elif order.filled_by == "customer" %}Customer{% else %}—{% endif %}
       </td>
+      <td><span class="label">PO #</span> {{ order.po_number or "—" }}</td>
       <td><span class="label">Ship window</span> {{ order.ship_window or "—" }}</td>
       <td><span class="label">Submitted</span> {{ order.created_at }}</td>
     </tr>
@@ -163,8 +164,8 @@
       <tr>
         <td><span class="label">New / reorder</span> {{ order.new_or_reorder or "—" }}</td>
         <td><span class="label">Account</span> {{ order.account_status or "—" }}</td>
-        <td><span class="label">Campaign</span> {{ order.campaign or "—" }}</td>
-        <td><span class="label">PO #</span> {{ order.po_number or "—" }}</td>
+        {# PO # moved to the header meta row 2026-08-04 — no longer internal-only. #}
+        <td colspan="2"><span class="label">Campaign</span> {{ order.campaign or "—" }}</td>
       </tr>
       <tr>
         <td><span class="label">Rep</span> {{ order.rep or "—" }}</td>

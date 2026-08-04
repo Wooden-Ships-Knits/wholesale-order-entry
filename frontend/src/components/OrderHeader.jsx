@@ -14,7 +14,7 @@ export default function OrderHeader({
       </div>
 
       <div className="header-grid">
-        {/* Row 1: Filled by (left) · Order total (right) */}
+        {/* Row 1: Filled by (left) · PO # (middle) · Order total (right) */}
         <fieldset className="inline-radios ha-filled">
           <legend>
             Filled by<span className="req">*</span>
@@ -38,6 +38,13 @@ export default function OrderHeader({
             Customer
           </label>
         </fieldset>
+
+        {/* Sits beside "Filled by" because either side can supply it: a rep
+            keying a non-show order, or a customer with their own PO. */}
+        <label className="ha-po">
+          PO # (optional)
+          <input type="text" value={form.poNumber} onChange={(e) => setField('poNumber', e.target.value)} />
+        </label>
 
         <div className="field ha-total">
           <span className="field-label">Order total</span>

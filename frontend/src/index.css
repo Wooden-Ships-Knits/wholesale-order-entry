@@ -68,13 +68,17 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-areas:
-    'filled .      total'
+    'filled po     total'
     'date   season ship';
   gap: 1rem 1.5rem;
   align-items: end;
 }
 .ha-filled {
   grid-area: filled;
+  align-self: start;
+}
+.ha-po {
+  grid-area: po;
   align-self: start;
 }
 .ha-total {
@@ -537,11 +541,27 @@ tfoot td {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem 2rem;
-  align-items: end;
+  /* Top-aligned, not bottom: Campaign is two lines tall in its one-third
+     column, and bottom-alignment would drop the shorter fieldsets beside it,
+     leaving their legends floating at different heights. */
+  align-items: start;
 }
 
-.internal-grid .span2 {
-  grid-column: span 2;
+/* Split belongs on the right of its row, opposite "Order written by". Without
+   an explicit column, auto-flow drops it into column 2, next to the dropdown
+   instead of across from it. */
+.internal-grid .split-field {
+  grid-column: 3;
+}
+
+/* Campaign sits in a single one-third column (2026-08-04), too narrow for both
+   options plus the free-text box on one line. Making the first option a block
+   pushes "Other:" and its input onto their own line instead of letting the box
+   wrap somewhere arbitrary. */
+.campaign-field > label:first-of-type {
+  display: flex;
+  margin-right: 0;
+  margin-bottom: 0.3rem;
 }
 
 .campaign-other,
@@ -684,6 +704,7 @@ button:hover {
     grid-template-areas: none;
   }
   .ha-filled,
+  .ha-po,
   .ha-total,
   .ha-date,
   .ha-season,
@@ -698,8 +719,10 @@ button:hover {
   .internal-use {
     padding: 1.25rem 1rem;
   }
+  /* .split-field is pinned to column 3 on desktop; left as-is here it would
+     conjure implicit columns and break the single-column stack. */
   .payment-grid .span2,
-  .internal-grid .span2 {
+  .internal-grid .split-field {
     grid-column: auto;
   }
 }
