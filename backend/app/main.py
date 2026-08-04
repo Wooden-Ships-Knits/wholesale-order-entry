@@ -18,6 +18,8 @@ from app.routers import (
     seasons,
     send_email,
     ship_windows,
+    sign,
+    signature_email,
 )
 
 app = FastAPI(title="Wooden Ships Wholesale Order Form")
@@ -56,3 +58,7 @@ app.include_router(conflict_email.router, prefix="/api")
 app.include_router(send_email.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(notices.router, prefix="/api")
+app.include_router(signature_email.router, prefix="/api")
+# Public — token-authenticated, not session-authenticated. See routers/sign.py
+# for what that means and what the GET response is allowed to contain.
+app.include_router(sign.router, prefix="/api")

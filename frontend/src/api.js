@@ -70,3 +70,34 @@ export async function submitOrder(payload) {
   }
   return body
 }
+
+// ---- signature by emailed link (/sign/<token>) ----
+// No session: the token in the URL is the credential. 404 = spent, revoked or
+// never valid; 410 = expired. The page words those two differently.
+export async function getOrderToSign(token) {
+  const res = await fetch(`/api/sign/${encodeURIComponent(token)}`)
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    const err = new Error(body.detail || `Could not load this order (${res.status})`)
+    err.status = res.status
+    throw err
+  }
+  return res.json()
+}
+
+export async function signOrder(token, payload) {
+  const res = await fetch(`/api/sign/${encodeURIComponent(token)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msgs = extractErrors(body, res.status)
+    const err = new Error(msgs.join(' '))
+    err.messages = msgs
+    err.status = res.status
+    throw err
+  }
+  return body
+}

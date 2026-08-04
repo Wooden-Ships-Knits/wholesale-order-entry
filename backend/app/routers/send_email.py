@@ -32,7 +32,14 @@ router = APIRouter()
 _SENT_COLUMN = {
     "conflict": "conflict_email_sent_at",
     "tax_cert": "tax_cert_email_sent_at",
+    "signature": "signature_requested_at",
 }
+
+# Kinds whose reply should route back correlated to the order. "signature" is
+# absent on purpose: the buyer answers by clicking the link, and a plus-address
+# Reply-To would send their questions into the automated inbound parser instead
+# of to a person.
+_REPLY_TAGGED = ("conflict", "tax_cert")
 
 
 class SendEmailRequest(BaseModel):
@@ -47,7 +54,7 @@ class SendEmailRequest(BaseModel):
     subject: str = Field("", max_length=500)
     body: str = Field("", max_length=20000)
     orderId: str | None = Field(None, max_length=36)
-    kind: Literal["conflict", "tax_cert"] | None = None
+    kind: Literal["conflict", "tax_cert", "signature"] | None = None
 
 
 @router.post("/send-email", dependencies=[AdminRequired])
@@ -63,7 +70,7 @@ def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db))
     # this order (see app/email/reply_address.py): a rep's conflict decision, or
     # a customer's tax-cert reply carrying the certificate attachment.
     reply_to = None
-    if payload.orderId and payload.kind in ("conflict", "tax_cert"):
+    if payload.orderId and payload.kind in _REPLY_TAGGED:
         reply_to = reply_address.build_reply_to(
             payload.orderId, payload.kind, settings.mail_sender
         )
@@ -79,6 +86,10 @@ def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db))
             order = db.get(Order, payload.orderId)
             if order is not None:
                 setattr(order, _SENT_COLUMN[payload.kind], datetime.now(timezone.utc))
+                # Remember where a signing link went, so it can be re-sent
+                # without the admin retyping the address.
+                if payload.kind == "signature":
+                    order.signature_email = to
                 db.commit()
         except Exception:
             logger.exception("Sent email but could not stamp order %s", payload.orderId)

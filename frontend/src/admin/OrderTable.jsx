@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  cancelSignatureLink,
   cardPdfUrl,
   certUrl,
   createSfAccount,
   getConflictEmail,
   getOrderShipWindows,
+  getSignatureEmail,
   pdfUrl,
   setConflictResolution,
   setOrderAccount,
@@ -310,6 +312,84 @@ function PaymentCell({ order: o }) {
   )
 }
 
+// Buyer signature by emailed link. Three states, colour-coded so the column
+// scans without reading:
+//   green + empty — no signature needed; the form was signed on the spot
+//   yellow        — link is out, still waiting on the buyer
+//   green + name  — signed
+// The email now goes out automatically at submit (orders._send_signature_request);
+// this column confirms it happened and is where a resend or cancel is done.
+function SignatureCell({ order: o, sent, drafting, cancelling, onDraft, onCancel }) {
+  // Signed on the form, so there is nothing outstanding. Deliberately empty:
+  // a "—" here would read as missing data rather than "not applicable".
+  if (!o.signatureRequested) return <td className="flag-green" />
+
+  if (o.signatureSignedAt) {
+    // The buyer may have changed quantities before signing. Say so — otherwise
+    // the rep's copy and the accepted order silently disagree.
+    const edited =
+      o.origTotalQty != null &&
+      (o.origTotalQty !== o.totalQty || o.origTotalAmount !== o.totalAmount)
+    return (
+      <td className="flag-green">
+        <div className="cert-missing">
+          <span className="sf-created">Signed ✓</span>
+          <span className="sub">{o.signatureName}</span>
+          <span className="sub">
+            {new Date(o.signatureSignedAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
+          {edited && (
+            <span
+              className="sub sig-edited"
+              title="The buyer changed the order before signing"
+            >
+              edited: {o.origTotalQty} → {o.totalQty} pcs
+            </span>
+          )}
+        </div>
+      </td>
+    )
+  }
+
+  // Requested but unsigned — yellow until the buyer acts.
+  return (
+    <td className="flag-yellow">
+      <div className="cert-missing">
+        {o.signatureEmailSent || sent ? (
+          <span className="sf-created">Email Sent ✓ waiting for signature</span>
+        ) : (
+          /* The token exists but the send failed (SMTP down at submit). Say so
+             rather than showing a reassuring "sent" the buyer never received. */
+          <span className="sig-unsent">Not sent — send it manually</span>
+        )}
+        {o.signatureEmail && <span className="sub">{o.signatureEmail}</span>}
+        {/* Re-drafting reuses the same unexpired token server-side, so the
+            first link stays the only working one. */}
+        <button type="button" className="chip" disabled={drafting} onClick={onDraft}>
+          {drafting ? 'Drafting…' : o.signatureEmailSent || sent ? 'Resend' : 'Send email'}
+        </button>
+        {/* While a link is live this order can't be accepted, relinked or have
+            its ship window changed — the buyer could still rewrite the lines.
+            Cancelling is how the team takes that back. */}
+        {o.signatureLinkLive && (
+          <button
+            type="button"
+            className="chip"
+            disabled={cancelling}
+            title="Revoke the buyer's link so this order can be worked on again"
+            onClick={onCancel}
+          >
+            {cancelling ? 'Cancelling…' : 'Cancel link'}
+          </button>
+        )}
+      </div>
+    </td>
+  )
+}
+
 // Tri-state dropdown for the boolean columns; '' = no filter.
 function YesNoFilter({ label, value, onChange }) {
   return (
@@ -339,6 +419,9 @@ export default function OrderTable({
   const [resolving, setResolving] = useState(null) // id of the order whose conflict is being resolved
   const [sentConflict, setSentConflict] = useState(() => new Set()) // orders whose conflict email was sent
   const [sentTaxCert, setSentTaxCert] = useState(() => new Set()) // orders whose tax-cert email was sent
+  const [sentSignature, setSentSignature] = useState(() => new Set()) // orders whose signature link was sent
+  const [draftingSignature, setDraftingSignature] = useState(null)
+  const [cancellingSignature, setCancellingSignature] = useState(null)
 
   // Dropdown options come from the unfiltered rows: picking a territory must
   // not remove the other territories from the list you picked it from.
@@ -423,12 +506,60 @@ export default function OrderTable({
     }
   }
 
+  // Ask the buyer to review and sign. The server mints (or reuses) the signing
+  // token while building this draft — the link can't exist without one.
+  async function draftSignatureEmail(order) {
+    setDraftingSignature(order.id)
+    try {
+      const d = await getSignatureEmail(order.id)
+      // To the buyer, CC the territory's lead rep (same as the tax-cert
+      // request) so the rep knows their order went out for signature. The CC
+      // may arrive empty when the territory has no rep — editable in the modal.
+      setDraft({
+        ...d,
+        cc: d.cc || order.repEmail || '',
+        title: 'Signature request draft',
+        signatureOrderId: order.id,
+      })
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setDraftingSignature(null)
+    }
+  }
+
+  // Revoke the buyer's link. Destructive from their side — their link dies
+  // mid-review — so it asks first.
+  async function cancelSignature(order) {
+    const who = order.signatureEmail || 'the buyer'
+    if (
+      !window.confirm(
+        `Cancel the signing link for ${order.accountName || 'this order'}?\n\n` +
+          `${who} will no longer be able to open or sign it, and you'll be able to ` +
+          `accept or edit this order again.`,
+      )
+    )
+      return
+    setCancellingSignature(order.id)
+    try {
+      await cancelSignatureLink(order.id)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setCancellingSignature(null)
+    }
+  }
+
   function handleSent() {
     if (draft?.conflictOrderId) {
       setSentConflict((prev) => new Set(prev).add(draft.conflictOrderId))
     }
     if (draft?.taxCertOrderId) {
       setSentTaxCert((prev) => new Set(prev).add(draft.taxCertOrderId))
+    }
+    if (draft?.signatureOrderId) {
+      setSentSignature((prev) => new Set(prev).add(draft.signatureOrderId))
     }
   }
 
@@ -497,6 +628,7 @@ export default function OrderTable({
           <tr ref={headRowRef}>
             <th>Date</th>
             <th>Order ID</th>
+            <th>Signature</th>
             <th>Season</th>
             <th>Shipping Window</th>
             <th>Account Name</th>
@@ -548,6 +680,7 @@ export default function OrderTable({
                 onChange={(e) => onFilterChange('shortId', e.target.value)}
               />
             </th>
+            <th aria-hidden="true" />
             <th>
               <select
                 aria-label="Filter by season"
@@ -702,6 +835,14 @@ export default function OrderTable({
                   <code>{o.shortId}</code>
                 </a>
               </td>
+              <SignatureCell
+                order={o}
+                sent={sentSignature.has(o.id)}
+                drafting={draftingSignature === o.id}
+                cancelling={cancellingSignature === o.id}
+                onDraft={() => draftSignatureEmail(o)}
+                onCancel={() => cancelSignature(o)}
+              />
               {/* Season is read-only: prices and Salesforce product ids were
                   resolved from this season's price book when the order was
                   submitted, so changing it would misprice every line. */}

@@ -95,8 +95,12 @@ class Terms(CamelModel):
     accepted: bool = False
     order_copy: bool = False
     order_copy_email: EmailStr | None = None
+    # "Send the draft to the buyer to sign" — an alternative to typing the
+    # signature here, so it makes signature_name optional (see routers/orders.py).
+    draft_signature: bool = False
+    draft_signature_email: EmailStr | None = None
 
-    @field_validator("order_copy_email", mode="before")
+    @field_validator("order_copy_email", "draft_signature_email", mode="before")
     @classmethod
     def _blank_copy_email_is_none(cls, value: Any) -> Any:
         """Treat "" as "not given".

@@ -9,6 +9,17 @@ class Settings(BaseSettings):
     port: int = 8080
     cors_origin: str = "http://localhost"
 
+    # Public origin used to build links the buyer clicks (the signature link).
+    # Defaults to cors_origin — in production both are the site's own origin —
+    # so a deployment that already sets CORS_ORIGIN needs no new variable.
+    public_base_url: str = ""
+    # How long a signature link stays usable. 7 days is what the buyer's email
+    # promises, and it must stay BELOW card_retention_days: the order can't be
+    # accepted until it is signed, and Accept is what keys the card into
+    # Salesforce — so a link outliving the card copy would leave the team an
+    # acceptable order with no card number to charge.
+    signature_link_days: int = 7
+
     database_url: str = "postgresql+psycopg://woodenships:woodenships@db:5432/woodenships"
 
     salesforce_username: str = ""

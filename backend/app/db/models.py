@@ -85,6 +85,26 @@ class Order(Base):
     # buyer opted to receive a copy of the order form at this address; null = no
     order_copy_email: Mapped[str | None] = mapped_column(Text)
 
+    # ---- signature by emailed link (admin sends it from the order table) ----
+    # Where the link was sent, and when. null requested_at = never asked.
+    signature_email: Mapped[str | None] = mapped_column(Text)
+    signature_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # A bearer credential: whoever holds the URL can edit and sign this order.
+    # Random — NEVER the order id, which appears in admin URLs, log lines and
+    # PDF filenames. Nulled on signing, so a link works exactly once.
+    signature_token: Mapped[str | None] = mapped_column(Text, unique=True, index=True)
+    signature_token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    # Set only when the buyer signs through the link — signature_name alone
+    # can't distinguish that from a rep who typed it on the form.
+    signature_signed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The order as the rep wrote it, snapshotted when the link is first sent.
+    # Lets /admin show "edited at signing: 40 → 22 pcs" instead of the buyer's
+    # change silently replacing what the rep and buyer discussed.
+    orig_total_qty: Mapped[int | None] = mapped_column(Integer)
+    orig_total_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+
     # internal use
     new_or_reorder: Mapped[str | None] = mapped_column(Text)
     account_status: Mapped[str | None] = mapped_column(Text)

@@ -65,6 +65,17 @@ export const setOrderShipWindow = (id, shipWindow) =>
 // the order table, or the store details from the conflict-check tab.
 export const getConflictEmail = (payload) => post('/api/conflict-email', payload)
 
+// Draft of the "review and sign your order" email to the buyer. Generating the
+// draft mints the signing token embedded in the link (an unexpired one is
+// reused), so re-drafting never leaves two working links for one order.
+export const getSignatureEmail = (orderId, email = null) =>
+  post('/api/signature-email', { orderId, email })
+
+// Revoke an outstanding signing link. The buyer's link stops working at once,
+// and the order becomes editable in /admin again (accept, ship window, relink
+// are all blocked while a link is live).
+export const cancelSignatureLink = (id) => post(`/api/admin/orders/${id}/cancel-signature`)
+
 // Send a drafted email (To/Cc/Subject/Body) via the server's SMTP account.
 export const sendEmail = (payload) => post('/api/send-email', payload)
 
