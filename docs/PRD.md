@@ -61,6 +61,7 @@ The website must reproduce all fields from the Excel form. Fields marked _auto_ 
 - Order date
 - Order total $$ _(auto)_
 - **Filled by** (Sales Representative / Customer — required; replaces "Part ship OK?", revision 2026-07-16). Selecting Sales Representative reveals the Internal Use section.
+- **PO #** (optional — moved here from the Internal Use section, revision 2026-08-04). Sits beside "Filled by" because either a customer or a rep may supply a purchase-order number; it was previously unreachable for customers.
 - **Ship Window** dropdown — rolling calendar-month windows starting the current month (e.g. "07/01 - 07/31  2026")
 - Ship window note (informational: "allow 7–12 days for transit")
 
@@ -103,7 +104,7 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 - New or reorder (optional)
 - New account / existing (required)
 - Campaign (Rep non-show order / Other) (optional)
-- PO # (optional)
+- ~~PO # (optional)~~ — moved to the order header (§5.1) 2026-08-04 so customers can fill it too
 - Order written by (required) — dropdown fed by the Salesforce `Written_By__c` picklist (`GET /api/order-writers`)
 - Split (Y/N) with — "with" is a dropdown of the same rep list
 - Rep _(auto)_ — credited rep; equals "Order written by" unless split

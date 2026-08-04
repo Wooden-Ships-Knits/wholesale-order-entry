@@ -87,7 +87,9 @@
       <td class="logo-cell" rowspan="2">
         <img src="WS%20LOGO%20Rect.png" alt="Wooden Ships — Paola Buendia">
       </td>
-      <td class="ctr">
+      {# colspan 2 balances the extra "PO #" cell on the row below. The address
+         is the longest string in the row, so it earns the width. #}
+      <td class="ctr" colspan="2">
         <span class="lbl">Contact</span>
         <span class="val">wholesale@wooden-ships.com</span>
       </td>
@@ -120,6 +122,7 @@
       <td><span class="lbl">Filled by</span><span class="val">
         {% if order.filled_by == "rep" %}Sales rep{% elif order.filled_by == "customer" %}Customer{% else %}—{% endif %}
       </span></td>
+      <td><span class="lbl">PO #</span><span class="val">{{ order.po_number or "—" }}</span></td>
       <td><span class="lbl">Payment by</span><span class="val">{{ order.payment_method or "—" }}</span></td>
       <td><span class="lbl">Charge approval</span><span class="val">
         {% if order.approval_before_charge is none %}—{% elif order.approval_before_charge %}Approval first{% else %}No approval needed{% endif %}
@@ -260,10 +263,10 @@
       <td colspan="2"><span class="lbl">Campaign</span><span class="val">{{ order.campaign or "—" }}</span></td>
     </tr>
     <tr>
-      <td><span class="lbl">PO #</span><span class="val">{{ order.po_number or "—" }}</span></td>
+      {# PO # moved to the masthead 2026-08-04 — it is no longer internal-only. #}
       <td><span class="lbl">Rep</span><span class="val">{{ order.rep or "—" }}</span></td>
       <td><span class="lbl">Order written by</span><span class="val">{{ order.order_written_by or "—" }}</span></td>
-      <td><span class="lbl">Split &nbsp; Y | N &nbsp; with</span>
+      <td colspan="2"><span class="lbl">Split &nbsp; Y | N &nbsp; with</span>
         <span class="val">{{ order.split_with or "N" }}</span></td>
     </tr>
   </table>
