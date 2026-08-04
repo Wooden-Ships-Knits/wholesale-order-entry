@@ -135,6 +135,7 @@ orders
   ship_window_note   text
   ship_window        text            -- buyer-selected calendar-month window
   filled_by          text            -- rep | customer
+  po_number          text            -- header field since 2026-08-04; customer or rep
   notes              text            -- free-text Notes section
   -- bill to
   buyer_name         text
@@ -171,7 +172,6 @@ orders
   new_or_reorder     text
   account_status     text            -- new / existing
   campaign           text
-  po_number          text
   rep                text
   order_written_by   text
   split_with         text

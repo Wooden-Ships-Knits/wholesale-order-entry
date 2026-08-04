@@ -77,7 +77,7 @@ export default function InternalUse({
           </label>
         </fieldset>
 
-        <fieldset className="inline-radios span2">
+        <fieldset className="inline-radios campaign-field">
           <legend>
             Campaign<span className="req">*</span>
           </legend>
@@ -109,10 +109,6 @@ export default function InternalUse({
         </fieldset>
 
         <label>
-          PO # (optional)
-          <input type="text" value={internal.poNumber} onChange={(e) => setInternal('poNumber', e.target.value)} />
-        </label>
-        <label>
           Order written by<span className="req">*</span>
           <select
             value={internal.orderWrittenBy}
@@ -127,24 +123,10 @@ export default function InternalUse({
             ))}
           </select>
         </label>
-        
-        {/* <label>
-          Rep*
-          <select
-            value={internal.rep}
-            onChange={(e) => setInternal('rep', e.target.value)}
-            disabled={!isSplit}
-          >
-            <option value="">Select a rep…</option>
-            {repOptions.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label> */}
 
-        <fieldset className="inline-radios">
+        {/* Pinned to the third column so it sits on the right of the row,
+            opposite "Order written by" — auto-flow would put it in column 2. */}
+        <fieldset className="inline-radios split-field">
           <legend>Split?</legend>
           <label>
             <input
@@ -178,6 +160,22 @@ export default function InternalUse({
             ))}
           </select>
         </fieldset>
+
+        {/* <label>
+          Rep*
+          <select
+            value={internal.rep}
+            onChange={(e) => setInternal('rep', e.target.value)}
+            disabled={!isSplit}
+          >
+            <option value="">Select a rep…</option>
+            {repOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label> */}
 
       </div>
     </section>
