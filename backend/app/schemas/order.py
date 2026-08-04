@@ -122,7 +122,6 @@ class Internal(CamelModel):
     account_status: str = ""
     campaign: str = ""
     campaign_other: str = ""
-    po_number: str = ""
     rep: str = ""
     order_written_by: str = ""
     split: bool | None = None
@@ -147,6 +146,10 @@ class OrderSubmission(CamelModel):
     part_ship_ok: bool | None = None
     ship_window: str = ""
     filled_by: str = ""  # "rep" | "customer" | ""
+    # Optional buyer's purchase-order number. Top-level, not in `internal`:
+    # since 2026-08-04 it sits beside "Filled by" and either a customer or a
+    # rep can supply it.
+    po_number: str = ""
     # Customer-filled forms only: "is this your first order?". None = unanswered.
     first_order: bool | None = None
     notes: str = ""
