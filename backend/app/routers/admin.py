@@ -117,6 +117,34 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         # Persistent "Sent ✓" state for the admin email buttons.
         "conflictEmailSent": o.conflict_email_sent_at is not None,
         "taxCertEmailSent": o.tax_cert_email_sent_at is not None,
+        # Buyer signature by emailed link. Sent → waiting → signed. The token
+        # itself is never exposed: it is a credential, and /admin doesn't need
+        # it to show state or to re-draft the email.
+        # Did this order ask to be signed by the buyer? False = the form was
+        # signed on the spot, so the admin column has nothing to chase.
+        "signatureRequested": bool(
+            o.signature_email
+            or o.signature_requested_at
+            or o.signature_token
+            or o.signature_signed_at
+        ),
+        # True only once the email actually left (see orders._send_signature_request);
+        # a requested-but-unsent order shows as still needing to go out.
+        "signatureEmailSent": o.signature_requested_at is not None,
+        "signatureEmail": o.signature_email,
+        # A usable link is out there right now, so admin edits are blocked
+        # (_reject_if_awaiting_signature). The token itself is never sent.
+        "signatureLinkLive": bool(o.signature_token) and o.signature_signed_at is None,
+        "signatureSignedAt": (
+            o.signature_signed_at.isoformat() if o.signature_signed_at else None
+        ),
+        "signatureName": o.signature_name,
+        # Non-null only once a buyer edited the order through the sign link —
+        # the pre-edit totals, so the change is visible instead of silent.
+        "origTotalQty": o.orig_total_qty,
+        "origTotalAmount": (
+            float(o.orig_total_amount) if o.orig_total_amount is not None else None
+        ),
         # Recorded outcome of the conflict inquiry (null = still waiting).
         "conflictResolution": o.conflict_resolution,
         "conflictResolvedAt": (
@@ -153,6 +181,30 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         "statusReason": o.status_reason,
         "statusAt": o.status_at.isoformat() if o.status_at else None,
     }
+
+
+def _reject_if_awaiting_signature(order: Order, what: str) -> None:
+    """Block admin edits while the buyer holds a live signing link.
+
+    A live token means someone can change the lines and sign at any moment. The
+    dangerous case is Accept: it pushes the CURRENT lines to Salesforce as a
+    Kugamon Draft and is idempotent on sf_order_id, so if the buyer then signs
+    with different quantities the two systems disagree permanently and nothing
+    ever reconciles them. Ship window and account relink are the milder version
+    of the same race — last write wins, silently.
+
+    The escape hatch is POST /orders/{id}/cancel-signature: revoke the link and
+    the order is ordinary again. That is deliberate rather than a force flag —
+    the admin has to take the buyer's ability to sign away, not just override it.
+    """
+    if order.signature_token and not order.signature_signed_at:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"A signature request is outstanding for this order — {what} "
+                "until the buyer signs, or cancel the signing link first."
+            ),
+        )
 
 
 def _account_exists(order: Order) -> bool | None:
@@ -286,6 +338,7 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
     order = db.get(Order, order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
+    _reject_if_awaiting_signature(order, "it can't be accepted or declined")
     # Accept = push the order into Salesforce (Kugamon Draft). If the push
     # fails, raise BEFORE changing status so the order stays actionable and the
     # team can fix the cause (e.g. missing account) and click Accept again.
@@ -392,6 +445,7 @@ def relink_account(order_id: str, payload: AccountLinkRequest, db: Session = Dep
             status_code=409,
             detail=f"This order is already {order.status} — its account can no longer be changed.",
         )
+    _reject_if_awaiting_signature(order, "its account can't be changed")
 
     before = (order.account_name, order.sf_account_id)
 
@@ -477,6 +531,7 @@ def set_ship_window(
             status_code=409,
             detail=f"This order is already {order.status} — its ship window can no longer be changed.",
         )
+    _reject_if_awaiting_signature(order, "its ship window can't be changed")
 
     window = payload.ship_window.strip()
     # Validate against the season's live list so a typo can't reach Salesforce.
@@ -494,6 +549,33 @@ def set_ship_window(
     db.commit()
     logger.info("Order %s ship window: %r -> %r", str(order.id)[:8], before, window)
     return _row(order, _account_exists(order))
+
+
+@router.post("/orders/{order_id}/cancel-signature", dependencies=[AdminRequired])
+def cancel_signature(order_id: str, db: Session = Depends(get_db)) -> dict:
+    """Revoke an outstanding signing link so the order can be worked on again.
+
+    For the ordinary case of a buyer who never responds: the team needs to
+    proceed, and _reject_if_awaiting_signature blocks them until the token is
+    gone. Revoking makes the buyer's link 404 immediately, so it is the admin
+    consciously taking away their ability to sign rather than editing behind
+    their back — which is the whole reason the guard exists.
+
+    signature_requested_at is kept: the request DID happen, and erasing it
+    would lose the record of what was asked of the buyer and when.
+    """
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.signature_signed_at is not None:
+        raise HTTPException(
+            status_code=409, detail="This order is already signed — there is no live link."
+        )
+    order.signature_token = None
+    order.signature_token_expires_at = None
+    db.commit()
+    logger.info("Signing link revoked for order %s", str(order.id)[:8])
+    return _row(order)
 
 
 @router.post("/orders/{order_id}/create-account", dependencies=[AdminRequired])

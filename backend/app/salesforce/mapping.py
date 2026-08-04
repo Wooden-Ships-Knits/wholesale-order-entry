@@ -4,9 +4,12 @@ All object/field names were confirmed against the real org on 2026-07-14
 (see docs/architecture.md §3.2). If a name changes in Salesforce, this is
 the only file that should need editing.
 """
+import logging
 import re
 from datetime import date
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------- objects
 ACCOUNT = "Account"
@@ -52,6 +55,13 @@ SALES_ORDER_START_SHIP = "Start_Ship_Date__c"
 # charged against. Safe to send: last4 is not cardholder data on its own, and
 # the full number is never in the payload (CLAUDE.md rule 1). string(4) in SF.
 SALES_ORDER_CC_LAST4 = "Use_CC_Ending_in__c"
+# Customer PO number from the rep-only Internal Use box. Optional on the form,
+# so it is only sent when filled.
+#
+# UNCONFIRMED API NAME (CLAUDE.md rule 4) — see po_number_field_exists below,
+# which checks the org before sending, so a wrong name here degrades to
+# "PO not pushed" (logged) rather than breaking Accept for every order with a PO.
+SALES_ORDER_PO_NUMBER = "kugo2p__PurchaseOrder__c"
 SHIP_THRU_DATE = "Ship_Thru__c"
 ESTIMATED_SHIPMENT_NAME = "Estimated_Shipment_Name__c"
 ORDER_WRITTEN_DATE = "Order_Written_Date__c"
@@ -404,6 +414,20 @@ def build_sales_order_header(
     if getattr(order, "card_last4", None):
         header[SALES_ORDER_CC_LAST4] = order.card_last4
 
+    # Customer PO number — optional, so absent unless the rep typed one.
+    # Guarded by a describe because the API name is an assumption (rule 4):
+    # a name that doesn't exist would otherwise fail the whole Accept push.
+    po = (getattr(order, "po_number", None) or "").strip()
+    if po:
+        if po_number_field_exists():
+            header[SALES_ORDER_PO_NUMBER] = po
+        else:
+            logger.warning(
+                "Order has PO %r but %s is not a createable field on %s — "
+                "PO not pushed. Confirm the API name in mapping.py.",
+                po, SALES_ORDER_PO_NUMBER, SALES_ORDER,
+            )
+
     # Type + Written_By apply to rep orders only (direct/customer leave empty).
     if order.filled_by == "rep":
         if order.new_or_reorder == "new":
@@ -421,6 +445,39 @@ def build_sales_order_header(
     return {k: v for k, v in header.items() if v not in ("", None)}
 
 
+_po_field_ok: bool | None = None
+
+
+def po_number_field_exists() -> bool:
+    """Is SALES_ORDER_PO_NUMBER a createable field on the Kugamon order?
+
+    The API name is an assumption (rule 4) and this is a LIVE-ORG WRITE on
+    Accept: sending a field that doesn't exist fails the whole push, so an
+    unconfirmed guess would turn "the PO didn't carry over" into "the order
+    can't be accepted at all". Checking first keeps the blast radius at the
+    PO itself.
+
+    Cached for the process lifetime — the schema doesn't change mid-run. A
+    describe failure returns False (don't push) rather than raising, so a
+    Salesforce hiccup can't block an Accept either.
+    """
+    global _po_field_ok
+    if _po_field_ok is None:
+        # Imported here, not at module scope: client imports mapping, so a
+        # top-level import would be circular.
+        from app.salesforce import client
+
+        try:
+            _po_field_ok = any(
+                f["name"] == SALES_ORDER_PO_NUMBER and f["createable"]
+                for f in client.describe_fields(SALES_ORDER)
+            )
+        except Exception:
+            logger.exception("Could not describe %s to check the PO field", SALES_ORDER)
+            return False
+    return _po_field_ok
+
+
 def build_sales_order_lines(order: Any) -> list[dict[str, Any]]:
     """Order items -> one line per size with qty > 0 (product, quantity and the
     date required; Kugamon prices from the header's price book).
@@ -435,10 +492,14 @@ def build_sales_order_lines(order: Any) -> list[dict[str, Any]]:
 
     lines: list[dict[str, Any]] = []
     for item in order.items:
+        # Sizes descend M/L -> S/M -> X/S (requested 2026-08-03). Kugamon lists
+        # lines in creation order and they are created one at a time in this
+        # order, so this tuple IS the order the team reads in Edit Lines.
+        # Style/colour grouping comes from order.items and is untouched.
         for product_id, qty in (
-            (item.sf_product_id_xs, item.qty_xs),
-            (item.sf_product_id_sm, item.qty_sm),
             (item.sf_product_id_ml, item.qty_ml),
+            (item.sf_product_id_sm, item.qty_sm),
+            (item.sf_product_id_xs, item.qty_xs),
         ):
             if product_id and qty:
                 line = {SALES_ORDER_LINE_PRODUCT: product_id, SALES_ORDER_LINE_QTY: qty}

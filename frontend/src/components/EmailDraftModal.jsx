@@ -41,9 +41,15 @@ export default function EmailDraftModal({ draft, onClose, onSent }) {
   const canSend = !toMissing && !sending && !sent
 
   // Tie this draft to an order so a successful send is recorded server-side
-  // (persistent "Sent ✓"). Tax-cert and conflict drafts carry different ids.
-  const orderId = draft.conflictOrderId || draft.taxCertOrderId || null
-  const kind = draft.conflictOrderId ? 'conflict' : draft.taxCertOrderId ? 'tax_cert' : null
+  // (persistent "Sent ✓"). Each kind of draft carries its own id field.
+  const orderId = draft.conflictOrderId || draft.taxCertOrderId || draft.signatureOrderId || null
+  const kind = draft.conflictOrderId
+    ? 'conflict'
+    : draft.taxCertOrderId
+      ? 'tax_cert'
+      : draft.signatureOrderId
+        ? 'signature'
+        : null
 
   async function send() {
     const ccNote = cc.trim() ? ` (cc ${cc.trim()})` : ''

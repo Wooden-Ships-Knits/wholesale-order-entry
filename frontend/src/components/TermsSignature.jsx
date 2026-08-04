@@ -1,4 +1,6 @@
-export default function TermsSignature({ terms, setTerms, defaultCopyEmail }) {
+// defaultBuyerEmail is the Ship To address — the prefill for both the order
+// copy and the draft-for-signature, since both go to the person who ordered.
+export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
   return (
     <section className="section terms">
       {/* <h2>Terms &amp; conditions</h2> */}
@@ -43,16 +45,58 @@ export default function TermsSignature({ terms, setTerms, defaultCopyEmail }) {
       </div>
       
       <div className="signature-grid">
-        <label>
-          Buyer's signature (type your full name)<span className="req">*</span>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={terms.draftSignature}
+          onChange={(e) => {
+            const checked = e.target.checked
+            setTerms('draftSignature', checked)
+            // Prefill with the buyer's (Ship To) email — editable after, and
+            // never overwrites an address they already typed.
+            if (checked && !terms.draftSignatureEmail) {
+              setTerms('draftSignatureEmail', defaultBuyerEmail || '')
+            }
+          }}
+        />
+        <span>Send the draft to buyer to sign the signature</span>
+      </label>
+        {/* Signing here and asking us to send the draft for signature are
+            alternatives, not both — so the checkbox disables this field rather
+            than sitting beside a still-required one. Matching rules live in
+            App.jsx (client) and routers/orders.py (the authority). */}
+        <label className={terms.draftSignature ? 'field-disabled' : undefined}>
+          Buyer's signature (type the full name)
+          {!terms.draftSignature && <span className="req">*</span>}
           <input
             type="text"
             className="signature-input"
             value={terms.signatureName}
             onChange={(e) => setTerms('signatureName', e.target.value)}
-            required
+            disabled={terms.draftSignature}
+            required={!terms.draftSignature}
           />
+          {terms.draftSignature && (
+            <p className="order-copy-note">
+              The buyer will sign the draft we email them.
+            </p>
+          )}
         </label>
+        
+      {terms.draftSignature && (
+        <label className="span2">
+          Buyer email<span className="req">*</span>
+          <input
+            type="email"
+            value={terms.draftSignatureEmail}
+            onChange={(e) => setTerms('draftSignatureEmail', e.target.value)}
+          />
+          <p className="order-copy-note">
+            We'll email the draft to the buyer for signature.
+          </p>
+        </label>
+      )}
+
         {/* <label>
           Date
           <input
@@ -91,7 +135,7 @@ export default function TermsSignature({ terms, setTerms, defaultCopyEmail }) {
             // Prefill with the buyer's (Ship To) email — editable after, and
             // never overwrites an address they already typed.
             if (checked && !terms.orderCopyEmail) {
-              setTerms('orderCopyEmail', defaultCopyEmail || '')
+              setTerms('orderCopyEmail', defaultBuyerEmail || '')
             }
           }}
         />

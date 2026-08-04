@@ -74,7 +74,7 @@ export default function App() {
   const [certOnFile, setCertOnFile] = useState(false)
   const [certFile, setCertFile] = useState(null)
   const [lookupNoMatch, setLookupNoMatch] = useState(false)
-  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false, orderCopy: false, orderCopyEmail: '' })
+  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false, orderCopy: false, orderCopyEmail: '', draftSignature: false, draftSignatureEmail: '' })
   const [internal, setInternalState] = useState({
     newOrReorder: '',
     accountStatus: '',
@@ -268,7 +268,14 @@ export default function App() {
     }
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!shipTo.resaleTaxId?.trim()) problems.push('Resale tax ID is required.')
-    if (!terms.signatureName) problems.push('Signature is required.')
+    // Signing now and sending the draft out to be signed are alternatives: one
+    // of the two is required, never both. Mirrors routers/orders.py.
+    if (terms.draftSignature) {
+      if (!terms.draftSignatureEmail)
+        problems.push('Please enter the buyer email to send the draft to.')
+    } else if (!terms.signatureName) {
+      problems.push('Signature is required.')
+    }
     if (!terms.accepted) problems.push('You must accept the Order Policies.')
     if (!terms.infoConfirmed) problems.push('Please confirm the order information is correct.')
     if (certFile && certFile.size > MAX_CERT_BYTES) {
@@ -444,7 +451,7 @@ export default function App() {
       {isNewAccount && <Payment payment={payment} setPayment={setPayment} />}
       {isNewAccount && <TaxExemption certFile={certFile} setCertFile={setCertFile} />}
       <Notes notes={notes} setNotes={setNotes} />
-      <TermsSignature terms={terms} setTerms={setTerms} defaultCopyEmail={shipTo.email} />
+      <TermsSignature terms={terms} setTerms={setTerms} defaultBuyerEmail={shipTo.email} />
 
       {conflictResult && (
         <ConflictWarning result={conflictResult} onDismiss={() => setConflictResult(null)} />

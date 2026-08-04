@@ -14,21 +14,23 @@ on orders.has_conflict for the admin page.
 import logging
 import uuid
 from datetime import datetime, timezone
-from decimal import Decimal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import crypto
 from app.config import settings
-from app.db.models import Order, OrderItem
+from app.db.models import Order
 from app.db.session import SessionLocal, get_db
-from app.email import order_email
+from app.email import mailer, order_email, signature_template
 from app.geo import conflict
+from app.pdf import context as pdf_context_builder
 from app.pdf import render as pdf_render
-from app.salesforce import client, mapping
+from app.routers import sign
+from app.salesforce import mapping
 from app.schemas.order import OrderSubmission
-from app.validation.order_minimum import validate_minimums
+from app.services import order_lines
+from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +76,55 @@ def _conflict_point(order: Order) -> tuple[float, float] | None:
     return None
 
 
+def _send_signature_request(order_id: uuid.UUID) -> None:
+    """Background: email the buyer their signing link, then record the send.
+
+    signature_requested_at is stamped only AFTER the SMTP call succeeds, so the
+    admin column's "Email Sent ✓" means the mail really left. A failure leaves
+    it null — the order shows as still needing a signature and the team can
+    resend from /admin, which is the honest outcome. The token is already
+    committed either way, so the resend reuses the same link.
+    """
+    db = SessionLocal()
+    try:
+        order = db.get(Order, order_id)
+        if order is None or not order.signature_token:
+            return
+        draft = signature_template.build(
+            to_email=order.signature_email,
+            sign_url=sign.sign_url(order.signature_token),
+            account_name=order.account_name,
+            buyer_name=order.buyer_name,
+            season_label=mapping.season_label(order.season_code),
+            total_qty=order.total_qty,
+            total_amount=order.total_amount,
+            expires_days=settings.signature_link_days,
+        )
+        # CC the territory's lead rep, same lookup as the tax-cert request.
+        # None when the territory is empty or has no rep row — send anyway
+        # rather than hold the buyer's link hostage to a sheet lookup.
+        cc = sheets_client.rep_email_for_territory(order.sales_territory)
+        if not cc:
+            logger.info(
+                "No rep email for territory %r — signature request for order %s sent without CC",
+                order.sales_territory, str(order_id)[:8],
+            )
+        if not mailer.send_email(draft["to"], draft["subject"], draft["body"], cc=cc):
+            logger.error(
+                "Signature request for order %s could not be sent — resend from /admin",
+                str(order_id)[:8],
+            )
+            return
+        order.signature_requested_at = datetime.now(timezone.utc)
+        db.commit()
+        logger.info("Signature request sent for order %s", str(order_id)[:8])
+    except Exception:
+        logger.exception("Signature request failed for order %s", str(order_id)[:8])
+        db.rollback()
+    finally:
+        db.close()
+
+
 def _run_conflict_check(order_id: uuid.UUID, lat: float, lng: float) -> None:
     """Background: store the nearby-stockist verdict on the order.
 
@@ -117,64 +168,24 @@ def submit_order(
 
     if not payload.terms.accepted:
         errors.append({"code": "terms", "message": "Terms & conditions must be accepted."})
-    if not payload.terms.signature_name.strip():
+    # Either the buyer signs here, or they asked us to email the draft for
+    # signature. Requiring both would block every order sent out for signing.
+    if payload.terms.draft_signature:
+        if not payload.terms.draft_signature_email:
+            errors.append({"code": "draft_signature_email",
+                           "message": "A buyer email is required to send the draft for signature."})
+    elif not payload.terms.signature_name.strip():
         errors.append({"code": "signature", "message": "Signature is required."})
 
+    # Quantities → priced lines. Shared with the signature-link path, so both
+    # re-resolve prices from the price book and enforce the same minimums.
+    # Errors accumulate with the terms ones above: the buyer sees everything
+    # wrong in one response rather than fixing them one round-trip at a time.
     items = [i for i in payload.items if i.pieces > 0]
-    if not items:
-        errors.append({"code": "no_items", "message": "The order has no quantities."})
-
-    errors.extend(validate_minimums(items))
-    if errors:
-        _fail(errors)
-
-    # Resolve the season's wholesale price book — authoritative prices + ids.
-    books = {
-        mapping.season_from_pricebook_name(b["Name"]): b
-        for b in client.list_wholesale_pricebooks()
-    }
-    book = books.get(payload.season)
-    if book is None:
-        _fail([{"code": "season", "message": f"Unknown season {payload.season}."}])
-    rows, _stats = mapping.group_products(client.get_pricebook_entries(book["Id"]))
-    catalog = {(r["styleName"], r["color"]): r for r in rows}
-
-    order_items: list[OrderItem] = []
-    total_qty = 0
-    total_amount = Decimal("0")
-    for item in items:
-        row = catalog.get((item.style_name, item.color))
-        if row is None:
-            errors.append(
-                {
-                    "code": "unknown_product",
-                    "style": item.style_name,
-                    "color": item.color,
-                    "message": f'"{item.style_name} — {item.color}" is not in the {payload.season} wholesale catalog.',
-                }
-            )
-            continue
-        unit_price = Decimal(str(row["unitPrice"] or 0)).quantize(Decimal("0.01"))
-        line_qty = item.pieces
-        line_total = (unit_price * line_qty).quantize(Decimal("0.01"))
-        total_qty += line_qty
-        total_amount += line_total
-        order_items.append(
-            OrderItem(
-                sf_product_id_xs=row["sizes"]["xs"] if item.qty_xs else None,
-                sf_product_id_sm=row["sizes"]["sm"] if item.qty_sm else None,
-                sf_product_id_ml=row["sizes"]["ml"] if item.qty_ml else None,
-                code=row["code"],
-                style_name=item.style_name,
-                color=item.color,
-                qty_xs=item.qty_xs,
-                qty_sm=item.qty_sm,
-                qty_ml=item.qty_ml,
-                line_qty=line_qty,
-                unit_price=unit_price,
-                line_total=line_total,
-            )
-        )
+    order_items, total_qty, total_amount, line_errors = order_lines.build(
+        payload.season, items
+    )
+    errors.extend(line_errors)
     if errors:
         _fail(errors)
 
@@ -262,73 +273,20 @@ def submit_order(
         status="submitted",
         items=order_items,
     )
+    # "Send the draft to the buyer to sign": mint the link now, so the token is
+    # committed with the order and the email task below has something to point
+    # at. signature_requested_at is NOT set here — it means "the email actually
+    # went out", and that is only known once the send succeeds.
+    if payload.terms.draft_signature and payload.terms.draft_signature_email:
+        order.signature_email = str(payload.terms.draft_signature_email)
+        order.signature_token, order.signature_token_expires_at = sign.mint_token()
     # Render the PDF BEFORE committing: card details exist only in this
     # request, so a failed render must fail the submission (nothing persisted,
     # buyer retries). The context dict below is the only place the full card
     # number/CVV are read, and it goes out of scope at the end of this call.
-    pdf_context = {
-        "order": {
-            "short_id": str(order.id)[:8],
-            "season_code": order.season_code,
-            "season_label": mapping.season_label(order.season_code),
-            "order_date": order.order_date,
-            "part_ship_ok": order.part_ship_ok,
-            "ship_window_note": order.ship_window_note,
-            "ship_window": order.ship_window,
-            "filled_by": order.filled_by,
-            "notes": order.notes,
-            "payment_method": order.payment_method,
-            "approval_before_charge": order.approval_before_charge,
-            "cert_filename": order.cert_filename,
-            "created_at": created_at.strftime("%Y-%m-%d %H:%M UTC"),
-            # The store the order is for — Bill To / Ship To name on the PDF.
-            # Distinct from buyer_name, which is the person placing it.
-            "account_name": order.account_name,
-            "buyer_name": order.buyer_name,
-            "bill_street": order.bill_street,
-            "bill_city_state": order.bill_city_state,
-            "bill_zip": order.bill_zip,
-            "tel": order.tel,
-            "fax": order.fax,
-            "ship_email": order.ship_email,
-            "ship_street": order.ship_street,
-            "ship_city_state": order.ship_city_state,
-            "ship_zip": order.ship_zip,
-            "resale_tax_id": order.resale_tax_id,
-            "cert_required_ack": order.cert_required_ack,
-            "cert_sending_ack": order.cert_sending_ack,
-            "cert_on_file": order.cert_on_file,
-            "signature_name": order.signature_name,
-            "signature_date": order.signature_date,
-            "terms_accepted": order.terms_accepted,
-            "new_or_reorder": order.new_or_reorder,
-            "account_status": order.account_status,
-            "campaign": order.campaign,
-            "po_number": order.po_number,
-            "rep": order.rep,
-            "order_written_by": order.order_written_by,
-            "split_with": order.split_with,
-            "sf_account_id": order.sf_account_id,
-            "total_qty": total_qty,
-            "total_amount": total_amount,
-        },
-        "items": [
-            {
-                "code": i.code,
-                "style_name": i.style_name,
-                "color": i.color,
-                "qty_xs": i.qty_xs,
-                "qty_sm": i.qty_sm,
-                "qty_ml": i.qty_ml,
-                "line_qty": i.line_qty,
-                "unit_price": i.unit_price,
-                "line_total": i.line_total,
-            }
-            for i in order_items
-        ],
-        # Card block is set per-copy below. CVV is never passed to either.
-        "card": None,
-    }
+    # created_at / items are passed explicitly: the row isn't committed yet, so
+    # the server-default timestamp and the items relationship aren't readable.
+    pdf_context = pdf_context_builder.build(order, created_at=created_at, items=order_items)
 
     # Two renders from one template:
     #   masked — number shown as "•••• 1234". Saved to disk and emailed.
@@ -419,6 +377,11 @@ def submit_order(
         background.add_task(
             order_email.send_buyer_copy, order.order_copy_email, email_ctx, pdf_bytes, filename
         )
+
+    # The buyer asked us to send the order out for signature. Background, like
+    # the copies above: a slow Gmail must not hold up the confirmation screen.
+    if order.signature_token:
+        background.add_task(_send_signature_request, order.id)
 
     # New accounts only: check whether an existing stockist is too close, so
     # /admin can flag it. Runs in the background — a slow Google/Salesforce

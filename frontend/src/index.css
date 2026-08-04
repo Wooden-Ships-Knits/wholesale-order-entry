@@ -186,6 +186,19 @@ label select:focus {
   font-size: 1.5rem !important;
 }
 
+/* A field switched off by another control. Greys the caption too, so the whole
+   field reads as inactive rather than just the box looking oddly flat. */
+.field-disabled {
+  color: #8b8780;
+}
+
+.field-disabled input:disabled,
+.field-disabled select:disabled {
+  background: #eceae5;
+  color: #8b8780;
+  cursor: not-allowed;
+}
+
 fieldset.inline-radios {
   border: none;
   margin: 0;
@@ -1389,5 +1402,103 @@ button:hover {
   color: #1e7d34;
 }
 .send-status.err {
+  color: #b03a2e;
+}
+
+/* ------------------------------------------------- buyer signature page */
+/* /sign/<token>. Reuses .section, .terms and the ProductLines styles from the
+   order form; only the page frame and the summary block are new. */
+.sign-page {
+  max-width: 1280px;
+  margin: 2rem auto 4rem;
+  background: #fff;
+  border: 1px solid #d8d4cc;
+  padding: 2rem 2.5rem;
+}
+
+.sign-head h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.sign-sub {
+  margin: 0.35rem 0 0;
+  color: #6b6862;
+  font-size: 0.9rem;
+}
+
+/* The standalone states (signed, dead link) — one centred block instead of
+   a form, so the page never looks like it failed to load. */
+.sign-card {
+  max-width: 34rem;
+  margin: 3rem auto;
+  text-align: center;
+}
+
+.sign-card h1 {
+  font-size: 1.4rem;
+  font-weight: 400;
+  margin: 0 0 0.75rem;
+}
+
+.sign-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.sign-summary-grid h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b6862;
+  margin: 0 0 0.35rem;
+}
+
+.sign-summary-grid p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.sign-note {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #6b6862;
+  margin: 0.9rem 0 0;
+}
+
+.sign-signature {
+  display: block;
+  max-width: 26rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .sign-page {
+    margin: 0;
+    border: none;
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  /* Three address columns don't survive a phone; stack them. */
+  .sign-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Buyer changed quantities before signing — worth noticing, so it reads as a
+   flag rather than another grey sub-line. */
+.sig-edited {
+  color: #9a6b1f;
+  font-weight: bold;
+}
+
+/* Signature link minted but the email never left (SMTP failed at submit). Reads
+   as a problem, not as a neutral "pending" — someone has to send it by hand. */
+.sig-unsent {
   color: #b03a2e;
 }
