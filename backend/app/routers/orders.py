@@ -166,15 +166,17 @@ def submit_order(
 ) -> dict:
     errors: list[dict] = []
 
-    if not payload.terms.accepted:
+    # The policies are the BUYER's to accept. A rep-filled order is on its way
+    # to them, so the acknowledgement comes later: the signing page shows the
+    # same policies and POST /api/sign/{token} sets terms_accepted. Requiring
+    # it here would make a rep tick a box on the buyer's behalf — and, since
+    # the form no longer shows it to reps, would block every rep order.
+    if not payload.terms.draft_signature and not payload.terms.accepted:
         errors.append({"code": "terms", "message": "Terms & conditions must be accepted."})
-    # Either the buyer signs here, or they asked us to email the draft for
-    # signature. Requiring both would block every order sent out for signing.
-    if payload.terms.draft_signature:
-        if not payload.terms.draft_signature_email:
-            errors.append({"code": "draft_signature_email",
-                           "message": "A buyer email is required to send the draft for signature."})
-    elif not payload.terms.signature_name.strip():
+    # Either the buyer signs here, or the order is emailed to them to sign.
+    # No separate recipient to validate: it's the Ship To email, which
+    # OrderSubmission already requires.
+    if not payload.terms.draft_signature and not payload.terms.signature_name.strip():
         errors.append({"code": "signature", "message": "Signature is required."})
 
     # Quantities → priced lines. Shared with the signature-link path, so both
@@ -277,8 +279,11 @@ def submit_order(
     # committed with the order and the email task below has something to point
     # at. signature_requested_at is NOT set here — it means "the email actually
     # went out", and that is only known once the send succeeds.
-    if payload.terms.draft_signature and payload.terms.draft_signature_email:
-        order.signature_email = str(payload.terms.draft_signature_email)
+    if payload.terms.draft_signature:
+        # Ship To is the buyer's own address and is already required, so it is
+        # the recipient. draft_signature_email is still honoured if a caller
+        # sends one, but the form no longer asks for it.
+        order.signature_email = str(payload.terms.draft_signature_email or payload.ship_to.email)
         order.signature_token, order.signature_token_expires_at = sign.mint_token()
     # Render the PDF BEFORE committing: card details exist only in this
     # request, so a failed render must fail the submission (nothing persisted,

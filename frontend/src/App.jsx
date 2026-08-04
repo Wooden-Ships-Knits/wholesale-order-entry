@@ -183,6 +183,12 @@ export default function App() {
     if (m.rep) setInternalState((p) => ({ ...p, rep: m.rep }))
   }
 
+  // Filled by a rep on the buyer's behalf. Drives how the order gets signed:
+  // the rep supplies a buyer email and we send the order out for signature,
+  // rather than the rep signing a box that isn't theirs to sign. Explicit
+  // === true because null means "not answered yet", which is neither.
+  const isRepFilled = form.representativeOk === true
+
   // Payment + tax exemption only apply to accounts we don't already have on
   // file. A customer answers "is this your first order?" directly; for a rep
   // it's the Internal Use radio, or a buyer lookup that found nothing.
@@ -268,16 +274,17 @@ export default function App() {
     }
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!shipTo.resaleTaxId?.trim()) problems.push('Resale tax ID is required.')
-    // Signing now and sending the draft out to be signed are alternatives: one
-    // of the two is required, never both. Mirrors routers/orders.py.
-    if (terms.draftSignature) {
-      if (!terms.draftSignatureEmail)
-        problems.push('Please enter the buyer email to send the draft to.')
-    } else if (!terms.signatureName) {
-      problems.push('Signature is required.')
-    }
-    if (!terms.accepted) problems.push('You must accept the Order Policies.')
-    if (!terms.infoConfirmed) problems.push('Please confirm the order information is correct.')
+    // How the order gets signed follows from who filled the form: a rep sends
+    // it to the buyer at the Ship To address (already required above), a
+    // customer signs on the spot. Mirrors routers/orders.py.
+    if (!isRepFilled && !terms.signatureName) problems.push('Signature is required.')
+    // Only the buyer accepts the policies. A rep-filled order carries no
+    // acknowledgement here — the buyer gives it on the signing page, and that
+    // is what sets terms_accepted. Mirrors routers/orders.py.
+    if (!isRepFilled && !terms.accepted)
+      problems.push('You must accept the Order Policies.')
+    if (!isRepFilled && !terms.infoConfirmed)
+      problems.push('Please confirm the order information is correct.')
     if (certFile && certFile.size > MAX_CERT_BYTES) {
       problems.push('The tax exemption certificate must be 10 MB or smaller.')
     }
@@ -334,7 +341,15 @@ export default function App() {
       // the field never renders in that case so it keeps its '' initial value,
       // and the backend's EmailStr|None accepts an address or null but not an
       // empty string — it rejected the whole order with "must have an @-sign".
-      terms: { ...terms, orderCopyEmail: terms.orderCopyEmail || null },
+      // Both derived, not stored: a rep-filled order always goes to the buyer
+      // to sign, at the Ship To address. The backend branches on draftSignature
+      // to mint the signing link and email it (routers/orders.py).
+      terms: {
+        ...terms,
+        orderCopyEmail: terms.orderCopyEmail || null,
+        draftSignature: isRepFilled,
+        draftSignatureEmail: isRepFilled ? shipTo.email : null,
+      },
       internal,
       notes,
       items,
@@ -451,7 +466,14 @@ export default function App() {
       {isNewAccount && <Payment payment={payment} setPayment={setPayment} />}
       {isNewAccount && <TaxExemption certFile={certFile} setCertFile={setCertFile} />}
       <Notes notes={notes} setNotes={setNotes} />
-      <TermsSignature terms={terms} setTerms={setTerms} defaultBuyerEmail={shipTo.email} />
+      {/* Customer-filled only. Everything in this section — the policies, the
+          acknowledgements, the signature and the order copy — belongs to the
+          buyer, and a rep-filled order goes to them to sign; they get the same
+          choices on the signing page instead (frontend/src/sign/SignPage.jsx).
+          Same gating style as InternalUse above, which is rep-only. */}
+      {!isRepFilled && (
+        <TermsSignature terms={terms} setTerms={setTerms} defaultBuyerEmail={shipTo.email} />
+      )}
 
       {conflictResult && (
         <ConflictWarning result={conflictResult} onDismiss={() => setConflictResult(null)} />
@@ -459,8 +481,17 @@ export default function App() {
 
       {submitNotice && <p className="submit-notice">{submitNotice}</p>}
       <div className="submit-row">
+        {/* A rep isn't finishing the order, they're handing it to the buyer to
+            sign — so the button says what actually happens next. Same submit
+            either way; only the wording differs. */}
         <button type="submit" className="submit-btn" disabled={submitting}>
-          {submitting ? 'Submitting…' : 'Submit order'}
+          {submitting
+            ? isRepFilled
+              ? 'Sending…'
+              : 'Submitting…'
+            : isRepFilled
+              ? 'Send to customer for signature'
+              : 'Submit order'}
         </button>
       </div>
 

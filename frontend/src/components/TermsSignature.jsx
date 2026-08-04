@@ -1,5 +1,9 @@
-// defaultBuyerEmail is the Ship To address — the prefill for both the order
-// copy and the draft-for-signature, since both go to the person who ordered.
+// defaultBuyerEmail is the Ship To address — the prefill for the order copy.
+//
+// Customer-filled orders only. A rep never sees this section: the policies,
+// the signature and the order copy are all the BUYER's to give, and a
+// rep-filled order hasn't reached them yet — they get the same choices on the
+// signing page instead. App.jsx decides, so there is no gate in here.
 export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
   return (
     <section className="section terms">
@@ -14,9 +18,9 @@ export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
           shortages must be reported within <strong>10 days</strong> of receipt. Returns are not accepted without prior
           authorization and are subject to a restocking fee. All sale items are <strong>final sale</strong>.
           Orders ship via <strong>DHL</strong> unless otherwise arranged; freight is payable by the buyer.
-          
-          All Orders are always Net Due prior to shipment. We do not offer net terms. Please let us know within <strong>10 days</strong> 
-          if you do not agree to these terms. If we don't hear from you, we'll understand this as an acceptance of 
+
+          All Orders are always Net Due prior to shipment. We do not offer net terms. Please let us know within <strong>10 days</strong>
+          if you do not agree to these terms. If we don't hear from you, we'll understand this as an acceptance of
           the terms and will proceed to purchase the yarn. Cancelled orders incur a 15% Restocking Fee.
         </p> */}
 
@@ -43,60 +47,18 @@ export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
         All Orders are always Net Due prior to shipment. We do not offer net terms. Please let us know within 10 days if you do not agree to these terms. If we don't hear from you, we'll understand this as an acceptance of the terms and will proceed to purchase the yarn. Cancelled orders incur a 15% Restocking Fee.
       </p>
       </div>
-      
+
       <div className="signature-grid">
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={terms.draftSignature}
-          onChange={(e) => {
-            const checked = e.target.checked
-            setTerms('draftSignature', checked)
-            // Prefill with the buyer's (Ship To) email — editable after, and
-            // never overwrites an address they already typed.
-            if (checked && !terms.draftSignatureEmail) {
-              setTerms('draftSignatureEmail', defaultBuyerEmail || '')
-            }
-          }}
-        />
-        <span>Send the draft to buyer to sign the signature</span>
-      </label>
-        {/* Signing here and asking us to send the draft for signature are
-            alternatives, not both — so the checkbox disables this field rather
-            than sitting beside a still-required one. Matching rules live in
-            App.jsx (client) and routers/orders.py (the authority). */}
-        <label className={terms.draftSignature ? 'field-disabled' : undefined}>
-          Buyer's signature (type the full name)
-          {!terms.draftSignature && <span className="req">*</span>}
+        <label>
+          Buyer's signature (type your full name)<span className="req">*</span>
           <input
             type="text"
             className="signature-input"
             value={terms.signatureName}
             onChange={(e) => setTerms('signatureName', e.target.value)}
-            disabled={terms.draftSignature}
-            required={!terms.draftSignature}
+            required
           />
-          {terms.draftSignature && (
-            <p className="order-copy-note">
-              The buyer will sign the draft we email them.
-            </p>
-          )}
         </label>
-        
-      {terms.draftSignature && (
-        <label className="span2">
-          Buyer email<span className="req">*</span>
-          <input
-            type="email"
-            value={terms.draftSignatureEmail}
-            onChange={(e) => setTerms('draftSignatureEmail', e.target.value)}
-          />
-          <p className="order-copy-note">
-            We'll email the draft to the buyer for signature.
-          </p>
-        </label>
-      )}
-
         {/* <label>
           Date
           <input
@@ -106,7 +68,7 @@ export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
           />
         </label> */}
       </div>
-      
+
       <label className="check">
         <input
           type="checkbox"
@@ -140,7 +102,7 @@ export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
           }}
         />
         <span>I would like to receive a copy of this order form.</span>
-      </label> 
+      </label>
 
       {terms.orderCopy && (
         <label className="span2">

@@ -58,10 +58,12 @@ SALES_ORDER_CC_LAST4 = "Use_CC_Ending_in__c"
 # Customer PO number from the rep-only Internal Use box. Optional on the form,
 # so it is only sent when filled.
 #
-# UNCONFIRMED API NAME (CLAUDE.md rule 4) — see po_number_field_exists below,
-# which checks the org before sending, so a wrong name here degrades to
-# "PO not pushed" (logged) rather than breaking Accept for every order with a PO.
-SALES_ORDER_PO_NUMBER = "kugo2p__PurchaseOrder__c"
+# Confirmed against the org 2026-08-03: label "Customer PO Number", string,
+# createable. (There is also kugo2p__CustomerPODate__c, which we don't set —
+# the form has no PO date.) po_number_field_exists() still checks before
+# sending, so a package upgrade that renames it degrades to "PO not pushed"
+# rather than breaking Accept for every order that has one.
+SALES_ORDER_PO_NUMBER = "kugo2p__CustomerPONumber__c"
 SHIP_THRU_DATE = "Ship_Thru__c"
 ESTIMATED_SHIPMENT_NAME = "Estimated_Shipment_Name__c"
 ORDER_WRITTEN_DATE = "Order_Written_Date__c"
