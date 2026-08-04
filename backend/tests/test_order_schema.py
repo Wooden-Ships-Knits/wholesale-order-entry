@@ -72,14 +72,6 @@ def test_cert_file_rejects_invalid_base64():
         _sub(taxExemption={"certFile": {"name": "cert.pdf", "contentBase64": "not@base64!!"}})
 
 
-def test_po_number_parses_at_top_level_for_a_customer_filled_order():
-    # PO # left the rep-only Internal Use section on 2026-08-04, so a customer
-    # payload — which carries no `internal` block at all — must still round-trip
-    # it. This is exactly the path that was impossible before.
-    sub = _sub(filledBy="customer", poNumber="PO-99812")
-    assert sub.po_number == "PO-99812"
-
-
 def test_order_copy_defaults_off_for_old_payloads():
     sub = _sub()
     assert sub.terms.order_copy is False

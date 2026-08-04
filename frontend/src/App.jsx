@@ -53,9 +53,6 @@ export default function App() {
     shipWindow: '',
     partShipOk: null,
     representativeOk: null,
-    // Optional, and deliberately outside `internal`: since 2026-08-04 PO # sits
-    // beside "Filled by" so a customer can supply one too.
-    poNumber: '',
     firstOrder: null,
     accountName: '', // the store/account (distinct from the Bill To buyer person)
     sfAccountId: null,
@@ -83,6 +80,7 @@ export default function App() {
     accountStatus: '',
     campaign: '',
     campaignOther: '',
+    poNumber: '',
     rep: '',
     orderWrittenBy: '',
     split: null,
@@ -322,7 +320,6 @@ export default function App() {
       partShipOk: form.partShipOk,
       shipWindow: form.shipWindow,
       filledBy: form.representativeOk === true ? 'rep' : form.representativeOk === false ? 'customer' : '',
-      poNumber: form.poNumber,
       // Customer's own "is this your first order?" answer — the customer-side
       // equivalent of the rep's Internal Use "New account" radio.
       firstOrder: form.firstOrder,
