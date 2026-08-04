@@ -34,6 +34,10 @@ export default function SignPage({ token }) {
   const [loadError, setLoadError] = useState('')
   const [signatureName, setSignatureName] = useState('')
   const [accepted, setAccepted] = useState(false)
+  // Rep-filled orders never showed the buyer the order-copy option (the whole
+  // policies section is customer-only on the form), so it lives here too.
+  const [orderCopy, setOrderCopy] = useState(false)
+  const [orderCopyEmail, setOrderCopyEmail] = useState('')
   const [notice, setNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(null)
@@ -96,6 +100,8 @@ export default function SignPage({ token }) {
     const problems = []
     if (!signatureName.trim()) problems.push('Please type your full name to sign.')
     if (!accepted) problems.push('Please accept the Order Policies.')
+    if (orderCopy && !orderCopyEmail.trim())
+      problems.push('Please enter an email address for your copy.')
     problems.push(...minimums.errors)
     if (problems.length) {
       setNotice(problems.join(' '))
@@ -114,7 +120,11 @@ export default function SignPage({ token }) {
 
     setSubmitting(true)
     try {
-      const res = await signOrder(token, { signatureName: signatureName.trim(), items })
+      const res = await signOrder(token, {
+        signatureName: signatureName.trim(),
+        items,
+        orderCopyEmail: orderCopy ? orderCopyEmail.trim() : null,
+      })
       setDone(res)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
@@ -304,6 +314,31 @@ export default function SignPage({ token }) {
             I have read and accept the Order Policies.<span className="req">*</span>
           </span>
         </label>
+
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={orderCopy}
+            onChange={(e) => {
+              const checked = e.target.checked
+              setOrderCopy(checked)
+              // Prefill from the order's Ship To address; editable after.
+              if (checked && !orderCopyEmail) setOrderCopyEmail(order.shipTo.email || '')
+            }}
+          />
+          <span>I would like to receive a copy of this order form.</span>
+        </label>
+
+        {orderCopy && (
+          <label className="sign-signature">
+            Email address for order copy<span className="req">*</span>
+            <input
+              type="email"
+              value={orderCopyEmail}
+              onChange={(e) => setOrderCopyEmail(e.target.value)}
+            />
+          </label>
+        )}
 
         <label className="sign-signature">
           Your signature (type your full name)<span className="req">*</span>

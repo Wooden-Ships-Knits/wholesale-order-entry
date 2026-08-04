@@ -22,8 +22,10 @@ import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
+from typing import Any
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import Field
+from pydantic import EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -64,6 +66,19 @@ class SignRequest(CamelModel):
     # The order as the buyer wants it. Sent in full (not as a diff) so the
     # server never has to reconcile partial state against what it holds.
     items: list[OrderItemIn] = Field(default_factory=list, max_length=200)
+    # "Email me a copy". A rep-filled order never showed this to the buyer on
+    # the order form — the whole policies section is customer-only — so this
+    # page is where they get the choice.
+    order_copy_email: EmailStr | None = None
+
+    @field_validator("order_copy_email", mode="before")
+    @classmethod
+    def _blank_is_none(cls, value: Any) -> Any:
+        """"" is "not given". EmailStr|None rejects an empty string, which is
+        what an unticked checkbox's untouched input sends."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
 
 def _order_for_token(db: Session, token: str) -> Order:
@@ -177,6 +192,11 @@ def sign_order(
     order.items = order_items
     order.total_qty = total_qty
     order.total_amount = total_amount
+
+    # Opting in here overrides whatever the order carried; leaving it unticked
+    # doesn't clear an address a customer already gave on the form.
+    if payload.order_copy_email:
+        order.order_copy_email = str(payload.order_copy_email)
 
     signed_at = datetime.now(timezone.utc)
     order.signature_name = payload.signature_name.strip()
