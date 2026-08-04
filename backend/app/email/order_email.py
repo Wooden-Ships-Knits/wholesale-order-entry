@@ -3,9 +3,16 @@
 Content builders return (subject, body); orchestrators attach the card-free
 order PDF and delegate transport to app.email.mailer.
 
-Both are sent at submit from app/routers/orders.py:
-  send_admin_copy  — always, to ADMIN_EMAIL
+Who gets the order PDF:
+  send_admin_copy  — at submit: always to ADMIN_EMAIL, CC the territory's rep
+  send_signed_copy — same recipients, when the buyer signs via the emailed link
   send_buyer_copy  — only when the buyer ticked "send me a copy"
+
+The rep is CC'd rather than sent a separate mail so there is one thread per
+order carrying one attachment, and a reply reaches everyone who has it. A
+rep-filled order therefore reaches the rep twice: once at submit (what they
+sent out) and once on signing (what the buyer actually agreed to) — which is
+the point, because the buyer may have changed the quantities in between.
 
 Neither is a confirmation: the order is reviewed in /admin afterwards and can
 be declined. Accept/Decline sends the buyer nothing automatically today.
@@ -61,9 +68,41 @@ def buyer_email(ctx: dict) -> tuple[str, str]:
     return subject, body
 
 
-def send_admin_copy(ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
+def signed_email(ctx: dict) -> tuple[str, str]:
+    """Notice for an order the BUYER has just signed through the emailed link.
+
+    Distinct from admin_email because "A new wholesale order was submitted" is
+    wrong here — it was submitted days ago by the rep, and what just happened
+    is the signature. The quantities may also have changed in between, so the
+    totals below are the ones that count.
+    """
+    subject = (
+        f"Order signed — {_store(ctx)} "
+        f"({ctx['season_code']}) — {ctx['total_qty']} pcs"
+    )
+    body = (
+        f"{ctx['buyer_name']} signed this order.\n\n"
+        + _summary(ctx)
+        + "\nThe signed order form PDF is attached."
+    )
+    return subject, body
+
+
+def send_admin_copy(ctx: dict, pdf_bytes: bytes, filename: str, cc: str | None = None) -> bool:
+    """Always to ADMIN_EMAIL, CC the territory's rep so they get the PDF too."""
     subject, body = admin_email(ctx)
-    return mailer.send_email(settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")])
+    return mailer.send_email(
+        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")], cc=cc
+    )
+
+
+def send_signed_copy(ctx: dict, pdf_bytes: bytes, filename: str, cc: str | None = None) -> bool:
+    """Same recipients as send_admin_copy, worded for a signature rather than
+    a new submission."""
+    subject, body = signed_email(ctx)
+    return mailer.send_email(
+        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")], cc=cc
+    )
 
 
 def send_buyer_copy(to: str, ctx: dict, pdf_bytes: bytes, filename: str) -> bool:

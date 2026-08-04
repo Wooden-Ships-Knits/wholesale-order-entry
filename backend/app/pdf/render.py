@@ -99,3 +99,24 @@ def save_output_file(data: bytes, filename: str) -> str:
 
 def save_order_pdf(pdf_bytes: bytes, filename: str) -> str:
     return save_output_file(pdf_bytes, filename)
+
+
+def delete_output_file(filename: str) -> bool:
+    """Remove a file from PDF_OUTPUT_DIR. True if it was there.
+
+    Used when an order's PDF is re-saved under a different name — the filename
+    carries the buyer name, and the buyer can correct that while signing, so
+    the pre-signature copy would otherwise be left behind as an orphan holding
+    a stale, unsigned version of the same order.
+
+    Resolved and re-checked against the output directory, like the admin
+    download route: `filename` is derived from stored data, but nothing here
+    should be able to delete outside that folder.
+    """
+    base = Path(settings.pdf_output_dir).resolve()
+    path = (base / filename).resolve()
+    if not str(path).startswith(str(base) + "/") or not path.is_file():
+        return False
+    path.unlink()
+    logger.info("Superseded output file removed: %s", filename)
+    return True
