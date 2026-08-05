@@ -6,7 +6,7 @@ order PDF and delegate transport to app.email.mailer.
 Who gets the order PDF:
   send_admin_copy  — at submit, to ADMIN_EMAIL: the team's internal notice
   send_signed_copy — same, when the buyer signs via the emailed link
-  send_order_copy  — the customer-facing copy, to the buyer, CC the rep
+  send_order_copy  — the customer-facing copy, to the buyer AND their rep
 
 The order copy goes out unconditionally (2026-08-05 — it used to depend on an
 "email me a copy" checkbox, which is gone from both the form and the signing
@@ -14,11 +14,11 @@ page). It is sent once per order, at the point the quantities become final:
 at submit for a customer-filled order, at signing for a rep-filled one, since
 the buyer may change quantities on the signing page.
 
-The rep is CC'd on that copy rather than sent a separate mail, so there is one
-thread per order carrying one attachment and a reply reaches everyone who has
-it. They are no longer CC'd on the internal notices above — that would be the
-same PDF twice. On a rep-filled order they still hear from us at submit: the
-signature request CCs them (routers/orders.py::_send_signature_request).
+The rep is a To on that copy rather than being sent a separate mail, so there
+is one thread per order carrying one attachment and a reply reaches everyone
+who has it. They are not copied on the internal notices above — that would be
+the same PDF twice. On a rep-filled order they still hear from us at submit:
+the signature request CCs them (routers/orders.py::_send_signature_request).
 
 None of these is a confirmation: the order is reviewed in /admin afterwards
 and can be declined. Accept/Decline sends the buyer nothing automatically.
@@ -110,12 +110,15 @@ def signed_email(ctx: dict) -> tuple[str, str]:
     return subject, body
 
 
+# html_from_text returns None unless the body actually uses **bold**, so these
+# three stay single-part plain text until a template marks something up.
 def send_admin_copy(ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
     """The team's internal notice. ADMIN_EMAIL only — the rep gets the PDF on
     the customer copy instead of the same attachment twice."""
     subject, body = admin_email(ctx)
     return mailer.send_email(
-        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")]
+        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")],
+        html=mailer.html_from_text(body),
     )
 
 
@@ -124,14 +127,25 @@ def send_signed_copy(ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
     a new submission."""
     subject, body = signed_email(ctx)
     return mailer.send_email(
-        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")]
+        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")],
+        html=mailer.html_from_text(body),
     )
 
 
-def send_order_copy(to: str, ctx: dict, pdf_bytes: bytes, filename: str, cc: str | None = None) -> bool:
-    """The customer's copy, CC the territory's rep (None when unknown)."""
+def send_order_copy(to: str, ctx: dict, pdf_bytes: bytes, filename: str, rep: str | None = None) -> bool:
+    """The order copy, addressed to the buyer AND the rep — no CC.
+
+    Both are To rather than the rep being copied (2026-08-05): this is as much
+    the rep's record of the order as the customer's, and a CC reads as being
+    kept in the loop on someone else's mail. rep is None when the territory is
+    unknown or has no rep row, and the buyer still gets their copy.
+    """
     subject, body = order_copy_email(ctx)
-    return mailer.send_email(to, subject, body, [(filename, pdf_bytes, "pdf")], cc=cc)
+    recipients = ", ".join(a for a in (to, rep) if a)
+    return mailer.send_email(
+        recipients, subject, body, [(filename, pdf_bytes, "pdf")],
+        html=mailer.html_from_text(body),
+    )
 
 
 # schedule_order_emails() lived here: it queued the admin notice AND the buyer

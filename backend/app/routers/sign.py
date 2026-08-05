@@ -339,19 +339,20 @@ def sign_order(
     }
     background.add_task(order_email.send_signed_copy, email_ctx, pdf_bytes, filename)
 
-    # The customer's copy, CC the territory's rep so they always receive the
-    # PDF the buyer actually signed — which may differ from the one they sent
-    # out, since quantities are editable on this page. This is the rep's copy
-    # of a rep-filled order; they are not CC'd on the notice above.
-    rep_cc = sheets_client.rep_email_for_territory(order.sales_territory)
-    if not rep_cc:
+    # The order copy, addressed to the buyer and the territory's rep, so the
+    # rep always receives the PDF the buyer actually signed — which may differ
+    # from the one they sent out, since quantities are editable on this page.
+    # This is the rep's copy of a rep-filled order; they are not on the notice
+    # above.
+    rep_to = sheets_client.rep_email_for_territory(order.sales_territory)
+    if not rep_to:
         logger.info(
             "No rep email for territory %r — order %s copy sent to the buyer only",
             order.sales_territory, short_id,
         )
     background.add_task(
         order_email.send_order_copy,
-        order.order_copy_email, email_ctx, pdf_bytes, filename, cc=rep_cc,
+        order.order_copy_email, email_ctx, pdf_bytes, filename, rep=rep_to,
     )
 
     logger.info(

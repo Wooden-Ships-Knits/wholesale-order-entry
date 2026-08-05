@@ -5,10 +5,11 @@ Backs the "Send Mail" button in the admin email-draft modal (conflict-inquiry,
 tax-certificate and signature-request drafts). The admin edits the draft, then
 this endpoint hands it to Gmail via app.email.mailer.
 
-Text only, with one exception: kind="signature" attaches the order's PDF,
-because that draft's body tells the buyer a copy is attached and the automatic
-send at submit attaches one (routers/orders.py::_send_signature_request). The
-PDF is re-rendered from the order row and card-masked — see app/pdf/context.py.
+Text only, with one exception: kind="signature" attaches the order's PDF, to
+match the automatic send at submit
+(routers/orders.py::_send_signature_request) — a resent request must not be a
+lesser email than the one it replaces. The PDF is re-rendered from the order
+row and card-masked — see app/pdf/context.py.
 
 When the caller passes an orderId + kind ("conflict" | "tax_cert"), a successful
 send is stamped on that order so the button shows a persistent "Sent ✓" that
@@ -110,8 +111,12 @@ def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db))
     if payload.orderId and payload.kind == "signature":
         attachments = _order_pdf_attachment(db, payload.orderId)
 
+    # The signature draft ships with **bold** / __underline__ markers in it, and
+    # the admin can add more while editing. Render them rather than mailing the
+    # raw asterisks out to a customer; a body with no markers is unaffected.
     sent = mailer.send_email(
-        to, payload.subject, payload.body, attachments, cc=cc, reply_to=reply_to
+        to, payload.subject, payload.body, attachments, cc=cc, reply_to=reply_to,
+        html=mailer.html_from_text(payload.body),
     )
     if not sent:
         raise HTTPException(status_code=502, detail="The email could not be sent.")
