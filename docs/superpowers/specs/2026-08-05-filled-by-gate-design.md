@@ -25,9 +25,11 @@ Show one question first. Render the form only once it has an answer.
    first order with Wooden Ships?" stays where it is in the order header
    (`OrderHeader.jsx:99-123`) and keeps driving Payment / Tax Exemption /
    location search from there. The gate is deliberately not a wizard.
-3. **The answer stays changeable.** The "Filled by" radios remain in the order
-   header, editable, exactly as today. The gate prevents *starting* without an
-   answer; it does not lock the answer in. Nothing is cleared when it changes.
+3. **The answer stays changeable.** ~~The "Filled by" radios remain in the
+   order header, editable, exactly as today.~~ **Superseded 2026-08-05** — see
+   the amendment below: the radios are gone and a Back button returns to the
+   gate instead. The principle holds: the gate prevents *starting* without an
+   answer, it does not lock the answer in.
 4. **A full-screen step, not a modal.** Rejected: an overlay above the form,
    because the form behind it is by definition in the wrong shape — it would
    preview a layout the user is about to invalidate — and it would need focus
@@ -192,22 +194,28 @@ with the `verify` skill:
 3. **Customer path.** Reloading and clicking "Customer" reveals the form with
    Terms/Signature present, Internal Use absent, and the "Is this your first
    order?" radios in the header.
-4. **Still changeable.** After choosing, flipping the header radio switches the
-   two sections without returning to the gate and without clearing entered
-   fields (type an account name first and confirm it survives).
+4. **Still changeable.** After choosing, the Back button returns to the gate
+   without clearing entered fields (type an account name first and confirm it
+   survives).
 5. **Keyboard.** Tab reaches both buttons and Enter activates the focused one.
 
-## Amendment 2026-08-05 — second header variant behind `?v=back`
+## Amendment 2026-08-05 — the header states the answer; a Back button changes it
 
-Decision 3 above (radios stay in the header) is now **one of two treatments**,
-kept side by side so the two can be compared before one is chosen.
+Decision 3 above (radios stay in the header) is **superseded**. Two treatments
+were built and compared from two links; the Back-button version was approved
+and is now the only one. The `?v=back` switch and the radio markup are gone —
+a stale `?v=back` link still works, it simply has no effect.
 
-| Link | Header treatment |
-|---|---|
-| `/order_form` | **Unchanged.** The "Filled by" radios, editable in place. |
-| `/order_form?v=back` | Radios removed. A bordered `← BACK` button at the section's top-left returns to the gate; a line reads "Filling out as **Sales Representative**" (or **Customer**); PO # moves down beside Order date / Collection / Ship Window on a four-column row. |
+The header now:
 
-Layout notes for the `back` variant:
+- states who is filling the form in — "Filling out as **Sales
+  Representative**" (or **Customer**) — rather than asking;
+- carries a bordered `← BACK` button at the section's top-left that returns to
+  the gate;
+- puts PO # beside Order date / Collection / Ship Window on a four-column row,
+  instead of on row 1 beside the old radios.
+
+Layout notes:
 
 - The Back button sits in **normal flow** above the logo, not absolutely
   positioned. At 375px the card is ~343px wide and the wordmark takes 260px of
@@ -215,17 +223,13 @@ Layout notes for the `back` variant:
 - It carries a `:focus-visible` outline. The stylesheet's global `button` rule
   defines no focus style, so a keyboard user otherwise had no indication.
 - The arrow is a separate `aria-hidden` span, so the accessible name is "Back".
-- `.hg-back` is a four-column grid (`'filled filled . total'` /
+- `.header-grid` is a four-column grid (`'filled filled . total'` /
   `'date season ship po'`), folding to two columns at ≤980px and to the
   existing single-column stack at ≤720px.
 - PO # is rendered after Ship Window in the **DOM**, not merely placed there by
   `grid-area`, so tab order follows the visual order.
-
-- `App.jsx` reads the parameter once at module load into `headerVariant` and
-  passes it to `OrderHeader` as `variant`, with `onBack` clearing
-  `representativeOk` back to `null` — which is what drops to the gate.
-- `OrderHeader` branches on `variant`; the radio markup is untouched in the
-  default path, so the plain link behaves exactly as it did before.
+- `onBack` clears `representativeOk` to `null`, which is what drops back to the
+  gate — the same condition the early return in `App.jsx` tests.
 - The Back control is `type="button"`. It sits inside the order `<form>`, and a
   bare `<button>` there would submit the order.
 - **Returning to the gate unmounts the form.** Everything held in `App` —
@@ -233,8 +237,6 @@ Layout notes for the `back` variant:
   by the form's children does not: the "Find your Account" search box clears
   (`BuyerLookup.jsx:5-9`) and "Same as Bill To" unticks (`Addresses.jsx:59`),
   though the values it copied remain. No confirmation prompt, by decision.
-- Once a treatment is chosen, delete the other branch and the `headerVariant`
-  read. The parameter is a testing affordance, not a feature.
 
 ## Out of scope
 

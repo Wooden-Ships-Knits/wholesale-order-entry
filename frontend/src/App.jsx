@@ -30,14 +30,6 @@ let lineSeq = 0
 const makeLine = () => ({ id: ++lineSeq, query: '', styleName: '', color: '', qty: {} })
 const INITIAL_LINES = 3
 
-// Which "Filled by" header treatment to show, chosen by the ?v=back query
-// parameter so both can be A/B'd from two links without a rebuild:
-//   /order_form          → 'radios' — today's radio pair in the header
-//   /order_form?v=back   → 'back'   — radios removed, Back link to the gate
-// Read once at module load; the URL does not change during a session.
-const headerVariant =
-  new URLSearchParams(window.location.search).get('v') === 'back' ? 'back' : 'radios'
-
 // Pull the trailing 2-letter US state code out of a "City, ST" string (the
 // \b keeps us from grabbing the last two letters of a plain word like "Canada").
 const stateFromCityState = (cityState) => {
@@ -412,7 +404,6 @@ export default function App() {
         setField={setField}
         totalAmount={totalAmount}
         shipWindows={shipWindows}
-        variant={headerVariant}
         // Clearing the answer drops back to the gate above. Everything held in
         // App survives; the form's own children (the account search box, the
         // "Same as Bill To" tick) unmount and reset.

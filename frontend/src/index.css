@@ -104,12 +104,14 @@ body {
   background: #faf9f7;
 }
 
+/* Row 1 states who is filling the form in and the running total; row 2 is the
+   four order fields. */
 .header-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   grid-template-areas:
-    'filled po     total'
-    'date   season ship';
+    'filled filled .    total'
+    'date   season ship po';
   gap: 1rem 1.5rem;
   align-items: end;
 }
@@ -117,9 +119,6 @@ body {
   grid-area: filled;
   align-self: start;
 }
-/* ?v=back variant: no "Filled by" radios. A Back link pinned to the section's
-   top-left corner returns to the gate, a line states which mode the form is
-   in, and PO # drops down to sit with the other order fields. */
 /* In normal flow above the logo, not absolutely positioned: at 375px the card
    is ~343px wide and the logo takes 260px of it, so a pinned control would sit
    on top of the wordmark. In flow it simply takes its own line at the left. */
@@ -158,22 +157,8 @@ body {
   color: #4c4a45;
 }
 
-/* Four columns: the mode statement and the order total top the grid, with the
-   four order fields in one row beneath them. */
-.hg-back {
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-areas:
-    'filled filled .    total'
-    'date   season ship po';
-}
-/* .ha-po starts aligned to the top of row 1 in the default layout; down here
-   it must sit on the baseline with the inputs beside it. */
-.hg-back .ha-po {
-  align-self: end;
-}
 .ha-po {
   grid-area: po;
-  align-self: start;
 }
 .ha-total {
   grid-area: total;
@@ -1639,12 +1624,12 @@ button:hover {
   padding-bottom: 0;
 }
 
-/* ?v=back header: four order fields in one row need the width for it. Between
-   full desktop and the single-column stack at 720px (handled by the existing
-   .header-grid reset, which wins here on source order), fold to two columns.
-   The ranges do not overlap, so this sits after the 720px block harmlessly. */
+/* Four order fields in one row need the width for it. Between full desktop and
+   the single-column stack at 720px (handled by the .header-grid reset above),
+   fold to two columns. The ranges do not overlap, so this sits after the 720px
+   block harmlessly. */
 @media (max-width: 980px) and (min-width: 721px) {
-  .hg-back {
+  .header-grid {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       'filled total'
