@@ -1,9 +1,14 @@
 """POST /api/send-email — admin-only. Sends a drafted email (To/Cc/Subject/Body)
 through the configured SMTP account.
 
-Backs the "Send Mail" button in the admin email-draft modal (conflict-inquiry
-and tax-certificate drafts). Text only — no attachments. The admin edits the
-draft, then this endpoint hands it to Gmail via app.email.mailer.
+Backs the "Send Mail" button in the admin email-draft modal (conflict-inquiry,
+tax-certificate and signature-request drafts). The admin edits the draft, then
+this endpoint hands it to Gmail via app.email.mailer.
+
+Text only, with one exception: kind="signature" attaches the order's PDF,
+because that draft's body tells the buyer a copy is attached and the automatic
+send at submit attaches one (routers/orders.py::_send_signature_request). The
+PDF is re-rendered from the order row and card-masked — see app/pdf/context.py.
 
 When the caller passes an orderId + kind ("conflict" | "tax_cert"), a successful
 send is stamped on that order so the button shows a persistent "Sent ✓" that
@@ -23,6 +28,8 @@ from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
 from app.email import mailer, reply_address
+from app.pdf import context as pdf_context
+from app.pdf import render as pdf_render
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +64,31 @@ class SendEmailRequest(BaseModel):
     kind: Literal["conflict", "tax_cert", "signature"] | None = None
 
 
+def _order_pdf_attachment(db: Session, order_id: str) -> list[tuple[str, bytes, str]] | None:
+    """The order's card-masked PDF, re-rendered from the row. None on failure.
+
+    Best-effort on purpose: a signature request without its attachment is worth
+    far more to the buyer than no email at all, since the link is what actually
+    matters. The miss is logged.
+    """
+    try:
+        order = db.get(Order, order_id)
+        if order is None:
+            return None
+        context = pdf_context.build(order)
+        context["card"] = pdf_context.masked_card(order)
+        return [(
+            pdf_render.order_pdf_filename(
+                order.season_code, order.buyer_name or "", order.created_at, order.id
+            ),
+            pdf_render.render_order_pdf(context),
+            "pdf",
+        )]
+    except Exception:
+        logger.exception("Could not attach the order PDF for %s — sending without it", order_id)
+        return None
+
+
 @router.post("/send-email", dependencies=[AdminRequired])
 def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db)) -> dict:
     if not settings.mail_configured:
@@ -74,7 +106,13 @@ def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db))
         reply_to = reply_address.build_reply_to(
             payload.orderId, payload.kind, settings.mail_sender
         )
-    sent = mailer.send_email(to, payload.subject, payload.body, cc=cc, reply_to=reply_to)
+    attachments = None
+    if payload.orderId and payload.kind == "signature":
+        attachments = _order_pdf_attachment(db, payload.orderId)
+
+    sent = mailer.send_email(
+        to, payload.subject, payload.body, attachments, cc=cc, reply_to=reply_to
+    )
     if not sent:
         raise HTTPException(status_code=502, detail="The email could not be sent.")
 

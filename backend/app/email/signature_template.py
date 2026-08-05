@@ -22,6 +22,7 @@ def build(
     total_qty: int | None = None,
     total_amount=None,
     expires_days: int = 7,
+    short_id: str | None = None,
 ) -> dict:
     """-> {to, cc, subject, body}.
 
@@ -35,16 +36,20 @@ def build(
 
     # "Please review and sign your Fall 2026 order ACME STORE" — wording and
     # layout supplied by Wooden Ships (2026-08-03); keep it as written rather
-    # than re-phrasing. Both placeholders are dropped cleanly when empty.
+    # than re-phrasing. Both placeholders are dropped cleanly when empty. The
+    # short id on the end matches the other order mails (email/order_email.py)
+    # so every message about one order sorts together in a mailbox.
     subject = " ".join(
         p for p in ("Please review and sign your", season, "order", store) if p
     )
+    if short_id:
+        subject = f"{subject} - {short_id}"
 
     body = f"""Hi {buyer or 'there'},
 
 Thank you for your order! We appreciate it!
 
-Please Review your order, make any adjustments needed, and Sign to submit. Click the link below:
+A copy of your order form is attached. Please Review your order, make any adjustments needed, and Sign to submit. Click the link below:
 {sign_url}
 
 The link will expire in {expires_days} days.

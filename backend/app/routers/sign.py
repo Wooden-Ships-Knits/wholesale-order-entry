@@ -21,10 +21,8 @@ but cannot influence what they cost.
 import logging
 import secrets
 from datetime import date, datetime, timedelta, timezone
-from typing import Any
-
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import EmailStr, Field, field_validator
+from pydantic import Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -83,19 +81,6 @@ class SignRequest(CamelModel):
     po_number: str = Field("", max_length=100)
     notes: str = Field("", max_length=5000)
     payment: Payment | None = None
-    # "Email me a copy". A rep-filled order never showed this to the buyer on
-    # the order form — the whole policies section is customer-only — so this
-    # page is where they get the choice.
-    order_copy_email: EmailStr | None = None
-
-    @field_validator("order_copy_email", mode="before")
-    @classmethod
-    def _blank_is_none(cls, value: Any) -> Any:
-        """"" is "not given". EmailStr|None rejects an empty string, which is
-        what an unticked checkbox's untouched input sends."""
-        if isinstance(value, str) and not value.strip():
-            return None
-        return value
 
 
 def _order_for_token(db: Session, token: str) -> Order:
@@ -258,10 +243,9 @@ def sign_order(
     order.po_number = payload.po_number.strip() or None
     order.notes = payload.notes.strip() or None
 
-    # Opting in here overrides whatever the order carried; leaving it unticked
-    # doesn't clear an address a customer already gave on the form.
-    if payload.order_copy_email:
-        order.order_copy_email = str(payload.order_copy_email)
+    # The copy follows the Ship To address, which the buyer may have just
+    # corrected above — send it where they can actually read it.
+    order.order_copy_email = order.ship_email
 
     signed_at = datetime.now(timezone.utc)
     order.signature_name = payload.signature_name.strip()
@@ -299,12 +283,7 @@ def sign_order(
     # final quantities, and the admin copy too when a new card was supplied.
     try:
         pdf_context = pdf_context_builder.build(order, items=order_items)
-        masked_card = {
-            "name": order.card_name or None,
-            "number": f"•••• {order.card_last4}" if order.card_last4 else None,
-            "exp": order.card_exp or None,
-            "full": False,
-        }
+        masked_card = pdf_context_builder.masked_card(order)
         pdf_context["card"] = masked_card
         pdf_bytes = pdf_render.render_order_pdf(pdf_context)
 
@@ -358,20 +337,22 @@ def sign_order(
         "total_qty": total_qty,
         "total_amount": total_amount,
     }
-    # Signed notice to the team, CC the territory's rep so they always receive
-    # the PDF the buyer actually signed — which may differ from the one they
-    # sent out, since quantities are editable on this page.
+    background.add_task(order_email.send_signed_copy, email_ctx, pdf_bytes, filename)
+
+    # The customer's copy, CC the territory's rep so they always receive the
+    # PDF the buyer actually signed — which may differ from the one they sent
+    # out, since quantities are editable on this page. This is the rep's copy
+    # of a rep-filled order; they are not CC'd on the notice above.
     rep_cc = sheets_client.rep_email_for_territory(order.sales_territory)
     if not rep_cc:
         logger.info(
-            "No rep email for territory %r — signed notice for order %s sent without a rep copy",
+            "No rep email for territory %r — order %s copy sent to the buyer only",
             order.sales_territory, short_id,
         )
-    background.add_task(order_email.send_signed_copy, email_ctx, pdf_bytes, filename, cc=rep_cc)
-    if order.order_copy_email:
-        background.add_task(
-            order_email.send_buyer_copy, order.order_copy_email, email_ctx, pdf_bytes, filename
-        )
+    background.add_task(
+        order_email.send_order_copy,
+        order.order_copy_email, email_ctx, pdf_bytes, filename, cc=rep_cc,
+    )
 
     logger.info(
         "Order %s signed by the buyer: qty %s -> %s, total %s -> %s",

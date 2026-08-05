@@ -77,7 +77,7 @@ export default function App() {
   const [certOnFile, setCertOnFile] = useState(false)
   const [certFile, setCertFile] = useState(null)
   const [lookupNoMatch, setLookupNoMatch] = useState(false)
-  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false, orderCopy: false, orderCopyEmail: '', draftSignature: false, draftSignatureEmail: '' })
+  const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false, draftSignature: false, draftSignatureEmail: '' })
   const [internal, setInternalState] = useState({
     newOrReorder: '',
     accountStatus: '',
@@ -257,7 +257,6 @@ export default function App() {
   async function onSubmit(e) {
     e.preventDefault()
     const problems = [...minimums.errors]
-    if (terms.orderCopy && !terms.orderCopyEmail) problems.push('Please enter an email for the order copy.')
     if (totalPieces === 0) problems.unshift('No items entered yet.')
     // Required order-header fields (marked * on the form).
     if (!season) problems.push('Please select a collection / season.')
@@ -340,16 +339,13 @@ export default function App() {
         certOnFile,
         certFile: certFilePayload,
       },
-      // orderCopyEmail must be null, not '', when the copy box is unticked:
-      // the field never renders in that case so it keeps its '' initial value,
-      // and the backend's EmailStr|None accepts an address or null but not an
-      // empty string — it rejected the whole order with "must have an @-sign".
-      // Both derived, not stored: a rep-filled order always goes to the buyer
-      // to sign, at the Ship To address. The backend branches on draftSignature
-      // to mint the signing link and email it (routers/orders.py).
+      // draftSignature/Email are derived, not stored: a rep-filled order always
+      // goes to the buyer to sign, at the Ship To address. The backend branches
+      // on draftSignature to mint the signing link and email it
+      // (routers/orders.py). The order copy needs nothing here — it is sent to
+      // the Ship To address unconditionally.
       terms: {
         ...terms,
-        orderCopyEmail: terms.orderCopyEmail || null,
         draftSignature: isRepFilled,
         draftSignatureEmail: isRepFilled ? shipTo.email : null,
       },
@@ -475,7 +471,7 @@ export default function App() {
           choices on the signing page instead (frontend/src/sign/SignPage.jsx).
           Same gating style as InternalUse above, which is rep-only. */}
       {!isRepFilled && (
-        <TermsSignature terms={terms} setTerms={setTerms} defaultBuyerEmail={shipTo.email} />
+        <TermsSignature terms={terms} setTerms={setTerms} />
       )}
 
       {conflictResult && (

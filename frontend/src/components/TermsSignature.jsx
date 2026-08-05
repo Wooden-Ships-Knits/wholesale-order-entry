@@ -1,10 +1,8 @@
-// defaultBuyerEmail is the Ship To address — the prefill for the order copy.
-//
-// Customer-filled orders only. A rep never sees this section: the policies,
-// the signature and the order copy are all the BUYER's to give, and a
-// rep-filled order hasn't reached them yet — they get the same choices on the
-// signing page instead. App.jsx decides, so there is no gate in here.
-export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
+// Customer-filled orders only. A rep never sees this section: the policies and
+// the signature are both the BUYER's to give, and a rep-filled order hasn't
+// reached them yet — they get the same section on the signing page instead.
+// App.jsx decides, so there is no gate in here.
+export default function TermsSignature({ terms, setTerms }) {
   return (
     <section className="section terms">
       {/* <h2>Terms &amp; conditions</h2> */}
@@ -87,41 +85,13 @@ export default function TermsSignature({ terms, setTerms, defaultBuyerEmail }) {
         <span>I confirm all the order information is correct.<span className="req">*</span></span>
       </label>
 
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={terms.orderCopy}
-          onChange={(e) => {
-            const checked = e.target.checked
-            setTerms('orderCopy', checked)
-            // Prefill with the buyer's (Ship To) email — editable after, and
-            // never overwrites an address they already typed.
-            if (checked && !terms.orderCopyEmail) {
-              setTerms('orderCopyEmail', defaultBuyerEmail || '')
-            }
-          }}
-        />
-        <span>I would like to receive a copy of this order form.</span>
-      </label>
-
-      {terms.orderCopy && (
-        <label className="span2">
-          Email address for order copy<span className="req">*</span>
-          <input
-            type="email"
-            value={terms.orderCopyEmail}
-            onChange={(e) => setTerms('orderCopyEmail', e.target.value)}
-          />
-          {/* Sets expectations at the moment of submitting: the copy is a
-              receipt of what was sent, not an approval. "Once reviewed" says
-              the order can still be declined without spelling that out at the
-              point of submission. */}
-          <p className="order-copy-note">
-            A copy for your records — not an order confirmation. We'll email you once your
-            order has been reviewed.
-          </p>
-        </label>
-      )}
+      {/* No "email me a copy" checkbox: every buyer gets the order copy at
+          their Ship To address, and their rep is CC'd. */}
+      <p className="order-copy-note">
+        A copy of this order form will be emailed to you and to your sales
+        representative. It is a copy for your records, not an order
+        confirmation — you'll receive a Sales Order Confirmation separately.
+      </p>
 
     </section>
   )

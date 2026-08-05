@@ -57,10 +57,6 @@ export default function SignPage({ token }) {
   // Mirrors the order form's second acknowledgement. Client-side only, like on
   // the form: the backend has no info_confirmed field, it gates submission.
   const [confirmed, setConfirmed] = useState(false)
-  // Rep-filled orders never showed the buyer the order-copy option (the whole
-  // policies section is customer-only on the form), so it lives here too.
-  const [orderCopy, setOrderCopy] = useState(false)
-  const [orderCopyEmail, setOrderCopyEmail] = useState('')
   const [notice, setNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(null)
@@ -142,8 +138,6 @@ export default function SignPage({ token }) {
     if (!signatureName.trim()) problems.push('Please type your full name to sign.')
     if (!accepted) problems.push('Please accept the Order Policies.')
     if (!confirmed) problems.push('Please confirm the order information is correct.')
-    if (orderCopy && !orderCopyEmail.trim())
-      problems.push('Please enter an email address for your copy.')
     problems.push(...minimums.errors)
     if (problems.length) {
       setNotice(problems.join(' '))
@@ -165,7 +159,6 @@ export default function SignPage({ token }) {
       const res = await signOrder(token, {
         signatureName: signatureName.trim(),
         items,
-        orderCopyEmail: orderCopy ? orderCopyEmail.trim() : null,
         billTo,
         shipTo,
         orderDate: orderDate || null,
@@ -429,30 +422,12 @@ export default function SignPage({ token }) {
           </span>
         </label>
 
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={orderCopy}
-            onChange={(e) => {
-              const checked = e.target.checked
-              setOrderCopy(checked)
-              // Prefill from the order's Ship To address; editable after.
-              if (checked && !orderCopyEmail) setOrderCopyEmail(order.shipTo.email || '')
-            }}
-          />
-          <span>I would like to receive a copy of this order form.</span>
-        </label>
-
-        {orderCopy && (
-          <label className="sign-signature">
-            Email address for order copy<span className="req">*</span>
-            <input
-              type="email"
-              value={orderCopyEmail}
-              onChange={(e) => setOrderCopyEmail(e.target.value)}
-            />
-          </label>
-        )}
+        {/* No "email me a copy" checkbox: the copy always goes to the Ship To
+            address above, editable in this form, with the rep CC'd. */}
+        <p className="order-copy-note">
+          A copy of this order form will be emailed to you and to your sales
+          representative once you sign.
+        </p>
 
         <label className="sign-signature">
           Your signature (type your full name)<span className="req">*</span>

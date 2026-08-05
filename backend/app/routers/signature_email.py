@@ -70,6 +70,7 @@ def signature_email(payload: SignatureEmailRequest, db: Session = Depends(get_db
         total_qty=order.total_qty,
         total_amount=order.total_amount,
         expires_days=settings.signature_link_days,
+        short_id=str(order.id)[:8],
     )
     # The link is in the body by necessity; keep it out of the logs.
     logger.info("Drafted a signature request for order %s", str(order.id)[:8])
