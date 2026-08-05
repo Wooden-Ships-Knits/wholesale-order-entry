@@ -741,14 +741,30 @@ button:hover {
 }
 
 /* --------------------------------------------------------------- footer */
+/* The middle link is the anchor: 1fr on either side makes its column land dead
+   centre of the form regardless of how wide the outer two are, and they sit
+   out at the edges. `justify-content: center` could not do this — it centres
+   the group, so an uneven pair pushes the middle off-centre. */
 .form-footer {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  /* Sets both gaps: the outer two are pulled in against the middle, so this
+     value IS the space either side of it. */
+  gap: 2.5rem;
   padding-top: 1.25rem;
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   color: #6d6a63;
+}
+/* Anchored inward, not to the form edges. Equal 1fr columns keep the middle
+   dead centre; pinning the outer two outward instead left gaps of 33px and
+   117px, because the three strings are different lengths. */
+.form-footer > :first-child {
+  justify-self: end;
+}
+.form-footer > :last-child {
+  justify-self: start;
 }
 
 .muted {
@@ -847,9 +863,14 @@ button:hover {
   .submit-btn {
     width: 100%;
   }
+  /* Three links side by side do not fit a phone; stack them centred instead. */
   .form-footer {
-    flex-wrap: wrap;
-    gap: 0.75rem 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .form-footer > :first-child,
+  .form-footer > :last-child {
+    justify-self: center;
   }
 }
 

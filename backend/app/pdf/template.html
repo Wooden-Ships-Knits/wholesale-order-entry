@@ -6,8 +6,26 @@
   @page {
     size: letter;
     margin: 0.9cm 0.9cm 1.3cm;
+    /* Three separate margin boxes, not one centred string: the middle one is
+       the anchor, centred on the page, and the outer two sit out at the
+       content edges. Kept in step with the web form's footer,
+       frontend/src/components/Footer.jsx */
+    @bottom-left {
+      content: "www.wooden-ships.com";
+      /* Pads the outer boxes inward so the three read as one line. Symmetric,
+         so the centre box stays on the page centre. */
+      padding-left: 5.38cm;
+      font-size: 7.5pt;
+      color: #4c4a45;
+    }
     @bottom-center {
-      content: "Visit us at www.wooden-ships.com  ·  www.woodenships-wholesale.com  ·  Follow us! @woodenshipsknits";
+      content: "www.woodenships-wholesale.com";
+      font-size: 7.5pt;
+      color: #4c4a45;
+    }
+    @bottom-right {
+      content: "@woodenshipsknits";
+      padding-right: 4.6cm;
       font-size: 7.5pt;
       color: #4c4a45;
     }
