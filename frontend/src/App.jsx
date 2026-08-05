@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, getNearbyAccounts, getTerritoryForState, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
+import FilledByGate from './components/FilledByGate'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
 import Addresses from './components/Addresses'
@@ -28,6 +29,14 @@ const fileToBase64 = (file) =>
 let lineSeq = 0
 const makeLine = () => ({ id: ++lineSeq, query: '', styleName: '', color: '', qty: {} })
 const INITIAL_LINES = 3
+
+// Which "Filled by" header treatment to show, chosen by the ?v=back query
+// parameter so both can be A/B'd from two links without a rebuild:
+//   /order_form          → 'radios' — today's radio pair in the header
+//   /order_form?v=back   → 'back'   — radios removed, Back link to the gate
+// Read once at module load; the URL does not change during a session.
+const headerVariant =
+  new URLSearchParams(window.location.search).get('v') === 'back' ? 'back' : 'radios'
 
 // Pull the trailing 2-letter US state code out of a "City, ST" string (the
 // \b keeps us from grabbing the last two letters of a plain word like "Canada").
@@ -386,6 +395,13 @@ export default function App() {
     )
   }
 
+  // "Filled by" decides which sections the form even has, so it is asked on its
+  // own screen before the form exists. The header radios below stay editable,
+  // and nothing here is cleared when the answer changes.
+  if (form.representativeOk === null) {
+    return <FilledByGate onChoose={(v) => setField('representativeOk', v)} />
+  }
+
   return (
     <form className="order-form" onSubmit={onSubmit} noValidate>
       <OrderHeader
@@ -396,6 +412,11 @@ export default function App() {
         setField={setField}
         totalAmount={totalAmount}
         shipWindows={shipWindows}
+        variant={headerVariant}
+        // Clearing the answer drops back to the gate above. Everything held in
+        // App survives; the form's own children (the account search box, the
+        // "Same as Bill To" tick) unmount and reset.
+        onBack={() => setField('representativeOk', null)}
       />
       {loadError && <p className="error-banner">{loadError}</p>}
 

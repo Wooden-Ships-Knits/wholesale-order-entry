@@ -64,6 +64,48 @@ body {
   display: block;
 }
 
+/* ----------------------------------------------------- "Filled by" gate */
+/* Shown instead of the form until "Filled by" is answered. Must come after
+   .order-form: the gate element carries both classes, so this padding only
+   wins on source order. */
+.filled-by-gate {
+  max-width: 560px;
+  text-align: center;
+  padding: 3rem 2.5rem;
+}
+.gate-greeting {
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.4rem;
+}
+.gate-question {
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  color: #4c4a45;
+  margin: 0 0 2rem;
+}
+.gate-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+/* Overrides the global `button` rule further down, which is a small black
+   uppercase pill — these need to read as two large choices, not as actions. */
+.gate-choices button {
+  padding: 1.1rem 1.5rem;
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px solid #d8d4cc;
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+.gate-choices button:hover {
+  border-color: #1d1d1b;
+  background: #faf9f7;
+}
+
 .header-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -76,6 +118,60 @@ body {
 .ha-filled {
   grid-area: filled;
   align-self: start;
+}
+/* ?v=back variant: no "Filled by" radios. A Back link pinned to the section's
+   top-left corner returns to the gate, a line states which mode the form is
+   in, and PO # drops down to sit with the other order fields. */
+/* In normal flow above the logo, not absolutely positioned: at 375px the card
+   is ~343px wide and the logo takes 260px of it, so a pinned control would sit
+   on top of the wordmark. In flow it simply takes its own line at the left. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.95rem;
+  background: #fff;
+  color: #4c4a45;
+  border: 1px solid #d8d4cc;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.back-link:hover {
+  color: #1d1d1b;
+  border-color: #1d1d1b;
+  background: #faf9f7;
+}
+/* The global button rule has no focus style; a keyboard user needs one here. */
+.back-link:focus-visible {
+  outline: 2px solid #1d1d1b;
+  outline-offset: 2px;
+}
+.back-link .back-arrow {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.filled-as {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4c4a45;
+}
+
+/* Four columns: the mode statement and the order total top the grid, with the
+   four order fields in one row beneath them. */
+.hg-back {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-areas:
+    'filled filled .    total'
+    'date   season ship po';
+}
+/* .ha-po starts aligned to the top of row 1 in the default layout; down here
+   it must sit on the baseline with the inputs beside it. */
+.hg-back .ha-po {
+  align-self: end;
 }
 .ha-po {
   grid-area: po;
@@ -1543,4 +1639,18 @@ button:hover {
 .sign-page .section .section {
   border-bottom: none;
   padding-bottom: 0;
+}
+
+/* ?v=back header: four order fields in one row need the width for it. Between
+   full desktop and the single-column stack at 720px (handled by the existing
+   .header-grid reset, which wins here on source order), fold to two columns.
+   The ranges do not overlap, so this sits after the 720px block harmlessly. */
+@media (max-width: 980px) and (min-width: 721px) {
+  .hg-back {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'filled total'
+      'date   season'
+      'ship   po';
+  }
 }

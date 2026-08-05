@@ -64,7 +64,8 @@ export default function FilledByGate({ onChoose }) {
       <div className="brand">
         <img src="/ws-logo-black.png" alt="Wooden Ships — Paola Buendia" className="brand-logo" />
       </div>
-      <h1>Who is filling out this order form?</h1>
+      <h1 className="gate-greeting">Hi!</h1>
+      <p className="gate-question">Who is filling out this order form?</p>
       <div className="gate-choices">
         <button type="button" onClick={() => onChoose(true)}>Sales Representative</button>
         <button type="button" onClick={() => onChoose(false)}>Customer</button>
@@ -84,6 +85,9 @@ Notes on the markup:
   nothing, and the answer is changeable afterwards anyway (decision 3).
 - The logo is the same asset and classes the order header already uses, so the
   first screen matches the form the user is about to see.
+- The screen opens on the greeting **"Hi!"**, with the question beneath it in
+  smaller, softer type — leading with the question read colder than it needed
+  to (added 2026-08-05).
 
 ### 2. `frontend/src/App.jsx` — one early return
 
@@ -192,6 +196,45 @@ with the `verify` skill:
    two sections without returning to the gate and without clearing entered
    fields (type an account name first and confirm it survives).
 5. **Keyboard.** Tab reaches both buttons and Enter activates the focused one.
+
+## Amendment 2026-08-05 — second header variant behind `?v=back`
+
+Decision 3 above (radios stay in the header) is now **one of two treatments**,
+kept side by side so the two can be compared before one is chosen.
+
+| Link | Header treatment |
+|---|---|
+| `/order_form` | **Unchanged.** The "Filled by" radios, editable in place. |
+| `/order_form?v=back` | Radios removed. A bordered `← BACK` button at the section's top-left returns to the gate; a line reads "Filling out as **Sales Representative**" (or **Customer**); PO # moves down beside Order date / Collection / Ship Window on a four-column row. |
+
+Layout notes for the `back` variant:
+
+- The Back button sits in **normal flow** above the logo, not absolutely
+  positioned. At 375px the card is ~343px wide and the wordmark takes 260px of
+  it, so a pinned control of usable size would overlap the logo.
+- It carries a `:focus-visible` outline. The stylesheet's global `button` rule
+  defines no focus style, so a keyboard user otherwise had no indication.
+- The arrow is a separate `aria-hidden` span, so the accessible name is "Back".
+- `.hg-back` is a four-column grid (`'filled filled . total'` /
+  `'date season ship po'`), folding to two columns at ≤980px and to the
+  existing single-column stack at ≤720px.
+- PO # is rendered after Ship Window in the **DOM**, not merely placed there by
+  `grid-area`, so tab order follows the visual order.
+
+- `App.jsx` reads the parameter once at module load into `headerVariant` and
+  passes it to `OrderHeader` as `variant`, with `onBack` clearing
+  `representativeOk` back to `null` — which is what drops to the gate.
+- `OrderHeader` branches on `variant`; the radio markup is untouched in the
+  default path, so the plain link behaves exactly as it did before.
+- The Back control is `type="button"`. It sits inside the order `<form>`, and a
+  bare `<button>` there would submit the order.
+- **Returning to the gate unmounts the form.** Everything held in `App` —
+  account name, addresses, quantities, payment, notes — survives. State owned
+  by the form's children does not: the "Find your Account" search box clears
+  (`BuyerLookup.jsx:5-9`) and "Same as Bill To" unticks (`Addresses.jsx:59`),
+  though the values it copied remain. No confirmation prompt, by decision.
+- Once a treatment is chosen, delete the other branch and the `headerVariant`
+  read. The parameter is a testing affordance, not a feature.
 
 ## Out of scope
 
