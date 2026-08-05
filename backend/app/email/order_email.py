@@ -4,18 +4,24 @@ Content builders return (subject, body); orchestrators attach the card-free
 order PDF and delegate transport to app.email.mailer.
 
 Who gets the order PDF:
-  send_admin_copy  — at submit: always to ADMIN_EMAIL, CC the territory's rep
-  send_signed_copy — same recipients, when the buyer signs via the emailed link
-  send_buyer_copy  — only when the buyer ticked "send me a copy"
+  send_admin_copy  — at submit, to ADMIN_EMAIL: the team's internal notice
+  send_signed_copy — same, when the buyer signs via the emailed link
+  send_order_copy  — the customer-facing copy, to the buyer, CC the rep
 
-The rep is CC'd rather than sent a separate mail so there is one thread per
-order carrying one attachment, and a reply reaches everyone who has it. A
-rep-filled order therefore reaches the rep twice: once at submit (what they
-sent out) and once on signing (what the buyer actually agreed to) — which is
-the point, because the buyer may have changed the quantities in between.
+The order copy goes out unconditionally (2026-08-05 — it used to depend on an
+"email me a copy" checkbox, which is gone from both the form and the signing
+page). It is sent once per order, at the point the quantities become final:
+at submit for a customer-filled order, at signing for a rep-filled one, since
+the buyer may change quantities on the signing page.
 
-Neither is a confirmation: the order is reviewed in /admin afterwards and can
-be declined. Accept/Decline sends the buyer nothing automatically today.
+The rep is CC'd on that copy rather than sent a separate mail, so there is one
+thread per order carrying one attachment and a reply reaches everyone who has
+it. They are no longer CC'd on the internal notices above — that would be the
+same PDF twice. On a rep-filled order they still hear from us at submit: the
+signature request CCs them (routers/orders.py::_send_signature_request).
+
+None of these is a confirmation: the order is reviewed in /admin afterwards
+and can be declined. Accept/Decline sends the buyer nothing automatically.
 """
 from app.config import settings
 from app.email import mailer
@@ -28,6 +34,16 @@ def _store(ctx: dict) -> str:
     predate the field, and a person's name is better than an empty subject.
     """
     return (ctx.get("account_name") or "").strip() or ctx.get("buyer_name") or "—"
+
+
+def _tag(ctx: dict) -> str:
+    """The order's short id, appended to every subject line.
+
+    One order can generate four mails across two flows; the id at the end is
+    what ties them together in a mailbox and back to the /admin row, since
+    store + season alone repeat across a season's re-orders.
+    """
+    return f" - {ctx['short_id']}"
 
 
 def _summary(ctx: dict) -> str:
@@ -46,24 +62,30 @@ def admin_email(ctx: dict) -> tuple[str, str]:
     # across stores ("Deborah" four times over is unscannable).
     subject = (
         f"New wholesale order — {_store(ctx)} "
-        f"({ctx['season_code']}) — {ctx['total_qty']} pcs"
+        f"({ctx['season_code']}) — {ctx['total_qty']} pcs" + _tag(ctx)
     )
     body = "A new wholesale order was submitted.\n\n" + _summary(ctx) + "\nThe order form PDF is attached."
     return subject, body
 
 
-def buyer_email(ctx: dict) -> tuple[str, str]:
-    # Sent at submit, to buyers who ticked "send me a copy". Deliberately NOT a
-    # confirmation — the order still has to be reviewed and can be declined.
-    # Wording mirrors the note under that checkbox on the form
-    # (frontend/src/components/TermsSignature.jsx); keep the two in step.
-    subject = f"Your Wooden Ships order copy — {ctx['season_label']}"
+def order_copy_email(ctx: dict) -> tuple[str, str]:
+    """The customer-facing copy, sent to the buyer and CC'd to their rep.
+
+    Sent once the quantities are final — at submit for a customer-filled
+    order, after signing for a rep-filled one — so the totals below are the
+    ones that count. Deliberately NOT a confirmation: that is the Sales Order
+    Confirmation the body promises, which the team sends separately.
+    """
+    subject = f"An Order has been Submitted! {ctx['season_label']} - {_store(ctx)}" + _tag(ctx)
     body = (
-        f"Thank you for your Wooden Ships wholesale order, {ctx['buyer_name']}.\n\n"
-        "This is a copy for your records — not an order confirmation. "
-        "We'll email you once your order has been reviewed.\n\n"
-        + _summary(ctx)
-        + "\nYour order copy is attached as a PDF.\n\n— Wooden Ships"
+        f"Hi there,\n\n"
+        f"Thank you for your order! Your signed PDF is attached.\n\n"
+        f"Total pieces: {ctx['total_qty']}\n"
+        f"Total: ${ctx['total_amount']:,.0f}\n\n"  # whole dollars, by request
+        "You will receive a Sales Order Confirmation within 2 business days.\n\n"
+        "As a reminder, you can change your order up to 10 days from receipt of the Sales Order Confirmation.\n\n"
+        "Thanks again for your order! We are excited to knit this for you!\n\n"
+        "Wooden Ships"
     )
     return subject, body
 
@@ -78,7 +100,7 @@ def signed_email(ctx: dict) -> tuple[str, str]:
     """
     subject = (
         f"Order signed — {_store(ctx)} "
-        f"({ctx['season_code']}) — {ctx['total_qty']} pcs"
+        f"({ctx['season_code']}) — {ctx['total_qty']} pcs" + _tag(ctx)
     )
     body = (
         f"{ctx['buyer_name']} signed this order.\n\n"
@@ -88,26 +110,28 @@ def signed_email(ctx: dict) -> tuple[str, str]:
     return subject, body
 
 
-def send_admin_copy(ctx: dict, pdf_bytes: bytes, filename: str, cc: str | None = None) -> bool:
-    """Always to ADMIN_EMAIL, CC the territory's rep so they get the PDF too."""
+def send_admin_copy(ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
+    """The team's internal notice. ADMIN_EMAIL only — the rep gets the PDF on
+    the customer copy instead of the same attachment twice."""
     subject, body = admin_email(ctx)
     return mailer.send_email(
-        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")], cc=cc
+        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")]
     )
 
 
-def send_signed_copy(ctx: dict, pdf_bytes: bytes, filename: str, cc: str | None = None) -> bool:
-    """Same recipients as send_admin_copy, worded for a signature rather than
+def send_signed_copy(ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
+    """Same recipient as send_admin_copy, worded for a signature rather than
     a new submission."""
     subject, body = signed_email(ctx)
     return mailer.send_email(
-        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")], cc=cc
+        settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")]
     )
 
 
-def send_buyer_copy(to: str, ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
-    subject, body = buyer_email(ctx)
-    return mailer.send_email(to, subject, body, [(filename, pdf_bytes, "pdf")])
+def send_order_copy(to: str, ctx: dict, pdf_bytes: bytes, filename: str, cc: str | None = None) -> bool:
+    """The customer's copy, CC the territory's rep (None when unknown)."""
+    subject, body = order_copy_email(ctx)
+    return mailer.send_email(to, subject, body, [(filename, pdf_bytes, "pdf")], cc=cc)
 
 
 # schedule_order_emails() lived here: it queued the admin notice AND the buyer

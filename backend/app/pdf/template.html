@@ -50,6 +50,13 @@
   /* Typed name rendered as a handwritten-style signature (font bundled in the
      image via fonts-dancingscript). */
   .signature { font-family: 'Dancing Script', cursive; font-size: 18pt; }
+  /* Unsigned copy: a rule to sign on, sized to match the signature line above
+     so the block does not change height once the name lands on it. */
+  .sig-blank {
+    display: block;
+    height: 20pt;
+    border-bottom: 0.75pt solid #1d1d1b;
+  }
   .ctr { text-align: center; }
 
   /* masthead — the logo art is square with generous padding, so crop it to a
@@ -260,26 +267,25 @@
   </table>
 
   <!-- ═══════════════════ signature + internal use ══════════════════ -->
-  {# Only printed once there IS a signature. A rep-filled order is sent to the
-     buyer to sign, so at submit time this block would be an empty box, a blank
-     date and "Terms accepted ☐ No" — which reads as an order someone forgot to
-     sign rather than one on its way out for signature.
-
-     Keyed on signature_name, NOT on filled_by: the PDF is re-rendered when the
-     buyer signs (routers/sign.py), and keying on the rep would keep the
-     signature off the document forever, which is the whole point of it. #}
-  {% if order.signature_name %}
+  {# Always printed, signed or not. A rep-filled order goes out for signature
+     with this copy attached, and the buyer needs to see the line they are
+     being asked to sign — an omitted block reads as a missing field. Unsigned
+     it shows an empty rule and "Awaiting signature"; the PDF is re-rendered
+     when the buyer signs (routers/sign.py) and the name lands on the rule. #}
   <table class="grid sig-row">
     <tr>
       <td style="width:55%"><span class="lbl">Buyer's signature</span>
-        <span class="signature">{{ order.signature_name }}</span></td>
+        {% if order.signature_name %}
+        <span class="signature">{{ order.signature_name }}</span>
+        {% else %}
+        <span class="sig-blank"></span>
+        {% endif %}</td>
       <td style="width:25%"><span class="lbl">Date</span>
-        <span class="val">{{ order.signature_date | longdate }}</span></td>
+        <span class="val">{{ order.signature_date | longdate if order.signature_date else "—" }}</span></td>
       <td style="width:20%"><span class="lbl">Terms accepted</span>
-        <span class="val">{{ "☑ Yes" if order.terms_accepted else "☐ No" }}</span></td>
+        <span class="val">{{ "☑ Yes" if order.terms_accepted else "☐ Awaiting signature" }}</span></td>
     </tr>
   </table>
-  {% endif %}
 
   <table class="grid">
     <tr>

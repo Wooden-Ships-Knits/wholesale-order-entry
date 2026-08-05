@@ -10,7 +10,7 @@ from datetime import date
 from pathlib import PurePosixPath
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -93,32 +93,26 @@ class Terms(CamelModel):
     signature_name: str = ""
     signature_date: date | None = None
     accepted: bool = False
-    order_copy: bool = False
-    order_copy_email: EmailStr | None = None
+    # No order_copy / order_copy_email: the "email me a copy" checkbox is gone
+    # (2026-08-05). Every buyer gets the copy, at their Ship To address.
     # "Send the draft to the buyer to sign" — an alternative to typing the
     # signature here, so it makes signature_name optional (see routers/orders.py).
     draft_signature: bool = False
     draft_signature_email: EmailStr | None = None
 
-    @field_validator("order_copy_email", "draft_signature_email", mode="before")
+    @field_validator("draft_signature_email", mode="before")
     @classmethod
     def _blank_copy_email_is_none(cls, value: Any) -> Any:
         """Treat "" as "not given".
 
         EmailStr|None accepts an address or null but NOT an empty string, and a
         skipped optional field arrives as "" from an HTML input. That rejected
-        the entire order with "must have an @-sign" whenever the buyer left the
-        order-copy box unticked — a required-field error on an optional field.
+        the entire order with "must have an @-sign" — a required-field error on
+        an optional field.
         """
         if isinstance(value, str) and not value.strip():
             return None
         return value
-
-    @model_validator(mode="after")
-    def _require_copy_email(self) -> "Terms":
-        if self.order_copy and not self.order_copy_email:
-            raise ValueError("order_copy_email is required when order_copy is set")
-        return self
 
 
 class Internal(CamelModel):
