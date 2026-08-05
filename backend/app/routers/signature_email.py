@@ -65,7 +65,6 @@ def signature_email(payload: SignatureEmailRequest, db: Session = Depends(get_db
         # admin can edit it in the modal before sending.
         cc_email=sheets_client.rep_email_for_territory(order.sales_territory),
         account_name=order.account_name,
-        buyer_name=order.buyer_name,
         season_label=mapping.season_label(order.season_code),
         total_qty=order.total_qty,
         total_amount=order.total_amount,
