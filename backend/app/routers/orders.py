@@ -116,6 +116,7 @@ def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str
         if not mailer.send_email(
             draft["to"], draft["subject"], draft["body"],
             [(filename, pdf_bytes, "pdf")], cc=cc,
+            html=mailer.html_from_text(draft["body"]),
         ):
             logger.error(
                 "Signature request for order %s could not be sent — resend from /admin",
@@ -379,22 +380,22 @@ def submit_order(
     }
     background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename)
 
-    # The customer's copy, CC the territory's lead rep so they always get the
-    # PDF. Sent to every buyer since 2026-08-05 — there is no "email me a copy"
-    # checkbox any more. Skipped when a signature link went out instead: the
+    # The order copy, addressed to the buyer and the territory's lead rep so
+    # they always get the PDF. Sent for every order since 2026-08-05 — there is
+    # no "email me a copy" checkbox any more. Skipped when a signature link went out instead: the
     # quantities are not final until the buyer signs, so the copy is sent from
     # routers/sign.py once they have. The attachment is the same in-memory,
     # card-masked PDF, so it sends even if the disk write above failed.
     if not order.signature_token:
-        rep_cc = sheets_client.rep_email_for_territory(order.sales_territory)
-        if not rep_cc:
+        rep_to = sheets_client.rep_email_for_territory(order.sales_territory)
+        if not rep_to:
             logger.info(
                 "No rep email for territory %r — order %s copy sent to the buyer only",
                 order.sales_territory, str(order.id)[:8],
             )
         background.add_task(
             order_email.send_order_copy,
-            order.order_copy_email, email_ctx, pdf_bytes, filename, cc=rep_cc,
+            order.order_copy_email, email_ctx, pdf_bytes, filename, rep=rep_to,
         )
 
     # The buyer asked us to send the order out for signature. Background, like
