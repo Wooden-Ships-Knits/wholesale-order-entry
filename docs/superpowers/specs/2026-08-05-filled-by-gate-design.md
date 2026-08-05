@@ -64,7 +64,7 @@ export default function FilledByGate({ onChoose }) {
       <div className="brand">
         <img src="/ws-logo-black.png" alt="Wooden Ships — Paola Buendia" className="brand-logo" />
       </div>
-      <h1 className="gate-question">Hi!, who is filling out this order form?</h1>
+      <h1 className="gate-question">Hi! Who is filling out this order form?</h1>
       <div className="gate-choices">
         <button type="button" onClick={() => onChoose(true)}>Sales Representative</button>
         <button type="button" onClick={() => onChoose(false)}>Customer</button>
@@ -84,7 +84,7 @@ Notes on the markup:
   nothing, and the answer is changeable afterwards anyway (decision 3).
 - The logo is the same asset and classes the order header already uses, so the
   first screen matches the form the user is about to see.
-- The greeting and the question share one line — **"Hi!, who is filling out
+- The greeting and the question share one line — **"Hi! Who is filling out
   this order form?"** — because opening on "Who…" read colder than it needed
   to (added 2026-08-05). It is the page's only heading, so it is an `<h1>`
   styled as one, not a caption.

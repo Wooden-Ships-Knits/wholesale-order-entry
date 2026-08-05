@@ -12,7 +12,7 @@ export default function FilledByGate({ onChoose }) {
       </div>
       {/* Greeting and question on one line, and it is the page's only heading —
           hence <h1> rather than a <p>. */}
-      <h1 className="gate-question">Hi!, who is filling out this order form?</h1>
+      <h1 className="gate-question">Hi! Who is filling out this order form?</h1>
       <div className="gate-choices">
         <button type="button" onClick={() => onChoose(true)}>
           Sales Representative
