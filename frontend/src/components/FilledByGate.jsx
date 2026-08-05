@@ -10,9 +10,9 @@ export default function FilledByGate({ onChoose }) {
       <div className="brand">
         <img src="/ws-logo-black.png" alt="Wooden Ships — Paola Buendia" className="brand-logo" />
       </div>
-      {/* The greeting carries the warmth; the question stays the plain
-          instruction underneath it. */}
-      <p className="gate-question">Hi!, who is filling out this order form?</p>
+      {/* Greeting and question on one line, and it is the page's only heading —
+          hence <h1> rather than a <p>. */}
+      <h1 className="gate-question">Hi!, who is filling out this order form?</h1>
       <div className="gate-choices">
         <button type="button" onClick={() => onChoose(true)}>
           Sales Representative

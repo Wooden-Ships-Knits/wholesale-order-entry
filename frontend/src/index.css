@@ -73,16 +73,14 @@ body {
   text-align: center;
   padding: 3rem 2.5rem;
 }
-.gate-greeting {
-  font-size: 1.7rem;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  margin: 0 0 0.4rem;
-}
+/* The greeting and the question share one line, and it is the page's heading —
+   so it is sized and coloured as one, not as a caption under something. */
 .gate-question {
-  font-size: 1.05rem;
+  font-size: 1.35rem;
+  font-weight: 400;
   letter-spacing: 0.03em;
-  color: #4c4a45;
+  line-height: 1.35;
+  color: #1d1d1b;
   margin: 0 0 2rem;
 }
 .gate-choices {
