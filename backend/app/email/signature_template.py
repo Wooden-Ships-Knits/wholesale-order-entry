@@ -17,7 +17,6 @@ def build(
     sign_url: str,
     cc_email: str | None = None,
     account_name: str | None = None,
-    buyer_name: str | None = None,
     season_label: str | None = None,
     total_qty: int | None = None,
     total_amount=None,
@@ -31,7 +30,6 @@ def build(
     territory is unknown — the admin fills it in before sending.
     """
     store = (account_name or "").strip()
-    buyer = (buyer_name or "").strip()
     season = (season_label or "").strip()
 
     # "Please review and sign your Fall 2026 order ACME STORE" — wording and
@@ -45,7 +43,11 @@ def build(
     if short_id:
         subject = f"{subject} - {short_id}"
 
-    body = f"""Hi {buyer or 'there'},
+    # "Hi there" rather than the buyer's name (2026-08-05): the Bill To name is
+    # whoever signs, not necessarily whoever reads this at the store, and a
+    # wrong first name reads worse than none. Matches the order copy's greeting
+    # (email/order_email.py).
+    body = f"""Hi there,
 
 Thank you for your order! We appreciate it!
 

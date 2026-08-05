@@ -98,7 +98,6 @@ def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str
             to_email=order.signature_email,
             sign_url=sign.sign_url(order.signature_token),
             account_name=order.account_name,
-            buyer_name=order.buyer_name,
             season_label=mapping.season_label(order.season_code),
             total_qty=order.total_qty,
             total_amount=order.total_amount,
