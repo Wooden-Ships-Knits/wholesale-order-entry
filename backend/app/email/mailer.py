@@ -80,8 +80,11 @@ def html_from_text(body: str) -> str | None:
     # rather than a bare string the buyer has to copy out.
     out = _URL_RE.sub(lambda m: f'<a href="{m.group(0)}">{m.group(0)}</a>', out)
     out = out.replace("\n", "<br>\n")
+    # Plain sans-serif, and only faces every mail client already has: webfonts
+    # are stripped by most of them, and a serif here would not match the
+    # client's own default face for the plain-text part of the same message.
     return (
-        '<div style="font-family:Georgia,serif; font-size:14px; '
+        '<div style="font-family:Arial,Helvetica,sans-serif; font-size:14px; '
         f'line-height:1.5; color:#1d1d1b;">\n{out}\n</div>'
     )
 
