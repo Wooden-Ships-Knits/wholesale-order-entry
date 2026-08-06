@@ -104,14 +104,15 @@ def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str
             expires_days=settings.signature_link_days,
             short_id=str(order_id)[:8],
         )
-        # CC the territory's lead rep, same lookup as the tax-cert request.
-        # None when the territory is empty or has no rep row — send anyway
+        # CC the rep who wrote the order (falling back to the territory's
+        # lead rep). None when neither resolves in the sheet — send anyway
         # rather than hold the buyer's link hostage to a sheet lookup.
-        cc = sheets_client.rep_email_for_territory(order.sales_territory)
+        cc = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
         if not cc:
             logger.info(
-                "No rep email for territory %r — signature request for order %s sent without CC",
-                order.sales_territory, str(order_id)[:8],
+                "No rep email for writer %r / territory %r — signature request "
+                "for order %s sent without CC",
+                order.order_written_by, order.sales_territory, str(order_id)[:8],
             )
         if not mailer.send_email(
             draft["to"], draft["subject"], draft["body"],
@@ -387,11 +388,12 @@ def submit_order(
     # routers/sign.py once they have. The attachment is the same in-memory,
     # card-masked PDF, so it sends even if the disk write above failed.
     if not order.signature_token:
-        rep_to = sheets_client.rep_email_for_territory(order.sales_territory)
+        rep_to = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
         if not rep_to:
             logger.info(
-                "No rep email for territory %r — order %s copy sent to the buyer only",
-                order.sales_territory, str(order.id)[:8],
+                "No rep email for writer %r / territory %r — order %s copy "
+                "sent to the buyer only",
+                order.order_written_by, order.sales_territory, str(order.id)[:8],
             )
         background.add_task(
             order_email.send_order_copy,
