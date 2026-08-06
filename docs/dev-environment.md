@@ -26,6 +26,9 @@ dev database away and start clean.
 
 `.env.dev` is gitignored, like `.env`.
 
+To put it online for reviewers instead of running it locally, see
+[`deploy/dev-on-vm.md`](deploy/dev-on-vm.md).
+
 ## Telling them apart
 
 The two sites are identical to look at, so dev shows a dark red **DEVELOPMENT**

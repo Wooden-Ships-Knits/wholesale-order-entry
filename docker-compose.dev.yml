@@ -50,7 +50,12 @@ services:
     build: ./frontend
     ports:
       # 8083, so production's 8082 keeps running alongside it.
-      - "8083:80"
+      #
+      # Bound to 127.0.0.1 deliberately. On the VM the host nginx proxies to
+      # this port and adds TLS and a password; publishing on 0.0.0.0 would put
+      # a second copy of the site — carrying real customer data — on
+      # http://<VM ip>:8083 with neither. Local use is unaffected.
+      - "127.0.0.1:8083:80"
     depends_on:
       - backend
     restart: unless-stopped
