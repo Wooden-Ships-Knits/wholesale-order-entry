@@ -1264,11 +1264,11 @@ button:hover {
 }
 /* Highlight only a "Yes": green for a new account, red for a conflict. */
 .admin-table td.flag-green {
-  background: rgba(46, 125, 50, 0.12);
+  background: rgba(103, 103, 103, 0);
   font-weight: 600;
 }
-.admin-table td.flag-yellow { 
-  background: rgba(214, 170, 20, 0.14); 
+.admin-table td.flag-yellow {
+  background: rgba(247, 255, 1, 0.935); 
   font-weight: 600;
 }
 
