@@ -113,6 +113,35 @@ def send_email(
         logger.warning("Email not sent to %s: SMTP is not configured", to)
         return False
 
+    # Dev mode: every message goes to one inbox instead of the real recipients.
+    # Done HERE rather than at the five call sites because this is the only
+    # place an address can turn into a delivery — a caller cannot bypass it, and
+    # no future call site has to remember the rule.
+    redirect = settings.mail_redirect_to
+    if redirect:
+        original_to, original_cc = to, cc
+        to, cc = redirect, None
+        subject = f"[DEV → {original_to}] {subject}"
+        banner = (
+            "*** DEV MODE — this message was NOT delivered to its real recipients ***\n"
+            f"Would have gone to: {original_to}\n"
+            + (f"Cc: {original_cc}\n" if original_cc else "")
+            + ("-" * 60)
+            + "\n\n"
+        )
+        body = banner + body
+        if html:
+            html = (
+                '<div style="background:#fbeeec;border:1px solid #b03a2e;color:#7a281f;'
+                'padding:10px 12px;margin-bottom:16px;font-family:sans-serif;font-size:13px">'
+                "<strong>DEV MODE — not delivered to the real recipients.</strong><br>"
+                f"Would have gone to: {original_to}"
+                + (f"<br>Cc: {original_cc}" if original_cc else "")
+                + "</div>"
+                + html
+            )
+        logger.info("DEV redirect: %s (cc %s) -> %s", original_to, original_cc or "-", redirect)
+
     msg = EmailMessage()
     msg["From"] = settings.mail_sender
     msg["To"] = to

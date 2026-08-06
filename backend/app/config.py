@@ -78,6 +78,15 @@ class Settings(BaseSettings):
     smtp_pass: str = ""
     mail_from: str = ""  # From address; falls back to smtp_user when blank
     admin_email: str = "wholesale@wooden-ships.com"
+    # DEV ONLY. When set, every outbound message goes to this address instead of
+    # its real recipients, with the intended To/Cc shown in the subject and a
+    # banner in the body. Blank in production. See app/email/mailer.py.
+    mail_redirect_to: str = ""
+    # DEV ONLY. Blocks the two Salesforce writes — creating an account and
+    # pushing an accepted order into Kugamon. Reads (accounts, products,
+    # territories, picklists) are unaffected, so a dev environment still shows
+    # real customer data. See app/salesforce/client.py.
+    salesforce_readonly: bool = False
 
     # Inbound reply capture (conflict replies). IMAP over SSL to the same
     # wholesale@ mailbox. Blank host/user/pass = disabled: run_poll() no-ops.

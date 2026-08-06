@@ -61,6 +61,22 @@ def query_all(soql: str) -> list[dict[str, Any]]:
         return _client().query_all(soql)["records"]
 
 
+class SalesforceReadOnly(RuntimeError):
+    """Raised when a write is attempted while SALESFORCE_READONLY is on."""
+
+
+def _refuse_if_readonly(what: str) -> None:
+    """Guard for the two live-org writes. Dev environments read real customer
+    data but must never create records in it — a single Accept click would
+    otherwise put a test order into Kugamon."""
+    if settings.salesforce_readonly:
+        logger.warning("SALESFORCE_READONLY: refused to %s", what)
+        raise SalesforceReadOnly(
+            f"This environment is read-only for Salesforce, so it will not {what}. "
+            "Unset SALESFORCE_READONLY to allow writes."
+        )
+
+
 def create_account(fields: dict[str, Any]) -> str:
     """Create a Salesforce Account, re-authenticating once on session expiry.
 
@@ -68,6 +84,8 @@ def create_account(fields: dict[str, Any]) -> str:
     validation rules, missing permission) so the caller can surface it — this is
     a write to the live org, never fail silently.
     """
+    _refuse_if_readonly("create a Salesforce account")
+
     def do() -> dict[str, Any]:
         return _client().Account.create(fields)
 
@@ -159,6 +177,8 @@ def create_sales_order(header: dict[str, Any], lines: list[dict[str, Any]]) -> t
     can surface it — never fail silently on a live-org write. Header is created
     first; each line links back to it. Kugamon auto-numbers Name and sets Status.
     """
+    _refuse_if_readonly("push this order into Salesforce")
+
     def _create(sobject: str, data: dict[str, Any]) -> dict[str, Any]:
         try:
             return getattr(_client(), sobject).create(data)

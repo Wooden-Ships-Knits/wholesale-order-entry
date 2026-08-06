@@ -1,0 +1,59 @@
+# Development stack — a second, self-contained copy of the app.
+#
+#   docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+#   → http://localhost:8083
+#
+# `name:` gives it its own compose project, so containers, network and the
+# pgdata volume are separate from production's. Test orders never land in the
+# real database or the real admin table.
+#
+# Safety comes from .env.dev, not from this file:
+#   MAIL_REDIRECT_TO=you@…    every email goes to you, never to reps or buyers
+#   SALESFORCE_READONLY=1     Accept / Create account refuse to write to the org
+#
+# Salesforce READS stay live, so customer data, products and territories are
+# real. Only outbound email and org writes are neutered.
+name: wholesale-dev
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-woodenships}
+      POSTGRES_USER: ${POSTGRES_USER:-woodenships}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env.dev}
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-woodenships} -d ${POSTGRES_DB:-woodenships}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    env_file: .env.dev
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-woodenships}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-woodenships}
+    volumes:
+      # Dev writes its PDFs and uploads to their own directory, so a test order
+      # cannot overwrite or sit beside a real customer's paperwork.
+      - ./output-dev/orders:/output/orders
+      - ./output-dev/notices:/output/notices
+      - ./backend/credentials/dialy-report-automation-e20c53e67542.json:/credentials/service-account.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    build: ./frontend
+    ports:
+      # 8083, so production's 8082 keeps running alongside it.
+      - "8083:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata_dev:

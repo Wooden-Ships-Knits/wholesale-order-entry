@@ -25,3 +25,5 @@ venv/
 .claude/
 memory/
 .vscode/
+.env.dev
+output-dev/
