@@ -27,7 +27,9 @@ dev database away and start clean.
 `.env.dev` is gitignored, like `.env`.
 
 To put it online for reviewers instead of running it locally, see
-[`deploy/dev-on-vm.md`](deploy/dev-on-vm.md).
+[`deploy/dev-on-vm.md`](deploy/dev-on-vm.md). For how a change travels from a
+branch to dev and then to production, see
+[`deploy/release-flow.md`](deploy/release-flow.md).
 
 ## Telling them apart
 
