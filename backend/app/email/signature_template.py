@@ -17,11 +17,11 @@ def build(
     sign_url: str,
     cc_email: str | None = None,
     account_name: str | None = None,
-    buyer_name: str | None = None,
     season_label: str | None = None,
     total_qty: int | None = None,
     total_amount=None,
     expires_days: int = 7,
+    short_id: str | None = None,
 ) -> dict:
     """-> {to, cc, subject, body}.
 
@@ -30,26 +30,42 @@ def build(
     territory is unknown — the admin fills it in before sending.
     """
     store = (account_name or "").strip()
-    buyer = (buyer_name or "").strip()
     season = (season_label or "").strip()
 
-    # "Please review and sign your Fall 2026 order ACME STORE" — wording and
-    # layout supplied by Wooden Ships (2026-08-03); keep it as written rather
-    # than re-phrasing. Both placeholders are dropped cleanly when empty.
-    subject = " ".join(
-        p for p in ("Please review and sign your", season, "order", store) if p
-    )
+    # "Please review and sign your Fall 2026 order - ACME STORE - a3f19c47" —
+    # wording and layout supplied by Wooden Ships (revised 2026-08-05); keep it
+    # as written rather than re-phrasing. Store and id are appended with their
+    # own separators so an order missing either doesn't leave a dangling dash.
+    # The short id matches the other order mails (email/order_email.py) so every
+    # message about one order sorts together in a mailbox.
+    subject = " ".join(p for p in ("Please review and sign your", season, "order") if p)
+    if store:
+        subject = f"{subject} - {store}"
+    if short_id:
+        subject = f"{subject} - {short_id}"
 
-    body = f"""Hi {buyer or 'there'},
+    # "Hi there" rather than the buyer's name (2026-08-05): the Bill To name is
+    # whoever signs, not necessarily whoever reads this at the store, and a
+    # wrong first name reads worse than none. Matches the order copy's greeting
+    # (email/order_email.py).
+    #
+    # **bold** / __underline__ are rendered in the HTML part and stripped from
+    # the plain-text one — see app/email/mailer.py::html_from_text.
+    body = f"""Hi there,
 
-Thank you for your order! We appreciate it!
+We have received your unsigned Draft Order! We appreciate it!
 
-Please Review your order, make any adjustments needed, and Sign to submit. Click the link below:
+**Now we just need a signature!**
+
+Please click on the link below to review, sign and submit.
 {sign_url}
 
-The link will expire in {expires_days} days.
+If you want to make changes, you can also do that before signing.
 
-Ship Windows are not locked in until the order is received and accepted. Please sign and submit right away to avoid missing ship window.
+Note: The link will expire in __{expires_days} days__.
+
+Ship Windows are not locked in until the order is received and accepted.
+Please sign and submit right away to avoid missing a ship window.
 
 If you have any questions, just reply to this email.
 

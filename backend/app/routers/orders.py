@@ -76,8 +76,12 @@ def _conflict_point(order: Order) -> tuple[float, float] | None:
     return None
 
 
-def _send_signature_request(order_id: uuid.UUID) -> None:
+def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str) -> None:
     """Background: email the buyer their signing link, then record the send.
+
+    The card-masked PDF is attached so the buyer can read the order before
+    opening the link — it is passed in from submit rather than re-rendered
+    here, so the attachment is byte-identical to the copy saved on disk.
 
     signature_requested_at is stamped only AFTER the SMTP call succeeds, so the
     admin column's "Email Sent ✓" means the mail really left. A failure leaves
@@ -94,22 +98,27 @@ def _send_signature_request(order_id: uuid.UUID) -> None:
             to_email=order.signature_email,
             sign_url=sign.sign_url(order.signature_token),
             account_name=order.account_name,
-            buyer_name=order.buyer_name,
             season_label=mapping.season_label(order.season_code),
             total_qty=order.total_qty,
             total_amount=order.total_amount,
             expires_days=settings.signature_link_days,
+            short_id=str(order_id)[:8],
         )
-        # CC the territory's lead rep, same lookup as the tax-cert request.
-        # None when the territory is empty or has no rep row — send anyway
+        # CC the rep who wrote the order (falling back to the territory's
+        # lead rep). None when neither resolves in the sheet — send anyway
         # rather than hold the buyer's link hostage to a sheet lookup.
-        cc = sheets_client.rep_email_for_territory(order.sales_territory)
+        cc = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
         if not cc:
             logger.info(
-                "No rep email for territory %r — signature request for order %s sent without CC",
-                order.sales_territory, str(order_id)[:8],
+                "No rep email for writer %r / territory %r — signature request "
+                "for order %s sent without CC",
+                order.order_written_by, order.sales_territory, str(order_id)[:8],
             )
-        if not mailer.send_email(draft["to"], draft["subject"], draft["body"], cc=cc):
+        if not mailer.send_email(
+            draft["to"], draft["subject"], draft["body"],
+            [(filename, pdf_bytes, "pdf")], cc=cc,
+            html=mailer.html_from_text(draft["body"]),
+        ):
             logger.error(
                 "Signature request for order %s could not be sent — resend from /admin",
                 str(order_id)[:8],
@@ -257,7 +266,10 @@ def submit_order(
         signature_name=payload.terms.signature_name,
         signature_date=payload.terms.signature_date,
         terms_accepted=payload.terms.accepted,
-        order_copy_email=str(payload.terms.order_copy_email) if payload.terms.order_copy_email else None,
+        # Where the customer's copy of the order goes. Always the Ship To
+        # address now — the buyer used to opt in with a separate address, and
+        # the column records which one was actually used. Editable at signing.
+        order_copy_email=str(payload.ship_to.email),
         new_or_reorder=payload.internal.new_or_reorder,
         account_status=payload.internal.account_status,
         is_new_account=_is_new_account(payload),
@@ -298,12 +310,7 @@ def submit_order(
     #   admin  — full number, for the monitoring team to key into Salesforce.
     #            Encrypted immediately, held in the DB, never written to disk
     #            and never emailed. See CLAUDE.md rule 1.
-    masked_card = {
-        "name": order.card_name or None,
-        "number": f"•••• {card_last4}" if card_last4 else None,
-        "exp": order.card_exp or None,
-        "full": False,
-    }
+    masked_card = pdf_context_builder.masked_card(order)
     try:
         pdf_context["card"] = masked_card
         pdf_bytes = pdf_render.render_order_pdf(pdf_context)
@@ -372,31 +379,31 @@ def submit_order(
         "total_qty": total_qty,
         "total_amount": total_amount,
     }
-    # The territory's lead rep always gets the order PDF, CC'd on the notice
-    # above — for a customer-filled order this is the rep finding out it came
-    # in at all. None when the territory is unknown or has no rep row; the
-    # notice still goes to the team.
-    rep_cc = sheets_client.rep_email_for_territory(order.sales_territory)
-    if not rep_cc:
-        logger.info(
-            "No rep email for territory %r — order %s notice sent without a rep copy",
-            order.sales_territory, str(order.id)[:8],
-        )
-    background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename, cc=rep_cc)
+    background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename)
 
-    # Buyer's own copy, only when they ticked the box on the form. The
-    # attachment is the same in-memory, card-masked PDF, so it sends even if
-    # the disk write above failed. Explicitly a records copy, not a
-    # confirmation — the order is still reviewed in /admin and may be declined.
-    if order.order_copy_email:
+    # The order copy, addressed to the buyer and the territory's lead rep so
+    # they always get the PDF. Sent for every order since 2026-08-05 — there is
+    # no "email me a copy" checkbox any more. Skipped when a signature link went out instead: the
+    # quantities are not final until the buyer signs, so the copy is sent from
+    # routers/sign.py once they have. The attachment is the same in-memory,
+    # card-masked PDF, so it sends even if the disk write above failed.
+    if not order.signature_token:
+        rep_to = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
+        if not rep_to:
+            logger.info(
+                "No rep email for writer %r / territory %r — order %s copy "
+                "sent to the buyer only",
+                order.order_written_by, order.sales_territory, str(order.id)[:8],
+            )
         background.add_task(
-            order_email.send_buyer_copy, order.order_copy_email, email_ctx, pdf_bytes, filename
+            order_email.send_order_copy,
+            order.order_copy_email, email_ctx, pdf_bytes, filename, rep=rep_to,
         )
 
     # The buyer asked us to send the order out for signature. Background, like
     # the copies above: a slow Gmail must not hold up the confirmation screen.
     if order.signature_token:
-        background.add_task(_send_signature_request, order.id)
+        background.add_task(_send_signature_request, order.id, pdf_bytes, filename)
 
     # New accounts only: check whether an existing stockist is too close, so
     # /admin can flag it. Runs in the background — a slow Google/Salesforce

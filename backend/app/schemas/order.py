@@ -6,11 +6,12 @@ Phase 4) and never persisted.
 """
 import base64
 import binascii
+import re
 from datetime import date
 from pathlib import PurePosixPath
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -18,8 +19,42 @@ class CamelModel(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
+# Capitalise after a word start, a hyphen or an apostrophe: "jean-luc" ->
+# "Jean-Luc", "o'brien" -> "O'Brien". Both apostrophes, since phones and
+# Word-style autocorrect produce the curly one.
+_NAME_START_RE = re.compile(r"(^|[-'’])([a-z])")
+
+
+def title_case(value: str) -> str:
+    """Normalise a person's name for display: "ADAM SMITH" -> "Adam Smith".
+
+    Buyers type their name in whatever case the keyboard was left in, and it
+    surfaces in the PDF, the order emails and the Salesforce account
+    Description — so it is normalised once here, on the way in, rather than at
+    each of those.
+
+    A word that is ALREADY mixed-case is left untouched: "McDonald", "DuBois"
+    and "van der Berg" are deliberate spellings, and blanket .title() would
+    mangle them into "Mcdonald" and "Dubois". Only all-caps and all-lowercase
+    words — the two cases that are never deliberate — get rewritten.
+    """
+    out: list[str] = []
+    for token in re.split(r"(\s+)", value.strip()):
+        letters = [c for c in token if c.isalpha()]
+        if letters and (all(c.isupper() for c in letters) or all(c.islower() for c in letters)):
+            token = _NAME_START_RE.sub(lambda m: m.group(1) + m.group(2).upper(), token.lower())
+        out.append(token)
+    return "".join(out)
+
+
 class BillTo(CamelModel):
     buyer_name: str = ""
+
+    @field_validator("buyer_name")
+    @classmethod
+    def _title_case_buyer(cls, value: str) -> str:
+        return title_case(value)
+
     street: str = ""
     city_state: str = ""
     zip: str = ""
@@ -93,32 +128,26 @@ class Terms(CamelModel):
     signature_name: str = ""
     signature_date: date | None = None
     accepted: bool = False
-    order_copy: bool = False
-    order_copy_email: EmailStr | None = None
+    # No order_copy / order_copy_email: the "email me a copy" checkbox is gone
+    # (2026-08-05). Every buyer gets the copy, at their Ship To address.
     # "Send the draft to the buyer to sign" — an alternative to typing the
     # signature here, so it makes signature_name optional (see routers/orders.py).
     draft_signature: bool = False
     draft_signature_email: EmailStr | None = None
 
-    @field_validator("order_copy_email", "draft_signature_email", mode="before")
+    @field_validator("draft_signature_email", mode="before")
     @classmethod
     def _blank_copy_email_is_none(cls, value: Any) -> Any:
         """Treat "" as "not given".
 
         EmailStr|None accepts an address or null but NOT an empty string, and a
         skipped optional field arrives as "" from an HTML input. That rejected
-        the entire order with "must have an @-sign" whenever the buyer left the
-        order-copy box unticked — a required-field error on an optional field.
+        the entire order with "must have an @-sign" — a required-field error on
+        an optional field.
         """
         if isinstance(value, str) and not value.strip():
             return None
         return value
-
-    @model_validator(mode="after")
-    def _require_copy_email(self) -> "Terms":
-        if self.order_copy and not self.order_copy_email:
-            raise ValueError("order_copy_email is required when order_copy is set")
-        return self
 
 
 class Internal(CamelModel):

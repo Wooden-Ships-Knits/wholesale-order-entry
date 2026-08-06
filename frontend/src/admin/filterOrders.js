@@ -11,9 +11,11 @@ export const EMPTY_FILTERS = {
   dateFrom: '', // 'YYYY-MM-DD' straight out of <input type="date">
   dateTo: '',
   shortId: '',
+  sign: '', // '' | 'yes' | 'no' — has the buyer signed?
   season: '',
   shipWindow: '',
   accountName: '',
+  writtenBy: '', // Internal Use "Order written by"; '' on customer-filled orders
   territory: '',
   newAccount: '', // '' | 'yes' | 'no'
   paymentMethod: '', // '' | 'Credit Card' | 'PayPal'
@@ -55,6 +57,19 @@ export function isNewAccount(o) {
 }
 
 
+/** Does this order have the buyer's signature? Shared by the Signature cell and
+ *  its column filter, for the same reason as isNewAccount above.
+ *
+ *  The column shows three states, not two: no signature was ever requested
+ *  (the customer signed the form itself, so nothing is outstanding), signed via
+ *  the emailed link, or requested and still waiting. Only the last of those is
+ *  unsigned — filtering on signatureSignedAt alone would report every
+ *  customer-filled order as unsigned, which is most of them. */
+export function isSigned(o) {
+  return !o.signatureRequested || Boolean(o.signatureSignedAt)
+}
+
+
 const contains = (value, query) => String(value ?? '').toLowerCase().includes(query)
 
 // Tri-state ('' | 'yes' | 'no') against a possibly-null boolean. null/undefined
@@ -80,9 +95,11 @@ export function filterOrders(orders, f) {
 
     // Match the full uuid too, so an id pasted from an email finds its row.
     if (shortId && !contains(o.shortId, shortId) && !contains(o.id, shortId)) return false
+    if (!matchesYesNo(f.sign, isSigned(o))) return false
     if (f.season && o.seasonCode !== f.season) return false
     if (f.shipWindow && o.shipWindow !== f.shipWindow) return false
     if (accountName && !contains(o.accountName, accountName)) return false
+    if (f.writtenBy && o.orderWrittenBy !== f.writtenBy) return false
     if (f.territory && o.salesTerritory !== f.territory) return false
     if (!matchesYesNo(f.newAccount, isNewAccount(o))) return false
     if (f.paymentMethod && o.paymentMethod !== f.paymentMethod) return false

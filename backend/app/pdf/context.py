@@ -10,12 +10,30 @@ the encrypted admin copy can only ever be made at submit time. Everything
 here comes from persisted columns, which is exactly why it is safe to call
 again later.
 
-The caller sets context["card"] — this module never touches card data.
+The caller sets context["card"]. masked_card() below builds that value from
+persisted columns only — last four digits, never a number. A full-card context
+is assembled by the submit handler alone, from the request in memory.
 """
 from typing import Any
 
 from app.db.models import Order
 from app.salesforce import mapping
+
+
+def masked_card(order: Order) -> dict[str, Any]:
+    """context["card"] for any copy that leaves the server.
+
+    Built from stored columns, so there is no number to leak: card_last4,
+    card_name and card_exp are the only card fields the DB holds (rule 1).
+    Every masked render goes through here so the customer copy, the disk copy
+    and any re-render show the same thing.
+    """
+    return {
+        "name": order.card_name or None,
+        "number": f"•••• {order.card_last4}" if order.card_last4 else None,
+        "exp": order.card_exp or None,
+        "full": False,
+    }
 
 
 def build(order: Order, *, created_at=None, items=None) -> dict[str, Any]:

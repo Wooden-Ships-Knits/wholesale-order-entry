@@ -155,7 +155,13 @@ _WINDOW_RE = re.compile(r"^\d{1,2}/\d{1,2}-\d{1,2}$")
 # sometimes mixed with descriptive text ("DC Metro/Suburb, DE, MD, NJ, PA") —
 # so we pull out standalone 2-letter codes and keep only real US states.
 TERRITORY_RANGE = "REGION!A:C"
-REPS_EMAIL = "Email!A:E"
+# Email tab: A=# B=Sales Territory C=Name D=Email Address E=NOTE F=Email Address real
+#
+# Column D is the address orders are sent to, and it is NOT always the person's
+# own: an assistant's row carries their principal's address on purpose (Julie
+# Zipperer -> rande@randecohen.com), so the order lands with whoever handles it.
+# Column F holds their real, personal address — reference only, never sent to.
+REPS_EMAIL = "Email!A:F"
 # The 'Split' tab: Written By | Reps. Every name in the Written_By__c picklist
 # belongs to exactly one sales rep; the order-form Split rule compares that rep
 # against the rep who owns the sales territory. Lives in the sheet so the sales
@@ -242,18 +248,32 @@ def territory_rep_for_state(state_code: str) -> str | None:
     return _territory_map(column=2).get(code)
 
 
-# The 'Email' tab: # | Sales Territory | Name | Email Address | NOTE (A:E). A
-# territory can span several rows (assistants); the FIRST row for a territory is
-# the lead rep ("the boss"), whose email we want.
+# The 'Email' tab is read into two indexes off one fetch:
+#
+#   by NAME (column C)      — who wrote the order. The primary lookup, because
+#                             the person who wrote it is the person who should
+#                             get it back, wherever the store happens to sit.
+#   by TERRITORY (column B) — the fallback, for a customer-filled order, which
+#                             has no writer. A territory can span several rows
+#                             (assistants); the FIRST is the lead rep.
+#
+# Both resolve to column D, which is the address to send to and is deliberately
+# not always the row's own person — see the REPS_EMAIL note above.
 def _normalize_territory(value: str | None) -> str:
     """Match key that ignores spacing/case differences between the REGION tab
     ('CA/ HI - Rande Cohen') and the Email tab ('CA/HI - Rande Cohen')."""
     return re.sub(r"\s+", "", value or "").lower()
 
 
-def _rep_email_map() -> dict[str, str]:
-    """Normalized Sales Territory -> lead rep email (first matching row's Email)."""
-    def fetch() -> dict[str, str]:
+def _normalize_name(value: str | None) -> str:
+    """Match key for a person's name: spacing and case don't have to agree
+    between the Salesforce 'Written By' picklist and column C of the sheet."""
+    return re.sub(r"\s+", "", value or "").lower()
+
+
+def _rep_email_maps() -> tuple[dict[str, str], dict[str, str]]:
+    """(by normalized name, by normalized territory) -> email address."""
+    def fetch() -> tuple[dict[str, str], dict[str, str]]:
         try:
             result = (
                 _client()
@@ -267,23 +287,31 @@ def _rep_email_map() -> dict[str, str]:
             )
         except Exception:
             logger.warning("Could not read the reps email sheet", exc_info=True)
-            return {}
+            return {}, {}
 
-        emails: dict[str, str] = {}
+        by_name: dict[str, str] = {}
+        by_territory: dict[str, str] = {}
         for row in result.get("values", [])[1:]:  # skip the header row
-            # A=# B=Sales Territory C=Name D=Email Address E=NOTE
+            # A=# B=Sales Territory C=Name D=Email Address E=NOTE F=real address
             territory = _normalize_territory(row[1]) if len(row) > 1 else ""
+            name = _normalize_name(row[2]) if len(row) > 2 else ""
             email = (row[3] or "").strip() if len(row) > 3 else ""
-            if territory and email:
-                emails.setdefault(territory, email)  # first row = the lead rep
-        if not emails:
-            logger.warning("No territory->email rows parsed from the reps email sheet")
-        return emails
+            if not email:
+                continue
+            # setdefault both: one name can appear on several territory rows
+            # (Kitty Tally covers three), and one territory on several name rows.
+            if name:
+                by_name.setdefault(name, email)
+            if territory:
+                by_territory.setdefault(territory, email)  # first row = lead rep
+        if not by_name and not by_territory:
+            logger.warning("No usable rows parsed from the reps email sheet")
+        return by_name, by_territory
 
     if not settings.region_rep_territories_sheet_id:
-        return {}
+        return {}, {}
 
-    key = "rep_email_map"
+    key = "rep_email_maps"
     now = time.monotonic()
     hit = _cache.get(key)
     if hit and hit[0] > now:
@@ -351,12 +379,33 @@ def writer_rep_map() -> dict[str, str]:
     return value
 
 
+def rep_email_for_writer(name: str | None) -> str | None:
+    """Email for an 'Order written by' name (column C -> column D), or None."""
+    key = _normalize_name(name)
+    if not key:
+        return None
+    return _rep_email_maps()[0].get(key)
+
+
 def rep_email_for_territory(territory: str | None) -> str | None:
     """Lead rep email for a Sales Territory value, or None if not found."""
     key = _normalize_territory(territory)
     if not key:
         return None
-    return _rep_email_map().get(key)
+    return _rep_email_maps()[1].get(key)
+
+
+def rep_email_for_order(written_by: str | None, territory: str | None) -> str | None:
+    """The rep address for one order: whoever wrote it, else whoever owns the
+    territory.
+
+    Written By is the authority (2026-08-06): a rep who writes an order for a
+    store outside their own patch still wants it back, and the territory owner
+    getting it instead was the wrong person twice over. Customer-filled orders
+    carry no writer, so those fall back to the territory — which is what the
+    whole system did before.
+    """
+    return rep_email_for_writer(written_by) or rep_email_for_territory(territory)
 
 
 def list_ship_windows(season_code: str) -> list[str]:
