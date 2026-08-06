@@ -78,10 +78,20 @@ class Settings(BaseSettings):
     smtp_pass: str = ""
     mail_from: str = ""  # From address; falls back to smtp_user when blank
     admin_email: str = "wholesale@wooden-ships.com"
-    # DEV ONLY. When set, every outbound message goes to this address instead of
-    # its real recipients, with the intended To/Cc shown in the subject and a
-    # banner in the body. Blank in production. See app/email/mailer.py.
+    # DEV ONLY. Fake recipients, by role: a rep address goes to DEV_REP_EMAIL,
+    # anyone else (the buyer) to DEV_BUYER_EMAIL. Keeping them apart preserves
+    # the shape of production mail — buyer in To, rep in Cc — so a dev send is
+    # worth reading. MAIL_REDIRECT_TO is the simpler catch-all: one inbox for
+    # everything, used for any role left blank. ALL BLANK IN PRODUCTION.
+    # See app/email/mailer.py.
+    dev_buyer_email: str = ""
+    dev_rep_email: str = ""
     mail_redirect_to: str = ""
+
+    @property
+    def dev_mail_rewrite(self) -> bool:
+        """True when outbound mail must not reach its real recipients."""
+        return bool(self.dev_buyer_email or self.dev_rep_email or self.mail_redirect_to)
     # DEV ONLY. Blocks the two Salesforce writes — creating an account and
     # pushing an accepted order into Kugamon. Reads (accounts, products,
     # territories, picklists) are unaffected, so a dev environment still shows

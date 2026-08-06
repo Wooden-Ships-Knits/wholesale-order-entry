@@ -302,6 +302,18 @@ def rep_email_for_territory(territory: str | None) -> str | None:
     return _rep_email_maps()[1].get(key)
 
 
+def all_rep_emails() -> set[str]:
+    """Every address the Email tab can route an order to, lowercased.
+
+    Used only by the dev mail rewriter, to tell a rep recipient from a buyer so
+    each goes to its own test inbox. Off the same cached fetch as the lookups,
+    so it costs nothing extra; an unreadable sheet yields an empty set and the
+    rewriter simply treats everyone as a buyer — still nobody real.
+    """
+    by_name, by_territory = _rep_email_maps()
+    return {e.lower() for e in (*by_name.values(), *by_territory.values()) if e}
+
+
 def rep_email_for_order(written_by: str | None, territory: str | None) -> str | None:
     """The rep address for one order: whoever wrote it, else whoever owns the
     territory.

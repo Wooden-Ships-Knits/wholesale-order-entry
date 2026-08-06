@@ -11,6 +11,23 @@ body {
   line-height: 1.45;
 }
 
+/* Development banner. In normal flow rather than fixed, so it pushes the page
+   down instead of covering the first thing on it — including the signing page,
+   where the covered thing would be the order the buyer is agreeing to. */
+.dev-banner {
+  background: #7a281f;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  font-family: Georgia, serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+.dev-banner strong {
+  letter-spacing: 0.14em;
+  margin-right: 0.6rem;
+}
+
 .order-form {
   max-width: 1280px;
   margin: 2rem auto 4rem;

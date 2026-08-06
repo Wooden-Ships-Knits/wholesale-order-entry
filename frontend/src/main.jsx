@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import AdminApp from './admin/AdminApp.jsx'
 import SignPage from './sign/SignPage.jsx'
+import DevBanner from './components/DevBanner.jsx'
 import './index.css'
 import './conflict/conflict.css'
 
@@ -35,6 +36,9 @@ if (!Page) {
 } else {
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
+      {/* Above every page — the order form, /admin and the signing page all
+          need to say which environment they are. */}
+      <DevBanner />
       <Page />
     </React.StrictMode>,
   )
