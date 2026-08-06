@@ -61,9 +61,9 @@ def signature_email(payload: SignatureEmailRequest, db: Session = Depends(get_db
     draft = signature_template.build(
         to_email=payload.email or order.signature_email or order.ship_email,
         sign_url=sign_url(order.signature_token),
-        # Lead rep for the order's territory; blank when unknown, and the
-        # admin can edit it in the modal before sending.
-        cc_email=sheets_client.rep_email_for_territory(order.sales_territory),
+        # The rep who wrote the order, else the territory's lead rep; blank
+        # when neither resolves, and the admin can edit it before sending.
+        cc_email=sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory),
         account_name=order.account_name,
         season_label=mapping.season_label(order.season_code),
         total_qty=order.total_qty,

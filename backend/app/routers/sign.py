@@ -344,11 +344,12 @@ def sign_order(
     # from the one they sent out, since quantities are editable on this page.
     # This is the rep's copy of a rep-filled order; they are not on the notice
     # above.
-    rep_to = sheets_client.rep_email_for_territory(order.sales_territory)
+    rep_to = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
     if not rep_to:
         logger.info(
-            "No rep email for territory %r — order %s copy sent to the buyer only",
-            order.sales_territory, short_id,
+            "No rep email for writer %r / territory %r — order %s copy sent "
+            "to the buyer only",
+            order.order_written_by, order.sales_territory, short_id,
         )
     background.add_task(
         order_email.send_order_copy,

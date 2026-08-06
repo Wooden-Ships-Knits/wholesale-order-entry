@@ -10,7 +10,28 @@ function formatPhone(raw) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
 }
 
-function Field({ label, value, onChange, type = 'text', required = false, autoComplete, disabled = false, placeholder }) {
+// "ADAM SMITH" / "adam smith" -> "Adam Smith", applied when the field loses
+// focus rather than per keystroke (rewriting mid-word fights the typist).
+//
+// A MIRROR of backend/app/schemas/order.py::title_case, which is the authority
+// — the PDF, the emails and Salesforce all read the normalised value from the
+// database. This exists so the form shows what those will show. Keep the two
+// in step, including the rule that already-mixed-case words ("McDonald",
+// "DuBois") are left exactly as typed.
+function titleCase(value) {
+  return (value || '')
+    .trim()
+    .split(/(\s+)/)
+    .map((token) => {
+      const letters = token.replace(/[^a-zA-Z]/g, '')
+      if (!letters) return token
+      if (letters !== letters.toUpperCase() && letters !== letters.toLowerCase()) return token
+      return token.toLowerCase().replace(/(^|[-'’])([a-z])/g, (_, sep, c) => sep + c.toUpperCase())
+    })
+    .join('')
+}
+
+function Field({ label, value, onChange, type = 'text', required = false, autoComplete, disabled = false, placeholder, titleCaseOnBlur = false }) {
   const [warning, setWarning] = useState('')
   const handleChange = (e) => {
     if (type === 'tel') {
@@ -25,6 +46,11 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
     }
   }
   const handleBlur = (e) => {
+    if (titleCaseOnBlur) {
+      const tidied = titleCase(e.target.value)
+      if (tidied !== e.target.value) onChange(tidied)
+      return
+    }
     if (type !== 'tel') return
     // On leaving the field, flag an incomplete number (1–9 digits). Empty is
     // fine — the phone isn't required.
@@ -43,7 +69,7 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
         type={type}
         value={type === 'tel' ? formatPhone(value) : value || ''}
         onChange={handleChange}
-        onBlur={type === 'tel' ? handleBlur : undefined}
+        onBlur={type === 'tel' || titleCaseOnBlur ? handleBlur : undefined}
         required={required}
         autoComplete={autoComplete}
         disabled={disabled}
@@ -115,6 +141,7 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
           value={billTo.buyerName}
           onChange={(v) => setBillTo('buyerName', v)}
           autoComplete="name"
+          titleCaseOnBlur
         />
         {showLocationSearch && (
           <AddressMap

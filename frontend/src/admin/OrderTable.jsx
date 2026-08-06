@@ -426,6 +426,7 @@ export default function OrderTable({
   // Dropdown options come from the unfiltered rows: picking a territory must
   // not remove the other territories from the list you picked it from.
   const territories = useMemo(() => distinctValues(allOrders, (o) => o.salesTerritory), [allOrders])
+  const writers = useMemo(() => distinctValues(allOrders, (o) => o.orderWrittenBy), [allOrders])
   const ranks = useMemo(() => distinctValues(allOrders, (o) => rankCode(o.rank)), [allOrders])
   const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
   const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
@@ -632,6 +633,7 @@ export default function OrderTable({
             <th>Season</th>
             <th>Shipping Window</th>
             <th>Account Name</th>
+            <th>Written By</th>
             <th>Sales Territory</th>
             <th>New account</th>
             <th>Rank</th>
@@ -680,7 +682,20 @@ export default function OrderTable({
                 onChange={(e) => onFilterChange('shortId', e.target.value)}
               />
             </th>
-            <th aria-hidden="true" />
+            <th>
+              {/* Fixed options, not distinctValues: "Unsigned" has to stay
+                  selectable even when nothing is currently unsigned, which is
+                  exactly when someone wants to check. */}
+              <select
+                aria-label="Filter by signature"
+                value={filters.sign}
+                onChange={(e) => onFilterChange('sign', e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="yes">Signed</option>
+                <option value="no">Unsigned</option>
+              </select>
+            </th>
             <th>
               <select
                 aria-label="Filter by season"
@@ -717,6 +732,20 @@ export default function OrderTable({
                 value={filters.accountName}
                 onChange={(e) => onFilterChange('accountName', e.target.value)}
               />
+            </th>
+            <th>
+              <select
+                aria-label="Filter by Written By"
+                value={filters.writtenBy}
+                onChange={(e) => onFilterChange('writtenBy', e.target.value)}
+              >
+                <option value="">All</option>
+                {writers.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
             </th>
             <th>
               <select
@@ -804,7 +833,7 @@ export default function OrderTable({
         <tbody>
           {!orders.length && (
             <tr>
-              <td className="admin-empty-row" colSpan={14}>
+              <td className="admin-empty-row" colSpan={16}>
                 {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
               </td>
             </tr>
@@ -849,6 +878,9 @@ export default function OrderTable({
               <td>{o.seasonCode || <span className="unknown">—</span>}</td>
               <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
               <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
+              {/* Internal Use "Order written by" — only rep-filled orders carry
+                  one, so a dash here means the customer submitted it. */}
+              <td>{o.orderWrittenBy || <span className="unknown">—</span>}</td>
               <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
               {/* New account: answered by the submit-time Salesforce check, not
                   by the buyer's "first order" answer. Yes stacks a "Create
