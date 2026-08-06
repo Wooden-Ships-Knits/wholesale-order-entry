@@ -1,0 +1,115 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="split-flow" name="Sales Territory &amp; Split">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="t1" value="1 &#8212; The Sales Territory box on the form (display + payload only)" style="text;html=1;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="700" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a1" value="&lt;b&gt;EXISTING account&lt;/b&gt;&lt;br&gt;rep looks the store up" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" value="&lt;b&gt;Salesforce&lt;/b&gt;&lt;br&gt;Account.SalesTerritory__c&lt;br&gt;42 values, e.g. &quot;Mountain - Taylor &amp;amp; Denise&quot;&lt;br&gt;&lt;i&gt;label may name a showroom, not a rep&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="b1" value="&lt;b&gt;NEW account&lt;/b&gt;&lt;br&gt;Ship To &quot;City, ST&quot; → state code" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="330" y="80" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="b2" value="&lt;b&gt;Sheet &#183; REGION tab&lt;/b&gt;&lt;br&gt;row where &lt;b&gt;col B (States)&lt;/b&gt; contains the state&lt;br&gt;→ label from &lt;b&gt;col A&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="330" y="150" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c1" value="&lt;b&gt;form.salesTerritory&lt;/b&gt;&lt;br&gt;shown read-only &#183; stored on the order&lt;br&gt;&#183; pushed as kugo2p__SalesTerritory__c&lt;br&gt;&lt;i&gt;NOT used to decide the split&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="185" y="270" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a1" target="a2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b1" target="b2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a2" target="c1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b2" target="c1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="t2" value="2 &#8212; The two inputs to the Split rule (both from the sheet)" style="text;html=1;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="390" width="700" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d1" value="&lt;b&gt;Written By&lt;/b&gt;&lt;br&gt;chosen in Internal Use&lt;br&gt;&lt;i&gt;Salesforce Written_By__c picklist&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="440" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="&lt;b&gt;Sheet &#183; Split tab&lt;/b&gt;&lt;br&gt;Written By → Rep&lt;br&gt;&lt;i&gt;Julie Mandell → Rande Cohen&lt;/i&gt;&lt;br&gt;GET /api/writer-reps" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="530" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" value="&lt;b&gt;WRITER&#39;S REP&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="85" y="645" width="160" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f0" value="&lt;b&gt;Ship To state code&lt;/b&gt;&lt;br&gt;&lt;i&gt;for EVERY account &#8212; new and existing&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="360" y="440" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" value="&lt;b&gt;Sheet &#183; REGION col C&lt;/b&gt;&lt;br&gt;the rep who owns that territory&lt;br&gt;&lt;i&gt;CO → &quot;Mountain - Denise Arnett&quot; → Denise Arnett&lt;/i&gt;&lt;br&gt;GET /api/territory?state=XX" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="360" y="530" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f2" value="&lt;b&gt;TERRITORY&#39;S REP&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="405" y="645" width="160" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d1" target="d2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d2" target="d3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="f0" target="f1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="f1" target="f2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="n1" value="&lt;b&gt;Why the state, not the territory label?&lt;/b&gt;&lt;br&gt;&lt;br&gt;The label is not reliably a rep name.&lt;br&gt;&quot;Mountain - Taylor &amp;amp; Denise&quot; is a showroom;&lt;br&gt;&quot;Canada&quot; and &quot;Shopify&quot; name nobody; and 31 of&lt;br&gt;the 42 Salesforce labels are absent from the sheet.&lt;br&gt;&lt;br&gt;The state resolves for 50 of 51 states and gives&lt;br&gt;the same answer for new and existing accounts." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacing=8;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="660" y="440" width="380" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#d6b656;" edge="1" parent="1" source="n1" target="f1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="t3" value="3 &#8212; The rule: updateSplitRequirement()" style="text;html=1;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="710" width="700" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="g1" value="Writer&#39;s rep&lt;br&gt;=&lt;br&gt;Territory&#39;s rep ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="225" y="760" width="200" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d3" target="g1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="f2" target="g1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="h1" value="&lt;b&gt;SAME REP&lt;/b&gt;&lt;br&gt;Split section &lt;b&gt;hidden&lt;/b&gt;&lt;br&gt;values cleared, so nothing&lt;br&gt;stale is submitted" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="20" y="930" width="215" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="h2" value="&lt;b&gt;DIFFERENT REP&lt;/b&gt;&lt;br&gt;shown &#183; required &#183; &lt;b&gt;LOCKED&lt;/b&gt;&lt;br&gt;Y preselected, Split with = territory&#39;s rep&lt;br&gt;&lt;i&gt;&quot;House&quot; counts as a rep here&lt;/i&gt;&lt;br&gt;submit is blocked if empty" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="255" y="930" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="h3" value="&lt;b&gt;CANNOT TELL&lt;/b&gt;&lt;br&gt;writer not in the Split tab, or state&lt;br&gt;unmapped, or the sheet is unreachable&lt;br&gt;→ shown &#183; &lt;b&gt;optional&lt;/b&gt; &#183; blank&lt;br&gt;&lt;i&gt;fails open: never blocks an order&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="515" y="930" width="250" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="yes" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="g1" target="h1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e13" value="no" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="g1" target="h2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e14" value="either side unknown" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="g1" target="h3"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="o1" value="&lt;b&gt;&quot;Split with&quot; dropdown options&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Sheet &#183; REGION col C&lt;/b&gt; (distinct) &#8212; GET /api/split-options&lt;br&gt;Aviva Landin &#183; Denise Arnett &#183; House &#183; Jason Hilsenrad&lt;br&gt;Kitty Tally &#183; Michael Young &#183; Rande Cohen &#183; Vickie Wilde&lt;br&gt;&lt;br&gt;&lt;i&gt;Not the Written_By picklist: a split is between reps,&lt;br&gt;and that picklist also holds people who write orders&lt;br&gt;for a rep (Julie Mandell, Maxey Zipperer, Faire).&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacing=8;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="800" y="760" width="360" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#9673a6;" edge="1" parent="1" source="o1" target="h2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="t4" value="4 &#8212; Afterwards" style="text;html=1;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1060" width="700" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="s1" value="&lt;b&gt;Buyer submits&lt;/b&gt;&lt;br&gt;Postgres &#183; PDF &#183; admin email&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;nothing reaches Salesforce yet&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1110" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="s2" value="&lt;b&gt;Admin clicks Accept in /admin&lt;/b&gt;&lt;br&gt;creates the Kugamon Draft&lt;br&gt;kugo2p__SalesOrder__c + lines&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;split / split_with are NOT pushed&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="480" y="1110" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="note" value="&lt;b&gt;Maintained in the Google Sheet &#8212; no deploy needed&lt;/b&gt;&lt;br&gt;REGION col B: which states belong to a territory &#183; REGION col C: which rep owns it &#183; Split tab: which rep each writer belongs to.&lt;br&gt;Backend caches each read for 60s. If the sheet cannot be read, every map is empty and Split falls back to optional." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1210" width="650" height="80" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

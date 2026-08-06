@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getSeasons, getReps, getOrderWriters, getShipWindows, getProducts, getNearbyAccounts, getTerritoryForState, submitOrder } from './api'
+import { getSeasons, getReps, getOrderWriters, getWriterReps, getSplitOptions, getShipWindows, getProducts, getNearbyAccounts, getTerritoryForState, submitOrder } from './api'
 import { computeTotals, validateMinimums, catalogKey } from './validation'
+import { updateSplitRequirement } from './lib/splitRules'
+import { repOptions } from './lib/repOptions'
 import FilledByGate from './components/FilledByGate'
 import OrderHeader from './components/OrderHeader'
 import BuyerLookup from './components/BuyerLookup'
@@ -41,6 +43,10 @@ export default function App() {
   const [seasons, setSeasons] = useState([])
   const [reps, setReps] = useState([])
   const [writers, setWriters] = useState([])
+  const [writerReps, setWriterReps] = useState({})
+  // "Split with" options: the territory owners in REGION column C, not the
+  // Written_By picklist — a split is between reps.
+  const [splitReps, setSplitReps] = useState([])
   const [shipWindows, setShipWindows] = useState([])
   const [season, setSeason] = useState('')
   const [rows, setRows] = useState([])
@@ -103,6 +109,14 @@ export default function App() {
     getOrderWriters()
       .then((d) => setWriters(d.writers))
       .catch(() => setWriters([]))
+    // Empty map = every writer unmapped = Split optional. Failing open keeps a
+    // sheet outage from blocking order entry (see lib/splitRules.js).
+    getWriterReps()
+      .then((d) => setWriterReps(d.writerReps || {}))
+      .catch(() => setWriterReps({}))
+    getSplitOptions()
+      .then((d) => setSplitReps(d.options || []))
+      .catch(() => setSplitReps([]))
   }, [])
 
   function onSeasonChange(code) {
@@ -234,23 +248,81 @@ export default function App() {
   // so this only runs when isNewAccount is true.
   const shipState = stateFromCityState(shipTo.cityState)
   const [territoryStatus, setTerritoryStatus] = useState('')
+  // Owner of the Ship To state's territory (REGION column C). Looked up for
+  // EVERY account, not just new ones: the Split rule needs it either way, and
+  // an existing account's Salesforce territory label often names a showroom
+  // rather than a rep. Only the label is written into the form, and only for a
+  // new account — an existing account keeps its SalesTerritory__c from lookup.
+  const [territoryRep, setTerritoryRep] = useState(null)
   useEffect(() => {
-    if (!isNewAccount || !shipState) {
+    if (!shipState) {
       setTerritoryStatus('')
+      setTerritoryRep(null)
       return
     }
     let stale = false
     getTerritoryForState(shipState)
       .then((r) => {
         if (stale) return
+        setTerritoryRep(r.rep || null)
+        if (!isNewAccount) {
+          setTerritoryStatus('')
+          return
+        }
         setForm((p) => ({ ...p, salesTerritory: r.territory || null }))
         setTerritoryStatus(r.territory ? '' : `No sales territory is mapped for ${shipState}.`)
       })
-      .catch(() => !stale && setTerritoryStatus(''))
+      .catch(() => {
+        if (stale) return
+        setTerritoryStatus('')
+        setTerritoryRep(null)
+      })
     return () => {
       stale = true
     }
   }, [isNewAccount, shipState])
+
+  // Split rule: the rep the order was written for vs the rep who owns the Ship
+  // To territory. Recomputed whenever either side changes.
+  // Keeps an already-chosen value selectable even if it left the sheet, the
+  // same guard the writer dropdown uses.
+  const splitOptions = useMemo(
+    () => repOptions(splitReps, internal.splitWith),
+    [splitReps, internal.splitWith],
+  )
+  const splitRule = useMemo(
+    () =>
+      updateSplitRequirement({
+        orderWrittenBy: internal.orderWrittenBy,
+        territoryRep,
+        writerReps,
+        splitOptions,
+      }),
+    [internal.orderWrittenBy, territoryRep, writerReps, splitOptions],
+  )
+
+  // Apply the rule to the answer itself. Keyed on the computed default so a
+  // rep's manual choice is left alone until the writer or territory changes —
+  // re-running on every render would fight them mid-edit.
+  const appliedSplitDefault = useRef(null)
+  useEffect(() => {
+    if (!splitRule.show) {
+      // Hidden: clear it, or a split chosen before the territory changed would
+      // still be submitted with nothing on screen to show for it.
+      appliedSplitDefault.current = null
+      setInternalState((p) =>
+        p.split === null && p.splitWith === '' ? p : { ...p, split: null, splitWith: '' },
+      )
+      return
+    }
+    if (!splitRule.required) {
+      appliedSplitDefault.current = null
+      return
+    }
+    if (appliedSplitDefault.current === splitRule.defaultSplitWith) return
+    appliedSplitDefault.current = splitRule.defaultSplitWith
+    setInternalState((p) => ({ ...p, split: true, splitWith: splitRule.defaultSplitWith }))
+  }, [splitRule.show, splitRule.required, splitRule.defaultSplitWith])
 
   const { totalPieces, totalAmount, perLine } = useMemo(() => computeTotals(resolved), [resolved])
   const minimums = useMemo(() => validateMinimums(resolved), [resolved])
@@ -274,6 +346,12 @@ export default function App() {
       if (!internal.accountStatus) problems.push('Internal Use: choose New account or Existing.')
       if (!internal.campaign) problems.push('Internal Use: choose a Campaign.')
       if (!internal.orderWrittenBy) problems.push('Internal Use: select who the order was written by.')
+      // Required only when the order was written for one rep and lands in
+      // another rep's territory (lib/splitRules.js).
+      if (splitRule.required && !internal.splitWith)
+        problems.push(
+          `Internal Use: this order is in ${splitRule.territoryRep}'s territory — choose who it is split with.`,
+        )
     }
     if (!shipTo.email) problems.push('Ship To email is required.')
     if (!shipTo.resaleTaxId?.trim()) problems.push('Resale tax ID is required.')
@@ -419,6 +497,8 @@ export default function App() {
           setCertOnFile={setCertOnFile}
           reps={reps}
           writers={writers}
+          splitRule={splitRule}
+          splitOptions={splitOptions}
         />
       )}
       
@@ -443,7 +523,7 @@ export default function App() {
         isNewAccount={isNewAccount}
       />
 
-      {isNewAccount && (form.salesTerritory || territoryStatus) && (
+      {(form.salesTerritory || territoryStatus) && (
         <section className="section territory-auto">
           <label>
             Sales territory <span className="muted">(auto-assigned from the Ship To state)</span>
