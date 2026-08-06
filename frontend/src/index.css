@@ -661,6 +661,16 @@ tfoot td {
 }
 
 .campaign-other,
+/* Says why Split turned required — without it the asterisk appears with no
+   explanation the moment the writer or the territory changes. */
+.split-note {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #7a281f;
+}
+
 .split-with {
   display: inline-block;
   width: 12rem;

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { repOptions } from '../lib/repOptions'
 
 export default function InternalUse({
   internal,
@@ -7,13 +8,15 @@ export default function InternalUse({
   setCertOnFile,
   reps = [],
   writers = [],
+  // { show, required, territoryRep } from lib/splitRules.js — Split only
+  // applies when the order lands in another rep's territory.
+  splitRule = { show: true, required: false, territoryRep: null },
+  // Territory owners from the sheet (REGION col C). Deliberately NOT the
+  // writers list: a split is between reps, and Written_By also contains people
+  // who write orders on a rep's behalf.
+  splitOptions = [],
 }) {
-  // Names from the sales order's Written_By__c picklist. Keep an auto-filled
-  // value selectable even if it isn't in the list.
-  const repOptions =
-    internal.orderWrittenBy && !writers.includes(internal.orderWrittenBy)
-      ? [internal.orderWrittenBy, ...writers]
-      : writers
+  const writerOptions = repOptions(writers, internal.orderWrittenBy)
   const isSplit = internal.split === true
 
   // Without a split, the credited rep is whoever wrote the order.
@@ -116,7 +119,7 @@ export default function InternalUse({
             required
           >
             <option value="">Select a rep…</option>
-            {repOptions.map((name) => (
+            {writerOptions.map((name) => (
               <option key={name} value={name}>
                 {name}
               </option>
@@ -125,24 +128,37 @@ export default function InternalUse({
         </label>
 
         {/* Pinned to the third column so it sits on the right of the row,
-            opposite "Order written by" — auto-flow would put it in column 2. */}
+            opposite "Order written by" — auto-flow would put it in column 2.
+            Hidden entirely when the writer's rep owns this territory: there is
+            no one to split with. */}
+        {splitRule.show && (
         <fieldset className="inline-radios split-field">
-          <legend>Split?</legend>
-          <label>
+          <legend>
+            Split?{splitRule.required && <span className="req">*</span>}
+          </legend>
+          {splitRule.required && (
+            <p className="split-note">In {splitRule.territoryRep}&rsquo;s territory</p>
+          )}
+          {/* Locked once the rule fills it in: the territory decides who the
+              order is split with, so the answer is shown, not asked for. Left
+              editable in the optional case, where nothing was filled in. */}
+          <label className={splitRule.required ? 'field-disabled' : undefined}>
             <input
               type="radio"
               name="split"
               checked={internal.split === true}
               onChange={() => setInternal('split', true)}
+              disabled={splitRule.required}
             />
             Y
           </label>
-          <label>
+          <label className={splitRule.required ? 'field-disabled' : undefined}>
             <input
               type="radio"
               name="split"
               checked={internal.split === false}
               onChange={() => setInternal('split', false)}
+              disabled={splitRule.required}
             />
             N
           </label>
@@ -150,16 +166,17 @@ export default function InternalUse({
             className="split-with"
             value={internal.splitWith}
             onChange={(e) => setInternal('splitWith', e.target.value)}
-            disabled={!isSplit}
+            disabled={!isSplit || splitRule.required}
           >
             <option value="">Split with…</option>
-            {repOptions.map((name) => (
+            {splitOptions.map((name) => (
               <option key={name} value={name}>
                 {name}
               </option>
             ))}
           </select>
         </fieldset>
+        )}
 
         {/* <label>
           Rep*
@@ -169,7 +186,7 @@ export default function InternalUse({
             disabled={!isSplit}
           >
             <option value="">Select a rep…</option>
-            {repOptions.map((name) => (
+            {writerOptions.map((name) => (
               <option key={name} value={name}>
                 {name}
               </option>
