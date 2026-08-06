@@ -207,11 +207,10 @@ def submit_order(
     campaign = payload.internal.campaign
     if campaign == "other" and payload.internal.campaign_other:
         campaign = f"Other: {payload.internal.campaign_other}"
-    split_with = (
-        f"Y — {payload.internal.split_with}".strip(" —")
-        if payload.internal.split is True
-        else ("N" if payload.internal.split is False else "")
-    )
+    # Stored as given, not rendered: these two feed Salesforce picklists.
+    # The name is kept only when there actually is a split.
+    split = payload.internal.split
+    split_with = (payload.internal.split_with or "").strip() if split is True else None
 
     # Uploaded tax-exemption certificate: decode now (schema already validated
     # extension, base64 and size) so a bad file fails before anything persists.
@@ -276,6 +275,7 @@ def submit_order(
         campaign=campaign,
         rep=payload.internal.rep,
         order_written_by=payload.internal.order_written_by,
+        split=split,
         split_with=split_with,
         sf_account_id=payload.sf_account_id,
         sales_territory=payload.sales_territory,

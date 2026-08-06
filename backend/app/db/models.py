@@ -112,6 +112,10 @@ class Order(Base):
     po_number: Mapped[str | None] = mapped_column(Text)
     rep: Mapped[str | None] = mapped_column(Text)
     order_written_by: Mapped[str | None] = mapped_column(Text)
+    # Two columns since 0016: `split` is the answer, `split_with` the name.
+    # They fill Salesforce's Split_Commission__c / Split_With__c picklists, so
+    # neither may be a rendered string. The PDF re-derives "Y — Name".
+    split: Mapped[bool | None] = mapped_column(Boolean)
     split_with: Mapped[str | None] = mapped_column(Text)
 
     # salesforce link

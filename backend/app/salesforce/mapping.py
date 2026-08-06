@@ -71,6 +71,11 @@ ORDER_TYPE = "Type__c"  # picklist: 'Season Opening Order' | 'Re-Order' | ...
 # Order-level territory picklist (distinct from Account's free-text SALES_TERRITORY).
 SALES_ORDER_TERRITORY = "kugo2p__SalesTerritory__c"
 CAMPAIGN = "Campaign__c"  # lookup -> Campaign
+# Commission split. Both confirmed against the org 2026-08-06 by describe, not
+# assumed. Split_With__c's picklist already contains every name the form can
+# offer (it comes from REGION column C), so no translation is needed.
+SPLIT_COMMISSION = "Split_Commission__c"  # picklist: 'Yes' | 'No'
+SPLIT_WITH = "Split_With__c"  # picklist of rep names
 COMMISSION_CROSS_CHECKED_BY = "Commission_Cross_Checked_By__c"  # picklist
 COMMISSION_CROSS_CHECKED = "Novriati"  # standing value for web orders
 CAMPAIGN_REP_NON_SHOW_NAME = "Rep - Non Show Orders"  # our 'rep-non-show' -> this Campaign
@@ -438,6 +443,13 @@ def build_sales_order_header(
             header[ORDER_TYPE] = "Re-Order"
         if order.order_written_by:
             header[WRITTEN_BY] = order.order_written_by
+
+    # Commission split. 'No' whenever there isn't one — including an order that
+    # never answered the question — so the field is never left ambiguous in
+    # Salesforce. The name only goes with a Yes.
+    header[SPLIT_COMMISSION] = "Yes" if order.split else "No"
+    if order.split and order.split_with:
+        header[SPLIT_WITH] = order.split_with
 
     if sales_territory:
         header[SALES_ORDER_TERRITORY] = sales_territory
