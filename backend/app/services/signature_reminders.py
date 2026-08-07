@@ -1,8 +1,8 @@
 """Chase unsigned orders automatically.
 
 An order whose buyer has a live signing link is re-sent the SAME email at the
-ages in settings.signature_reminder_hours (48h and 96h after the first request
-left). Nothing else changes: same token, same link, same expiry date. A
+ages in settings.signature_reminder_hours, counted from when the first request
+left. Nothing else changes: same token, same link, same expiry. A
 reminder is a nudge, not a new request — minting a fresh token would leave the
 buyer's earlier email holding a link that had silently stopped working.
 
@@ -43,13 +43,18 @@ def _due(order: Order, now: datetime) -> bool:
     return now - order.signature_requested_at >= timedelta(hours=schedule[sent])
 
 
-def _candidates(db: Session) -> list[Order]:
+def _candidates(db: Session, now: datetime) -> list[Order]:
     """Orders with a live link that has already been emailed once.
 
     signature_requested_at NOT NULL is the anchor: an order whose first request
     never left has nothing to chase from, and re-sending it is the admin's job.
     A signed order has no token, and a cancelled link has none either, so the
     token test covers both without naming them.
+
+    Expiry is checked here as well as by the token: expiring does NOT clear
+    signature_token (only signing and Cancel link do), so without this an
+    order past its expiry would keep matching and we would mail the buyer a
+    link that 410s. A reminder that can't be acted on is worse than silence.
     """
     return list(
         db.scalars(
@@ -57,6 +62,7 @@ def _candidates(db: Session) -> list[Order]:
                 Order.signature_token.is_not(None),
                 Order.signature_signed_at.is_(None),
                 Order.signature_requested_at.is_not(None),
+                Order.signature_token_expires_at > now,
                 Order.status == "submitted",
             )
         )
@@ -74,7 +80,6 @@ def _send(order: Order) -> bool:
         season_label=mapping.season_label(order.season_code),
         total_qty=order.total_qty,
         total_amount=order.total_amount,
-        expires_on=order.signature_token_expires_at,
         short_id=str(order.id)[:8],
     )
     cc = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
@@ -113,7 +118,7 @@ def send_due_reminders(db: Session) -> int:
 
     now = datetime.now(timezone.utc)
     sent = 0
-    for order in _candidates(db):
+    for order in _candidates(db, now):
         if not _due(order, now):
             continue
         short_id = str(order.id)[:8]
