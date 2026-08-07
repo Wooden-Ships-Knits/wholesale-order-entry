@@ -337,7 +337,8 @@ def sign_order(
         "total_qty": total_qty,
         "total_amount": total_amount,
     }
-    background.add_task(order_email.send_signed_copy, email_ctx, pdf_bytes, filename)
+    if settings.send_internal_notices:
+        background.add_task(order_email.send_signed_copy, email_ctx, pdf_bytes, filename)
 
     # The order copy, addressed to the buyer and the territory's rep, so the
     # rep always receives the PDF the buyer actually signed — which may differ

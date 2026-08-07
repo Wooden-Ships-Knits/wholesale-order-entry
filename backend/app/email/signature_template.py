@@ -8,7 +8,11 @@ internal — no rep, no territory, no other stockists, no rank. It carries one
 link, and that link is a credential: anyone the buyer forwards it to can edit
 and sign the order. The body says so plainly rather than assuming the buyer
 infers it.
+
+The same body is used for the automatic chasers (app/services/
+signature_reminders.py), so nothing in it may read as first-contact-only.
 """
+from datetime import date, datetime
 
 
 def build(
@@ -20,7 +24,7 @@ def build(
     season_label: str | None = None,
     total_qty: int | None = None,
     total_amount=None,
-    expires_days: int = 7,
+    expires_on: date | datetime | None = None,
     short_id: str | None = None,
 ) -> dict:
     """-> {to, cc, subject, body}.
@@ -28,9 +32,17 @@ def build(
     cc is the territory's lead rep (same lookup as the tax-cert request), so
     the rep sees that their buyer was asked to sign. It may be empty when the
     territory is unknown — the admin fills it in before sending.
+
+    expires_on is the token's own expiry, passed in rather than derived from a
+    day count: the automatic chasers re-send this same body days later, and
+    "expires in 30 days" would restart the clock in the reader's head every
+    time. A date says the same thing on day 0 and day 4.
     """
     store = (account_name or "").strip()
     season = (season_label or "").strip()
+    # "August 5" — no year. These links live weeks, not months, so the year is
+    # noise; %-d drops the leading zero ("August 05" reads like a form field).
+    expiry = f"{expires_on:%B} {expires_on.day}" if expires_on else ""
 
     # "Please review and sign your Fall 2026 order - ACME STORE - a3f19c47" —
     # wording and layout supplied by Wooden Ships (revised 2026-08-05); keep it
@@ -62,7 +74,7 @@ Please click on the link below to review, sign and submit.
 
 If you want to make changes, you can also do that before signing.
 
-Note: The link will expire in __{expires_days} days__.
+Note: The link will expire on __{expiry}__.
 
 Ship Windows are not locked in until the order is received and accepted.
 Please sign and submit right away to avoid missing a ship window.

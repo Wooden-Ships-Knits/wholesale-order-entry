@@ -101,7 +101,7 @@ def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str
             season_label=mapping.season_label(order.season_code),
             total_qty=order.total_qty,
             total_amount=order.total_amount,
-            expires_days=settings.signature_link_days,
+            expires_on=order.signature_token_expires_at,
             short_id=str(order_id)[:8],
         )
         # CC the rep who wrote the order (falling back to the territory's
@@ -379,7 +379,8 @@ def submit_order(
         "total_qty": total_qty,
         "total_amount": total_amount,
     }
-    background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename)
+    if settings.send_internal_notices:
+        background.add_task(order_email.send_admin_copy, email_ctx, pdf_bytes, filename)
 
     # The order copy, addressed to the buyer and the territory's lead rep so
     # they always get the PDF. Sent for every order since 2026-08-05 — there is
