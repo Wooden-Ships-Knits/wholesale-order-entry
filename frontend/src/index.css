@@ -1296,6 +1296,18 @@ button:hover {
 .status.declined {
   color: #7a281f;
 }
+/* Why a Save was rejected, shown in the cell the admin is looking at — the
+   .admin-error banner is at the top of the page, off-screen from here. */
+.account-edit-error {
+  margin: 0.4rem 0 0;
+  max-width: 22rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #7a281f;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: normal;
+}
 .admin-error {
   background: #fdf3f2;
   border: 1px solid #7a281f;
