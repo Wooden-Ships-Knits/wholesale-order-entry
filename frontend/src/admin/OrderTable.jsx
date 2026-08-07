@@ -889,7 +889,12 @@ export default function OrderTable({
               {/* Internal Use "Order written by" — only rep-filled orders carry
                   one, so a dash here means the customer submitted it. */}
               <td>{o.orderWrittenBy || <span className="unknown">—</span>}</td>
-              <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
+              {/* Flagged when empty: a territory-less order has no rep to fall
+                  back to, so a customer-filled one sends its copy to the buyer
+                  alone. Someone has to link it to the right account. */}
+              <td className={o.salesTerritory?.trim() ? undefined : 'flag-yellow'}>
+                {o.salesTerritory || <span className="unknown">—</span>}
+              </td>
               {/* New account: answered by the submit-time Salesforce check, not
                   by the buyer's "first order" answer. Yes stacks a "Create
                   account" action (or "Created ✓") beneath it. */}
