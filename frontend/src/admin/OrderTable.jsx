@@ -89,6 +89,11 @@ function AccountNameCell({ order: o, onChanged, onError }) {
   const [text, setText] = useState(o.accountName || '')
   const [hits, setHits] = useState([])
   const [saving, setSaving] = useState(false)
+  // Shown next to the buttons as well as in the page banner. The banner sits
+  // above the table, and this cell is reached by scrolling down and across a
+  // wide one — so a rejected save (a live signing link blocks a relink) looked
+  // exactly like a dead button.
+  const [failed, setFailed] = useState('')
 
   // Admin page is authenticated, so search-as-you-type is fine here (on the
   // public form it would expose the stockist list).
@@ -110,11 +115,13 @@ function AccountNameCell({ order: o, onChanged, onError }) {
 
   async function save(accountName, accountId) {
     setSaving(true)
+    setFailed('')
     try {
       await setOrderAccount(o.id, accountName, accountId)
       setEditing(false)
       onChanged()
     } catch (err) {
+      setFailed(err.message)
       onError(err.message)
     } finally {
       setSaving(false)
@@ -185,6 +192,7 @@ function AccountNameCell({ order: o, onChanged, onError }) {
             Cancel
           </button>
         </div>
+        {failed && <p className="account-edit-error">{failed}</p>}
       </div>
     </td>
   )
