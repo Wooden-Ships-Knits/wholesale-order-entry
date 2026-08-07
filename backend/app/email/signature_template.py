@@ -12,7 +12,6 @@ infers it.
 The same body is used for the automatic chasers (app/services/
 signature_reminders.py), so nothing in it may read as first-contact-only.
 """
-from datetime import date, datetime
 
 
 def build(
@@ -24,7 +23,6 @@ def build(
     season_label: str | None = None,
     total_qty: int | None = None,
     total_amount=None,
-    expires_on: date | datetime | None = None,
     short_id: str | None = None,
 ) -> dict:
     """-> {to, cc, subject, body}.
@@ -33,16 +31,12 @@ def build(
     the rep sees that their buyer was asked to sign. It may be empty when the
     territory is unknown — the admin fills it in before sending.
 
-    expires_on is the token's own expiry, passed in rather than derived from a
-    day count: the automatic chasers re-send this same body days later, and
-    "expires in 30 days" would restart the clock in the reader's head every
-    time. A date says the same thing on day 0 and day 4.
+    No expiry date is passed in: the body says "the link will expire so don't
+    delay" rather than naming a day (wording set 2026-08-06). That also suits
+    the chasers, which re-send this same body up to 30 days later.
     """
     store = (account_name or "").strip()
     season = (season_label or "").strip()
-    # "August 5" — no year. These links live weeks, not months, so the year is
-    # noise; %-d drops the leading zero ("August 05" reads like a form field).
-    expiry = f"{expires_on:%B} {expires_on.day}" if expires_on else ""
 
     # "Please review and sign your Fall 2026 order - ACME STORE - a3f19c47" —
     # wording and layout supplied by Wooden Ships (revised 2026-08-05); keep it
@@ -69,15 +63,17 @@ We have received your unsigned Draft Order! We appreciate it!
 
 **Now we just need a signature!**
 
-Please click on the link below to review, sign and submit.
+Please click on the link below to review, sign digitally and submit.
 {sign_url}
+
+No printing necessary!
 
 If you want to make changes, you can also do that before signing.
 
-Note: The link will expire on __{expiry}__.
+Note: The link will expire so don't delay!
 
-Ship Windows are not locked in until the order is received and accepted.
-Please sign and submit right away to avoid missing a ship window.
+--- Ship Windows are not locked in until the order is received and accepted.
+--- Please sign and submit right away to avoid missing a ship window.
 
 If you have any questions, just reply to this email.
 

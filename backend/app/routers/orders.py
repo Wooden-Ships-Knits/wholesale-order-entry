@@ -101,7 +101,6 @@ def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str
             season_label=mapping.season_label(order.season_code),
             total_qty=order.total_qty,
             total_amount=order.total_amount,
-            expires_on=order.signature_token_expires_at,
             short_id=str(order_id)[:8],
         )
         # CC the rep who wrote the order (falling back to the territory's

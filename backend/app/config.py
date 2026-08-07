@@ -25,7 +25,12 @@ class Settings(BaseSettings):
     signature_link_days: int = 30
     # Unsigned orders are chased automatically at these ages, counted from when
     # the first request was emailed. Empty list = no reminders.
-    signature_reminder_hours: list[int] = [48, 96]
+    # 2 days, 5, 15, 22, 29 (set 2026-08-06). The last one is a day short of
+    # signature_link_days on purpose: a threshold at or past the link's own
+    # expiry can never fire, because the sweep refuses to chase a dead link
+    # rather than mail the buyer a URL that 410s. Keep the final entry below
+    # signature_link_days * 24 if either is ever changed.
+    signature_reminder_hours: list[int] = [48, 120, 360, 528, 696]
 
     # The two notices the team sends itself at ADMIN_EMAIL — "New wholesale
     # order" and "Order signed". Off since 2026-08-06: every order is already
