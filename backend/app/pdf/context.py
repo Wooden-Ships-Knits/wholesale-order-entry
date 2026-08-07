@@ -87,7 +87,14 @@ def build(order: Order, *, created_at=None, items=None) -> dict[str, Any]:
             "po_number": order.po_number,
             "rep": order.rep,
             "order_written_by": order.order_written_by,
-            "split_with": order.split_with,
+            # Re-derived for display: the columns are now structured (0016),
+            # but the PDF still reads "Y — Name" / "N" as the team expects.
+            "split_with": (
+                f"Y — {order.split_with}" if order.split and order.split_with
+                else "Y" if order.split
+                else "N" if order.split is False
+                else ""
+            ),
             "sf_account_id": order.sf_account_id,
             "total_qty": order.total_qty,
             "total_amount": order.total_amount,

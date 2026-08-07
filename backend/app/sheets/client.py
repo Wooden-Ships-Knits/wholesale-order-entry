@@ -32,7 +32,13 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 RANGE_COLUMNS = "B:Q"
 
 _lock = threading.Lock()
-_service: Any = None
+# One service PER THREAD. google-api-python-client sits on httplib2, which is
+# not thread-safe, and FastAPI runs these sync endpoints in a thread pool — the
+# order form fires several sheet-backed calls at once on load. Sharing one
+# service made concurrent requests corrupt each other's TLS stream
+# ("ssl.SSLError: record layer failure"), and because the fetch helpers swallow
+# exceptions, the failure was silent: an empty map, and Split quietly optional.
+_tls = threading.local()
 
 # Short TTL so a strikethrough edit in the sheet shows up on the form within a
 # minute, not five. The sheet is small, so refetching often is cheap.
@@ -41,15 +47,18 @@ _cache: dict[str, tuple[float, Any]] = {}
 
 
 def _client() -> Any:
-    global _service
-    with _lock:
-        if _service is None:
+    service = getattr(_tls, "service", None)
+    if service is None:
+        # Building is itself not thread-safe (credential file read + discovery),
+        # so serialise construction; the returned object is then this thread's.
+        with _lock:
             logger.info("Connecting to Google Sheets (service account)")
             creds = Credentials.from_service_account_file(
                 settings.google_credentials_path, scopes=SCOPES
             )
-            _service = build("sheets", "v4", credentials=creds, cache_discovery=False)
-        return _service
+            service = build("sheets", "v4", credentials=creds, cache_discovery=False)
+        _tls.service = service
+    return service
 
 
 def get_values(
@@ -153,6 +162,11 @@ TERRITORY_RANGE = "REGION!A:C"
 # Zipperer -> rande@randecohen.com), so the order lands with whoever handles it.
 # Column F holds their real, personal address — reference only, never sent to.
 REPS_EMAIL = "Email!A:F"
+# The 'Split' tab: Written By | Reps. Every name in the Written_By__c picklist
+# belongs to exactly one sales rep; the order-form Split rule compares that rep
+# against the rep who owns the sales territory. Lives in the sheet so the sales
+# team can add a writer without a deploy.
+SPLIT_RANGE = "Split!A:B"
 _STATE_CODE_RE = re.compile(r"\b[A-Z]{2}\b")
 US_STATE_CODES = frozenset(
     "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS "
@@ -160,8 +174,14 @@ US_STATE_CODES = frozenset(
 )
 
 
-def _territory_map() -> dict[str, str]:
-    """US state code -> territory label, read from the region/rep sheet."""
+def _territory_map(column: int = 0) -> dict[str, str]:
+    """US state code -> REGION column value, read from the region/rep sheet.
+
+    column 0 = the territory label (col A); column 2 = the rep who owns it
+    (col C). The rep is what the order form's Split rule compares against —
+    parsing the rep out of the label does not work, because labels like
+    "Mountain - Taylor & Denise" name a showroom rather than a rep.
+    """
     def fetch() -> dict[str, str]:
         try:
             result = (
@@ -182,20 +202,22 @@ def _territory_map() -> dict[str, str]:
         for row in result.get("values", [])[1:]:  # skip the header row
             if len(row) < 2:
                 continue
-            territory = (row[0] or "").strip()
-            if not territory:
+            value = (row[column] or "").strip() if len(row) > column else ""
+            if not value:
                 continue
             for code in _STATE_CODE_RE.findall((row[1] or "").upper()):
                 if code in US_STATE_CODES:
-                    mapping.setdefault(code, territory)  # first row wins on overlap
+                    mapping.setdefault(code, value)  # first row wins on overlap
         if not mapping:
-            logger.warning("No state->territory rows parsed from the territories sheet")
+            logger.warning(
+                "No state->column-%s rows parsed from the territories sheet", column
+            )
         return mapping
 
     if not settings.region_rep_territories_sheet_id:
         return {}
 
-    key = "territory_map"
+    key = f"territory_map:{column}"
     now = time.monotonic()
     hit = _cache.get(key)
     if hit and hit[0] > now:
@@ -211,6 +233,19 @@ def territory_for_state(state_code: str) -> str | None:
     if len(code) != 2:
         return None
     return _territory_map().get(code)
+
+
+def territory_rep_for_state(state_code: str) -> str | None:
+    """The rep who owns the territory a state belongs to (REGION column C).
+
+    Drives the order form's Split rule for every account, new or existing —
+    an existing account's Salesforce territory label often names a showroom
+    ("Mountain - Taylor & Denise") rather than the rep who owns it.
+    """
+    code = (state_code or "").strip().upper()
+    if len(code) != 2:
+        return None
+    return _territory_map(column=2).get(code)
 
 
 # The 'Email' tab is read into two indexes off one fetch:
@@ -286,6 +321,64 @@ def _rep_email_maps() -> tuple[dict[str, str], dict[str, str]]:
     return value
 
 
+def split_options() -> list[str]:
+    """Selectable values for the order form's "Split with" dropdown.
+
+    The distinct owners in REGION column C — the reps plus "House". Derived
+    from the state->rep map rather than the raw column so rows that map to no
+    US state (the sheet's 'Test - Sol' row) never reach the form. Sourcing the
+    list from the same column the Split rule reads guarantees that whatever the
+    rule picks is selectable.
+    """
+    return sorted(set(_territory_map(column=2).values()))
+
+
+def writer_rep_map() -> dict[str, str]:
+    """"Written By" name -> the sales rep they belong to (the 'Split' tab).
+
+    Returns {} if the sheet is unreadable or unconfigured — the form then treats
+    every writer as unmapped, which makes Split optional rather than required.
+    Failing open matters here: a sheet outage must not block order entry.
+    """
+    def fetch() -> dict[str, str]:
+        try:
+            result = (
+                _client()
+                .spreadsheets()
+                .values()
+                .get(
+                    spreadsheetId=settings.region_rep_territories_sheet_id,
+                    range=SPLIT_RANGE,
+                )
+                .execute()
+            )
+        except Exception:
+            logger.warning("Could not read the Split tab of the region/rep sheet", exc_info=True)
+            return {}
+
+        pairs: dict[str, str] = {}
+        for row in result.get("values", [])[1:]:  # skip the header row
+            writer = (row[0] or "").strip() if row else ""
+            rep = (row[1] or "").strip() if len(row) > 1 else ""
+            if writer and rep:
+                pairs[writer] = rep
+        if not pairs:
+            logger.warning("No writer->rep rows parsed from the Split tab")
+        return pairs
+
+    if not settings.region_rep_territories_sheet_id:
+        return {}
+
+    key = "writer_rep_map"
+    now = time.monotonic()
+    hit = _cache.get(key)
+    if hit and hit[0] > now:
+        return hit[1]
+    value = fetch()
+    _cache[key] = (now + _CACHE_TTL_SECONDS, value)
+    return value
+
+
 def rep_email_for_writer(name: str | None) -> str | None:
     """Email for an 'Order written by' name (column C -> column D), or None."""
     key = _normalize_name(name)
@@ -300,6 +393,18 @@ def rep_email_for_territory(territory: str | None) -> str | None:
     if not key:
         return None
     return _rep_email_maps()[1].get(key)
+
+
+def all_rep_emails() -> set[str]:
+    """Every address the Email tab can route an order to, lowercased.
+
+    Used only by the dev mail rewriter, to tell a rep recipient from a buyer so
+    each goes to its own test inbox. Off the same cached fetch as the lookups,
+    so it costs nothing extra; an unreadable sheet yields an empty set and the
+    rewriter simply treats everyone as a buyer — still nobody real.
+    """
+    by_name, by_territory = _rep_email_maps()
+    return {e.lower() for e in (*by_name.values(), *by_territory.values()) if e}
 
 
 def rep_email_for_order(written_by: str | None, territory: str | None) -> str | None:

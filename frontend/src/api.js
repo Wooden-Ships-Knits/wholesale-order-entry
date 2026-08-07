@@ -24,6 +24,8 @@ async function get(url) {
   return res.json()
 }
 
+// Liveness + which environment this is (drives the DEVELOPMENT banner).
+export const getHealth = () => get('/api/health')
 export const getSeasons = () => get('/api/seasons')
 export const getReps = () => get('/api/reps')
 export const getTerritories = () => get('/api/territories')
@@ -31,6 +33,8 @@ export const getTerritories = () => get('/api/territories')
 export const getTerritoryForState = (state) =>
   get(`/api/territory?state=${encodeURIComponent(state)}`)
 export const getOrderWriters = () => get('/api/order-writers')
+export const getWriterReps = () => get('/api/writer-reps')
+export const getSplitOptions = () => get('/api/split-options')
 export const getShipWindows = (season) =>
   get(`/api/ship-windows?season=${encodeURIComponent(season)}`)
 export const getProducts = (season) => get(`/api/products?season=${encodeURIComponent(season)}`)

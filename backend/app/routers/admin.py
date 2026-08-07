@@ -325,6 +325,10 @@ def _push_order_to_salesforce(order: Order) -> None:
     )
     try:
         so_id, so_number = sf_client.create_sales_order(header, lines)
+    except sf_client.SalesforceReadOnly as exc:
+        # A dev environment, not a failure — 400 so the admin sees the reason
+        # rather than a "Salesforce is broken" 502.
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:  # header/line rejection, permission, etc.
         logger.exception("Salesforce order push failed for order %s", str(order.id)[:8])
         raise HTTPException(status_code=502, detail=f"Salesforce order create failed: {exc}")
@@ -609,6 +613,8 @@ def create_account(order_id: str, db: Session = Depends(get_db)) -> dict:
     payload = mapping.build_account_create_payload(order)
     try:
         account_id = sf_client.create_account(payload)
+    except sf_client.SalesforceReadOnly as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:  # duplicate rule, validation rule, permission, etc.
         logger.exception("Salesforce account create failed for order %s", str(order.id)[:8])
         raise HTTPException(status_code=502, detail=f"Salesforce create failed: {exc}")

@@ -11,6 +11,23 @@ body {
   line-height: 1.45;
 }
 
+/* Development banner. In normal flow rather than fixed, so it pushes the page
+   down instead of covering the first thing on it — including the signing page,
+   where the covered thing would be the order the buyer is agreeing to. */
+.dev-banner {
+  background: #7a281f;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  font-family: Georgia, serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+.dev-banner strong {
+  letter-spacing: 0.14em;
+  margin-right: 0.6rem;
+}
+
 .order-form {
   max-width: 1280px;
   margin: 2rem auto 4rem;
@@ -644,6 +661,16 @@ tfoot td {
 }
 
 .campaign-other,
+/* Says why Split turned required — without it the asterisk appears with no
+   explanation the moment the writer or the territory changes. */
+.split-note {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #7a281f;
+}
+
 .split-with {
   display: inline-block;
   width: 12rem;
@@ -1237,11 +1264,11 @@ button:hover {
 }
 /* Highlight only a "Yes": green for a new account, red for a conflict. */
 .admin-table td.flag-green {
-  background: rgba(46, 125, 50, 0.12);
+  background: rgba(103, 103, 103, 0);
   font-weight: 600;
 }
-.admin-table td.flag-yellow { 
-  background: rgba(214, 170, 20, 0.14); 
+.admin-table td.flag-yellow {
+  background: rgba(247, 255, 1, 0.935); 
   font-weight: 600;
 }
 
@@ -1295,6 +1322,18 @@ button:hover {
 }
 .status.declined {
   color: #7a281f;
+}
+/* Why a Save was rejected, shown in the cell the admin is looking at — the
+   .admin-error banner is at the top of the page, off-screen from here. */
+.account-edit-error {
+  margin: 0.4rem 0 0;
+  max-width: 22rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #7a281f;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: normal;
 }
 .admin-error {
   background: #fdf3f2;

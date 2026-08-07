@@ -89,6 +89,11 @@ function AccountNameCell({ order: o, onChanged, onError }) {
   const [text, setText] = useState(o.accountName || '')
   const [hits, setHits] = useState([])
   const [saving, setSaving] = useState(false)
+  // Shown next to the buttons as well as in the page banner. The banner sits
+  // above the table, and this cell is reached by scrolling down and across a
+  // wide one — so a rejected save (a live signing link blocks a relink) looked
+  // exactly like a dead button.
+  const [failed, setFailed] = useState('')
 
   // Admin page is authenticated, so search-as-you-type is fine here (on the
   // public form it would expose the stockist list).
@@ -110,11 +115,13 @@ function AccountNameCell({ order: o, onChanged, onError }) {
 
   async function save(accountName, accountId) {
     setSaving(true)
+    setFailed('')
     try {
       await setOrderAccount(o.id, accountName, accountId)
       setEditing(false)
       onChanged()
     } catch (err) {
+      setFailed(err.message)
       onError(err.message)
     } finally {
       setSaving(false)
@@ -185,6 +192,7 @@ function AccountNameCell({ order: o, onChanged, onError }) {
             Cancel
           </button>
         </div>
+        {failed && <p className="account-edit-error">{failed}</p>}
       </div>
     </td>
   )
@@ -881,7 +889,12 @@ export default function OrderTable({
               {/* Internal Use "Order written by" — only rep-filled orders carry
                   one, so a dash here means the customer submitted it. */}
               <td>{o.orderWrittenBy || <span className="unknown">—</span>}</td>
-              <td>{o.salesTerritory || <span className="unknown">—</span>}</td>
+              {/* Flagged when empty: a territory-less order has no rep to fall
+                  back to, so a customer-filled one sends its copy to the buyer
+                  alone. Someone has to link it to the right account. */}
+              <td className={o.salesTerritory?.trim() ? undefined : 'flag-yellow'}>
+                {o.salesTerritory || <span className="unknown">—</span>}
+              </td>
               {/* New account: answered by the submit-time Salesforce check, not
                   by the buyer's "first order" answer. Yes stacks a "Create
                   account" action (or "Created ✓") beneath it. */}

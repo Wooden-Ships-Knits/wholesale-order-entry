@@ -13,12 +13,29 @@ class Settings(BaseSettings):
     # Defaults to cors_origin — in production both are the site's own origin —
     # so a deployment that already sets CORS_ORIGIN needs no new variable.
     public_base_url: str = ""
-    # How long a signature link stays usable. 7 days is what the buyer's email
-    # promises, and it must stay BELOW card_retention_days: the order can't be
-    # accepted until it is signed, and Accept is what keys the card into
-    # Salesforce — so a link outliving the card copy would leave the team an
-    # acceptable order with no card number to charge.
-    signature_link_days: int = 7
+    # How long a signature link stays usable, and what the buyer's email
+    # promises as an explicit date. Raised 7 -> 30 on 2026-08-06.
+    #
+    # Must not EXCEED card_retention_days: the order can't be accepted until it
+    # is signed, and Accept is what keys the card into Salesforce — so a link
+    # outliving the card copy would leave the team an acceptable order with no
+    # card number to charge. At 30/30 the two run out together, which is the
+    # tightest this may safely be; raise card_retention_days first if this ever
+    # goes higher.
+    signature_link_days: int = 30
+    # Unsigned orders are chased automatically at these ages, counted from when
+    # the first request was emailed. Empty list = no reminders.
+    signature_reminder_hours: list[int] = [48, 96]
+
+    # The two notices the team sends itself at ADMIN_EMAIL — "New wholesale
+    # order" and "Order signed". Off since 2026-08-06: every order is already
+    # in /admin with its PDF, so these only doubled the inbox. A flag rather
+    # than deleted code because this was paused once before (2026-07-23) and
+    # switched back on the next day.
+    #
+    # Turning it off does NOT stop the team hearing about orders: MAIL_FROM is
+    # wholesale@, so replies to the customer's order copy still land there.
+    send_internal_notices: bool = False
 
     database_url: str = "postgresql+psycopg://woodenships:woodenships@db:5432/woodenships"
 
@@ -49,8 +66,9 @@ class Settings(BaseSettings):
     # Blank = no admin copy is kept at all; the card is discarded at submit.
     card_encryption_key: str = ""
     # Admin copies are purged this many days after submit even if the order was
-    # never accepted or declined, so cards never linger.
-    card_retention_days: int = 14
+    # never accepted or declined, so cards never linger. Raised 14 -> 30 on
+    # 2026-08-06 to match signature_link_days — see the note there.
+    card_retention_days: int = 30
 
     # Nearby-stockist conflict check. Server-side Google key (Distance Matrix)
     # — NOT the browser key in frontend/.env; IP-restrict it. Empty = the
@@ -78,6 +96,25 @@ class Settings(BaseSettings):
     smtp_pass: str = ""
     mail_from: str = ""  # From address; falls back to smtp_user when blank
     admin_email: str = "wholesale@wooden-ships.com"
+    # DEV ONLY. Fake recipients, by role: a rep address goes to DEV_REP_EMAIL,
+    # anyone else (the buyer) to DEV_BUYER_EMAIL. Keeping them apart preserves
+    # the shape of production mail — buyer in To, rep in Cc — so a dev send is
+    # worth reading. MAIL_REDIRECT_TO is the simpler catch-all: one inbox for
+    # everything, used for any role left blank. ALL BLANK IN PRODUCTION.
+    # See app/email/mailer.py.
+    dev_buyer_email: str = ""
+    dev_rep_email: str = ""
+    mail_redirect_to: str = ""
+
+    @property
+    def dev_mail_rewrite(self) -> bool:
+        """True when outbound mail must not reach its real recipients."""
+        return bool(self.dev_buyer_email or self.dev_rep_email or self.mail_redirect_to)
+    # DEV ONLY. Blocks the two Salesforce writes — creating an account and
+    # pushing an accepted order into Kugamon. Reads (accounts, products,
+    # territories, picklists) are unaffected, so a dev environment still shows
+    # real customer data. See app/salesforce/client.py.
+    salesforce_readonly: bool = False
 
     # Inbound reply capture (conflict replies). IMAP over SSL to the same
     # wholesale@ mailbox. Blank host/user/pass = disabled: run_poll() no-ops.

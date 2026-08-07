@@ -99,6 +99,14 @@ class Order(Base):
     # Set only when the buyer signs through the link — signature_name alone
     # can't distinguish that from a rep who typed it on the form.
     signature_signed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # How many automatic chasers have gone out (0, 1, 2 …). Indexes into
+    # settings.signature_reminder_hours, so it is the sweep's cursor as well as
+    # a count: never a timestamp, because "which reminder is next" has to
+    # survive the schedule being changed.
+    signature_reminders_sent: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
+    signature_reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # The order as the rep wrote it, snapshotted when the link is first sent.
     # Lets /admin show "edited at signing: 40 → 22 pcs" instead of the buyer's
     # change silently replacing what the rep and buyer discussed.
@@ -112,6 +120,10 @@ class Order(Base):
     po_number: Mapped[str | None] = mapped_column(Text)
     rep: Mapped[str | None] = mapped_column(Text)
     order_written_by: Mapped[str | None] = mapped_column(Text)
+    # Two columns since 0016: `split` is the answer, `split_with` the name.
+    # They fill Salesforce's Split_Commission__c / Split_With__c picklists, so
+    # neither may be a rendered string. The PDF re-derives "Y — Name".
+    split: Mapped[bool | None] = mapped_column(Boolean)
     split_with: Mapped[str | None] = mapped_column(Text)
 
     # salesforce link

@@ -37,6 +37,14 @@ SPECIAL_INSTRUCTIONS = "Special_Instructions__c"
 SALES_ORDER = "kugo2p__SalesOrder__c"
 WRITTEN_BY = "Written_By__c"
 
+# Who keyed the order into Salesforce, as opposed to who sold it (WRITTEN_BY).
+# Always "System" from here: nobody typed these in — the web form pushed them —
+# and that is exactly what the team needs to see to tell them apart from
+# hand-entered orders. Confirmed against the org 2026-08-06: picklist,
+# createable, and "System" is one of its active values.
+ENTERED_BY = "Entered_By__c"
+ENTERED_BY_SYSTEM = "System"
+
 # ------------------------------------- Kugamon order push (Accept -> SF Draft)
 # Header (kugo2p__SalesOrder__c) + lines (kugo2p__SalesOrderProductLine__c),
 # all createable-verified 2026-07-23. Name/Status are NOT createable (auto).
@@ -71,6 +79,11 @@ ORDER_TYPE = "Type__c"  # picklist: 'Season Opening Order' | 'Re-Order' | ...
 # Order-level territory picklist (distinct from Account's free-text SALES_TERRITORY).
 SALES_ORDER_TERRITORY = "kugo2p__SalesTerritory__c"
 CAMPAIGN = "Campaign__c"  # lookup -> Campaign
+# Commission split. Both confirmed against the org 2026-08-06 by describe, not
+# assumed. Split_With__c's picklist already contains every name the form can
+# offer (it comes from REGION column C), so no translation is needed.
+SPLIT_COMMISSION = "Split_Commission__c"  # picklist: 'Yes' | 'No'
+SPLIT_WITH = "Split_With__c"  # picklist of rep names
 COMMISSION_CROSS_CHECKED_BY = "Commission_Cross_Checked_By__c"  # picklist
 COMMISSION_CROSS_CHECKED = "Novriati"  # standing value for web orders
 CAMPAIGN_REP_NON_SHOW_NAME = "Rep - Non Show Orders"  # our 'rep-non-show' -> this Campaign
@@ -430,6 +443,11 @@ def build_sales_order_header(
                 po, SALES_ORDER_PO_NUMBER, SALES_ORDER,
             )
 
+    # Every order this app pushes was keyed by the app, so this is unconditional
+    # — unlike Written_By below, which is rep-only because a customer order has
+    # no salesperson behind it.
+    header[ENTERED_BY] = ENTERED_BY_SYSTEM
+
     # Type + Written_By apply to rep orders only (direct/customer leave empty).
     if order.filled_by == "rep":
         if order.new_or_reorder == "new":
@@ -438,6 +456,13 @@ def build_sales_order_header(
             header[ORDER_TYPE] = "Re-Order"
         if order.order_written_by:
             header[WRITTEN_BY] = order.order_written_by
+
+    # Commission split. 'No' whenever there isn't one — including an order that
+    # never answered the question — so the field is never left ambiguous in
+    # Salesforce. The name only goes with a Yes.
+    header[SPLIT_COMMISSION] = "Yes" if order.split else "No"
+    if order.split and order.split_with:
+        header[SPLIT_WITH] = order.split_with
 
     if sales_territory:
         header[SALES_ORDER_TERRITORY] = sales_territory

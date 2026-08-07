@@ -89,6 +89,46 @@ def html_from_text(body: str) -> str | None:
     )
 
 
+def _is_rep_address(addr: str) -> bool:
+    """Is this address a rep or the internal team, rather than a buyer?
+
+    The team inbox counts as internal. Rep addresses come from the sheet's
+    Email tab; if that read fails the set is empty and everyone looks like a
+    buyer — the wrong test inbox, never a real one.
+    """
+    if addr == (settings.admin_email or "").lower():
+        return True
+    try:
+        from app.sheets import client as sheets_client
+
+        return addr in sheets_client.all_rep_emails()
+    except Exception:  # sheet unreachable — see docstring
+        logger.warning("Could not classify %s as rep/buyer; treating as buyer", addr)
+        return False
+
+
+def _dev_rewrite(addresses: str) -> str:
+    """Swap every real address for its dev inbox, keeping the count and order.
+
+    Falls back to MAIL_REDIRECT_TO when the matching role address is blank, so
+    a half-configured dev env still cannot mail a real person.
+    """
+    rep_box = settings.dev_rep_email or settings.mail_redirect_to
+    buyer_box = settings.dev_buyer_email or settings.mail_redirect_to
+    out: list[str] = []
+    for raw in addresses.split(","):
+        addr = raw.strip()
+        if not addr:
+            continue
+        box = rep_box if _is_rep_address(addr.lower()) else buyer_box
+        # No box configured for this role: fall back to the other rather than
+        # letting the real address through.
+        out.append(box or rep_box or buyer_box or addr)
+    # De-duplicate (buyer and rep can collapse onto one inbox) while keeping order.
+    seen: set[str] = set()
+    return ", ".join(a for a in out if not (a in seen or seen.add(a)))
+
+
 def send_email(
     to: str,
     subject: str,
@@ -112,6 +152,38 @@ def send_email(
     if not settings.mail_configured:
         logger.warning("Email not sent to %s: SMTP is not configured", to)
         return False
+
+    # Dev mode: real recipients are swapped for test inboxes. Done HERE rather
+    # than at the five call sites because this is the only place an address can
+    # turn into a delivery — a caller cannot bypass it, and no future call site
+    # has to remember the rule.
+    if settings.dev_mail_rewrite:
+        original_to, original_cc = to, cc
+        to = _dev_rewrite(to)
+        cc = _dev_rewrite(cc) if cc else None
+        subject = f"[DEV → {original_to}] {subject}"
+        banner = (
+            "*** DEV MODE — this message was NOT delivered to its real recipients ***\n"
+            f"Would have gone to: {original_to}\n"
+            + (f"Cc: {original_cc}\n" if original_cc else "")
+            + ("-" * 60)
+            + "\n\n"
+        )
+        body = banner + body
+        if html:
+            html = (
+                '<div style="background:#fbeeec;border:1px solid #b03a2e;color:#7a281f;'
+                'padding:10px 12px;margin-bottom:16px;font-family:sans-serif;font-size:13px">'
+                "<strong>DEV MODE — not delivered to the real recipients.</strong><br>"
+                f"Would have gone to: {original_to}"
+                + (f"<br>Cc: {original_cc}" if original_cc else "")
+                + "</div>"
+                + html
+            )
+        logger.info(
+            "DEV rewrite: to %s -> %s | cc %s -> %s",
+            original_to, to, original_cc or "-", cc or "-",
+        )
 
     msg = EmailMessage()
     msg["From"] = settings.mail_sender
