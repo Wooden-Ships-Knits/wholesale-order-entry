@@ -8,6 +8,10 @@ Who gets the order PDF:
   send_signed_copy — same, when the buyer signs via the emailed link
   send_order_copy  — the customer-facing copy, to the buyer AND their rep
 
+The first two are OFF by default since 2026-08-06 — see settings.
+send_internal_notices. They are still built and still sent when it is on, so
+this module deliberately keeps all three.
+
 The order copy goes out unconditionally (2026-08-05 — it used to depend on an
 "email me a copy" checkbox, which is gone from both the form and the signing
 page). It is sent once per order, at the point the quantities become final:
