@@ -68,7 +68,6 @@ def signature_email(payload: SignatureEmailRequest, db: Session = Depends(get_db
         season_label=mapping.season_label(order.season_code),
         total_qty=order.total_qty,
         total_amount=order.total_amount,
-        expires_on=order.signature_token_expires_at,
         short_id=str(order.id)[:8],
     )
     # The link is in the body by necessity; keep it out of the logs.
