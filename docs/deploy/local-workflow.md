@@ -17,35 +17,31 @@ your own machine.
 Everything runs against the **dev** stack on `:8083`. Both flags are mandatory —
 see [the footgun](#the-two-mistakes-everyone-makes).
 
-Paste this once per terminal session:
-
 ```bash
-dev() { docker compose -f docker-compose.dev.yml --env-file .env.dev "$@"; }
+# changed frontend/src/**
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build nginx
+
+# changed backend/app/**  (then restart nginx, or you get a 502)
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build backend
+docker compose -f docker-compose.dev.yml --env-file .env.dev restart nginx
+
+# changed .env.dev only — no --build
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d backend
+
+# watch backend logs
+docker compose -f docker-compose.dev.yml --env-file .env.dev logs -f backend
+
+# what's running / stop it
+docker compose -f docker-compose.dev.yml --env-file .env.dev ps
+docker compose -f docker-compose.dev.yml --env-file .env.dev down
+
+# which environment am I on?  "dev":true = the dev stack
+curl -s http://127.0.0.1:8083/api/health
 ```
 
-Then:
-
-```bash
-dev up -d --build nginx     # changed frontend/src/**
-dev up -d --build backend   # changed backend/app/**
-dev restart nginx           # after ANY backend restart, or you get a 502
-dev up -d backend           # changed .env.dev only (no --build)
-dev logs -f backend         # watch backend logs
-dev ps                      # what's running
-dev down                    # stop the dev stack
-
-curl -s http://127.0.0.1:8083/api/health   # "dev":true = you're on dev
-```
-
-It is a **function**, not a variable — `D="docker compose …"` then `$D ps`
-looks tidier but fails on macOS with
-`command not found: docker compose -f …`, because zsh does not split an
-unquoted variable into separate words the way bash does. The function form
-works in both shells.
-
-It lives only in that terminal session, so there is nothing to clean up and no
-way for it to leak into a production command later. To keep it permanently, put
-the same line in `~/.zshrc`.
+Yes, they are long. That is deliberate: the two flags are what separate dev from
+production, so they stay visible in every command rather than hidden behind an
+alias you might forget to define in a new terminal.
 
 ---
 

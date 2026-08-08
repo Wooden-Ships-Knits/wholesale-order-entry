@@ -21,6 +21,7 @@ const COLUMNS = [
   { header: 'Order ID', width: 12 },
   { header: 'Signature', width: 34 },
   { header: 'Season', width: 9 },
+  { header: 'Quantity', width: 10 },
   { header: 'Shipping Window', width: 18 },
   { header: 'Account Name', width: 30 },
   { header: 'Written By', width: 18 },
@@ -69,6 +70,15 @@ function shortDate(iso) {
  *  `type: String` is not decoration: order ids are hex, so a short id like
  *  "20250814" would otherwise be read as a number and lose its leading zeros. */
 const text = (value) => (value ? { value: String(value), type: String } : null)
+
+/** A numeric cell, or an empty one when the value is absent.
+ *
+ *  A real number rather than text, so the column sorts numerically and Excel's
+ *  SUM works on it — the whole reason to want quantities in a spreadsheet.
+ *  Zero is a legitimate quantity, so this checks for null/undefined explicitly
+ *  rather than falsiness. */
+const number = (value) =>
+  value == null || Number.isNaN(Number(value)) ? null : { value: Number(value), type: Number }
 
 // Joined with " · " so a single cell can carry what the table stacks vertically
 // (method + card summary, Yes + how it was resolved) and still read as one line.
@@ -184,6 +194,9 @@ export function orderSheetData(orders) {
       text(o.shortId),
       text(signatureText(o)),
       text(o.seasonCode),
+      // Total pieces as the order stands. A buyer who changed quantities at
+      // signing changed this too — the Signature column carries the before/after.
+      number(o.totalQty),
       text(o.shipWindow),
       text(o.accountName),
       text(o.orderWrittenBy),

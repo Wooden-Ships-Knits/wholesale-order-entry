@@ -11,16 +11,62 @@ the map they all sit on.
 
 ## The daily loop
 
-Edit → push → PR → pull → test. Four stages, copy-pasteable. Detail for each is
-in [`local-workflow.md`](local-workflow.md) and
-[`deploy-to-dev.md`](deploy-to-dev.md).
+Ten stages end to end, copy-pasteable. Stages 1–7 are the daily loop; 8–10 are
+[the release](#the-release--dev-to-production), which happens less often.
 
-### 1 · Push your edit
+| | Stage | Where |
+|---|---|---|
+| 1 | [Start your branch from `feat/dev-environment`](#1--start-your-branch-from-featdev-environment) | laptop |
+| 2 | [Push your edit](#2--push-your-edit) | laptop |
+| 3 | [Open the PR into `feat/dev-environment`](#3--open-the-pr-into-featdev-environment) | GitHub |
+| 4 | [Pull the integration branch locally](#4--pull-the-integration-branch-locally) | laptop |
+| 5 | [Test locally](#5--test-locally) | laptop `:8083` |
+| 6 | [Pull and restart dev on the VM](#6--pull-and-restart-dev-on-the-vm) | VM |
+| 7 | [Verify, then hand it over](#7--verify-then-hand-it-over) | VM → manager |
+| — | *manager approves* | |
+| 8 | [Open the release PR](#8--open-the-release-pr) | GitHub |
+| 9 | [Deploy production on the VM](#9--deploy-production-on-the-vm) | VM |
+| 10 | [Put everything back on `main`](#10--put-everything-back-on-main) | VM + laptop |
+
+Detail for each is in [`local-workflow.md`](local-workflow.md),
+[`deploy-to-dev.md`](deploy-to-dev.md) and
+[`release-flow.md`](release-flow.md).
+
+### 1 · Start your branch from `feat/dev-environment`
+
+Do this **before** you edit anything.
 
 ```bash
 cd ~/Automation/wholesale-order-entry
 
-git branch --show-current        # must NOT be main
+git checkout feat/dev-environment
+git pull                              # don't skip — see below
+git checkout -b feat/<your-branch>
+```
+
+**Not from `main`.** `main` is production, and the integration branch is
+normally ahead of it with work that is approved but not yet released. Branch
+from `main` and you start without those commits, then have to reconcile two
+histories when you PR back — conflicts you never needed.
+
+The rule: **branch from what you will PR into.** You PR into
+`feat/dev-environment`, so start there.
+
+```bash
+# see for yourself what you would have missed
+git log --oneline origin/main..origin/feat/dev-environment
+```
+
+`git pull` matters just as much: without it you branch from yesterday's copy and
+re-introduce whatever landed since.
+
+> **Already edited before reading this?** Nothing is lost — `git checkout -b`
+> carries uncommitted changes onto the new branch. Just run it now.
+
+### 2 · Push your edit
+
+```bash
+git branch --show-current        # must NOT be main or feat/dev-environment
 git status --short               # read this before staging — no surprises
 
 git add -A
@@ -35,14 +81,7 @@ git status -sb
 ## feat/your-branch...origin/feat/your-branch      ← in sync ✓
 ```
 
-> Working on a branch that doesn't exist yet? Create it from the integration
-> branch first, so you start from what dev is already running:
-> ```bash
-> git checkout feat/dev-environment && git pull
-> git checkout -b feat/<your-branch>
-> ```
-
-### 2 · Open the PR into `feat/dev-environment`
+### 3 · Open the PR into `feat/dev-environment`
 
 `gh` is not installed, so use the web UI. `git push` prints a direct link:
 
@@ -60,7 +99,7 @@ remote:      https://github.com/Wooden-Ships-Knits/wholesale-order-entry/pull/ne
 Then **merge the PR** on GitHub. Nothing is live yet — this only moves your work
 into the branch the dev site is built from.
 
-### 3 · Pull the integration branch locally
+### 4 · Pull the integration branch locally
 
 The merge happened on GitHub's servers. Your laptop knows nothing until you ask:
 
@@ -82,19 +121,19 @@ git branch -d feat/<your-branch>              # local
 git push origin --delete feat/<your-branch>   # on GitHub
 ```
 
-### 4 · Test locally
+### 5 · Test locally
 
-Paste once per terminal session:
+Rebuild whichever part you changed:
 
 ```bash
-dev() { docker compose -f docker-compose.dev.yml --env-file .env.dev "$@"; }
+# frontend changed
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build nginx
 ```
 
-Then rebuild whichever part you changed and open it:
-
 ```bash
-dev up -d --build nginx      # frontend changed
-dev up -d --build backend    # backend changed — then: dev restart nginx
+# backend changed — restart nginx after, or you get a 502
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build backend
+docker compose -f docker-compose.dev.yml --env-file .env.dev restart nginx
 ```
 
 **Confirm you are on the dev stack before testing anything that submits or
@@ -119,12 +158,201 @@ docker exec wholesale-dev-nginx-1 \
 A path printed = it's in the build. Silence = rebuild again, and re-read
 [the one rule](local-workflow.md#the-one-rule).
 
-### What happens after
+### 6 · Pull and restart dev on the VM
 
-The loop above ends at "it works on my laptop". Getting it in front of your
-manager and then to customers is steps 6–11 of
-[the full sequence](#the-full-sequence) — deploy `feat/dev-environment` to the
-dev site on the VM, get approval, then PR that branch into `main`.
+Now put it where your manager can see it. Everything below runs **on the VM**.
+
+```bash
+ssh <vm>                          # see deploy-to-dev.md if unsure
+cd ~/wholesale-order-entry
+```
+
+**Safety check first — which branch is this checkout on?** The VM has one
+checkout shared by both stacks, so this is also the branch production would be
+rebuilt from:
+
+```bash
+git branch --show-current
+git status --short                # must be clean — the VM is not for editing
+```
+
+Pull the integration branch:
+
+```bash
+git fetch origin
+git checkout feat/dev-environment
+git pull
+
+git log --oneline -3              # your commit should be here
+```
+
+`git fetch` first, or `checkout` won't see commits pushed minutes ago.
+
+Restart the dev stack with the new code. **Both flags are mandatory** — without
+them you rebuild *production* from an unapproved branch, silently:
+
+```bash
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+```
+
+**Schema changed?** Dev has its own database. Migrations are baked into the
+image, so the rebuild above must come first — then ask the database whether
+anything is pending:
+
+```bash
+docker compose -f docker-compose.dev.yml --env-file .env.dev exec backend alembic current
+docker compose -f docker-compose.dev.yml --env-file .env.dev exec backend alembic heads
+```
+
+Different → apply them:
+
+```bash
+docker compose -f docker-compose.dev.yml --env-file .env.dev exec backend alembic upgrade head
+```
+
+**Got a 502?** nginx cached the backend's old container IP:
+
+```bash
+docker compose -f docker-compose.dev.yml --env-file .env.dev restart nginx
+```
+
+### 7 · Verify, then hand it over
+
+```bash
+curl -s http://127.0.0.1:8083/api/health; echo
+# {"status":"ok","env":"development","dev":true,
+#  "mailRedirected":true,"salesforceReadonly":true}
+```
+
+**`"env":"production"` here means stop.** `.env.dev` did not load, and that
+container can email real reps and write to the live Salesforce org.
+
+Then open `https://dev.order-form.woodenships-wholesale.com` (basic auth:
+`reviewer`) and check before telling anyone:
+
+- [ ] Red **DEVELOPMENT** bar on every page
+- [ ] Your change is visible — hard refresh, `Cmd+Shift+R`
+- [ ] Production still loads, with **no** bar
+
+Send your manager the URL, the credentials, and **what to click**.
+
+**Revisions?** Back to stage 1 with a new branch. **Approved?** → the release,
+below.
+
+---
+
+## The release — dev to production
+
+Stages 8–10. Not daily: this ships everything sitting in `feat/dev-environment`
+as one batch, and only after your manager has approved it on the dev site.
+
+This is the only part of the flow that customers can see go wrong. Read
+[`release-flow.md`](release-flow.md) too — it covers rollback.
+
+### 8 · Open the release PR
+
+On GitHub, a second PR — the reverse direction from your feature PR:
+
+- **Base:** `main`  ·  **Compare:** `feat/dev-environment`
+
+Here `main` **is** the correct base. Check the diff once more: it is everything
+merged into the integration branch since the last release, not just your change.
+
+```bash
+# preview what this release contains, before opening it
+git log --oneline origin/main..origin/feat/dev-environment
+git diff --stat origin/main...origin/feat/dev-environment
+```
+
+Merge it on GitHub. Production still does not have it — merging updates the
+branch, not the server.
+
+### 9 · Deploy production on the VM
+
+```bash
+ssh <vm>
+cd ~/wholesale-order-entry
+```
+
+```bash
+git checkout main            # ← the step that is easy to forget
+git pull
+git branch --show-current    # confirm it really says: main
+```
+
+> ⚠️ **This is the dangerous moment.** The next command has **no** `-f` and
+> **no** `--env-file` — that is what makes it production. If the checkout is
+> still on a feature branch, you have just shipped unapproved code to customers
+> and nothing will warn you.
+
+```bash
+docker compose up -d --build
+```
+
+**Schema changed in this release?** Ask the database, not git — this compares
+where the **DB** is against where the **code** is:
+
+```bash
+docker compose exec backend alembic current   # the database's revision
+docker compose exec backend alembic heads     # the revision this image expects
+```
+
+Identical → nothing to do. Different → migrations are pending:
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend alembic current   # should now match heads
+```
+
+> **Migrations do not roll back.** A code rollback leaves an applied migration in
+> place. Check what a migration does before running it here — this is the real
+> customer database. See
+> [release-flow.md](release-flow.md#rolling-production-back).
+
+**502?** Same stale-DNS cause as on dev — nginx cached the backend's old IP:
+
+```bash
+docker compose restart nginx
+```
+
+Verify:
+
+```bash
+curl -s https://order-form.woodenships-wholesale.com/api/health; echo
+# {"status":"ok","env":"production","dev":false,
+#  "mailRedirected":false,"salesforceReadonly":false}
+```
+
+- [ ] `"env":"production"` and `"dev":false`
+- [ ] **No** DEVELOPMENT bar anywhere on the site
+- [ ] The change you shipped is actually visible
+- [ ] Submit still works end to end
+
+### 10 · Put everything back on `main`
+
+Leave the VM on `main`, so the next person's plain `docker compose up -d --build`
+cannot ship an unreviewed branch:
+
+```bash
+# still on the VM, still on main
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+```
+
+Dev now mirrors production, which is the right resting state — the next feature
+starts from a clean base.
+
+Finally, on your laptop:
+
+```bash
+git checkout main
+git pull
+```
+
+Skip this and your local `main` silently drifts behind, which is how branches get
+started from stale code.
+
+> **Never leave the VM on a feature branch.** See
+> [the footgun](#the-one-that-will-bite-you).
 
 ---
 
@@ -235,41 +463,44 @@ deploy anywhere in this picture — see
 
 ## The full sequence
 
+The same ten stages as [the daily loop](#the-daily-loop), as a picture:
+
 ```mermaid
 flowchart TD
-    A["1 · Edit code<br/>on your laptop"] --> B["2 · Test locally<br/>rebuild + open :8083"]
-    B --> C{"Works?"}
-    C -->|no| A
-    C -->|yes| D["3 · git push<br/>your branch to GitHub"]
-    D --> E["4 · Open PR<br/>base: feat/dev-environment"]
-    E --> F["5 · Merge that PR<br/>nothing is live yet"]
-    F --> G["6 · On the VM: checkout<br/>feat/dev-environment<br/>+ rebuild dev"]
+    A["1 · Branch from<br/>feat/dev-environment<br/>then edit"] --> B["2 · Commit and push<br/>your branch"]
+    B --> C["3 · Open PR<br/>base: feat/dev-environment<br/>and merge it"]
+    C --> D["4 · Pull feat/dev-environment<br/>on your laptop"]
+    D --> E["5 · Test locally<br/>rebuild + open :8083"]
+    E --> F{"Works?"}
+    F -->|no| A
+    F -->|yes| G["6 · On the VM: checkout<br/>feat/dev-environment<br/>+ rebuild dev"]
     G --> H["7 · Manager reviews<br/>dev.order-form…"]
     H --> I{"Approved?"}
     I -->|"revisions"| A
     I -->|yes| J["8 · PR feat/dev-environment<br/>→ main, and merge"]
     J --> K["9 · On the VM:<br/>git checkout main<br/>+ rebuild production"]
-    K --> L["10 · Put dev back<br/>on main too"]
-    L --> M["11 · On your laptop:<br/>git pull"]
+    K --> L["10 · Put dev and your<br/>laptop back on main"]
 ```
 
-Two things people get wrong here:
+Three things people get wrong here:
 
-- **Step 5 comes before step 6.** The dev site serves `feat/dev-environment`, so
-  your change is invisible there until your PR is merged into it. Deploying
+- **Stage 1 is a stage.** Branch from `feat/dev-environment`, not `main`, and
+  pull first. Getting this wrong is invisible until the merge conflicts.
+- **Stage 3 comes before stage 6.** The dev site serves `feat/dev-environment`,
+  so your change is invisible there until your PR is merged into it. Deploying
   before merging shows your manager the *old* code.
-- **Step 11 is the one everyone forgets**, and it is why local branches drift
-  behind. Nothing in steps 8–10 touches your laptop.
+- **Stage 10 is the one everyone forgets**, and it is why local branches drift
+  behind. Nothing in stages 8–9 touches your laptop.
 
-Steps 5 and 8 are **separate merges**, often days apart: your feature lands in
+Stages 3 and 8 are **separate merges**, often days apart: your feature lands in
 `feat/dev-environment` when you are happy with it, and that branch ships to
 `main` only after your manager approves it on the dev site.
 
-| Steps | Where | Detailed doc |
+| Stages | Where | Detailed doc |
 |---|---|---|
-| 1–2 | laptop | [`local-workflow.md`](local-workflow.md) |
-| 3–7 | laptop → GitHub → VM → manager | [`deploy-to-dev.md`](deploy-to-dev.md) |
-| 8–11 | GitHub → VM → laptop | [`release-flow.md`](release-flow.md) |
+| 1–2, 4–5 | laptop | [`local-workflow.md`](local-workflow.md) |
+| 3, 6–7 | GitHub → VM → manager | [`deploy-to-dev.md`](deploy-to-dev.md) |
+| 8–10 | GitHub → VM → laptop | [`release-flow.md`](release-flow.md) |
 
 ---
 
