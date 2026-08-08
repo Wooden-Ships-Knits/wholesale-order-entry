@@ -3,6 +3,129 @@
 Start here. The other files in this folder are the detailed steps; this one is
 the map they all sit on.
 
+- **Just want the commands?** → [The daily loop](#the-daily-loop)
+- **Confused about what "dev" means?** → [Two things that trip everyone up](#two-things-that-trip-everyone-up)
+- **Want the whole picture?** → [The map](#the-map)
+
+---
+
+## The daily loop
+
+Edit → push → PR → pull → test. Four stages, copy-pasteable. Detail for each is
+in [`local-workflow.md`](local-workflow.md) and
+[`deploy-to-dev.md`](deploy-to-dev.md).
+
+### 1 · Push your edit
+
+```bash
+cd ~/Automation/wholesale-order-entry
+
+git branch --show-current        # must NOT be main
+git status --short               # read this before staging — no surprises
+
+git add -A
+git commit -m "feat: what you did"
+git push -u origin feat/<your-branch>
+```
+
+**Check it worked** — no `[ahead N]` means GitHub has everything:
+
+```bash
+git status -sb
+## feat/your-branch...origin/feat/your-branch      ← in sync ✓
+```
+
+> Working on a branch that doesn't exist yet? Create it from the integration
+> branch first, so you start from what dev is already running:
+> ```bash
+> git checkout feat/dev-environment && git pull
+> git checkout -b feat/<your-branch>
+> ```
+
+### 2 · Open the PR into `feat/dev-environment`
+
+`gh` is not installed, so use the web UI. `git push` prints a direct link:
+
+```
+remote: Create a pull request for 'feat/xyz' on GitHub by visiting:
+remote:      https://github.com/Wooden-Ships-Knits/wholesale-order-entry/pull/new/feat/xyz
+```
+
+- **Base:** `feat/dev-environment`  ·  **Compare:** `feat/<your-branch>`
+
+> ⚠️ **GitHub pre-selects `main` as the base.** Change it in the dropdown every
+> single time. Left on `main`, your feature aims straight at production's branch
+> and skips your manager's review entirely.
+
+Then **merge the PR** on GitHub. Nothing is live yet — this only moves your work
+into the branch the dev site is built from.
+
+### 3 · Pull the integration branch locally
+
+The merge happened on GitHub's servers. Your laptop knows nothing until you ask:
+
+```bash
+git checkout feat/dev-environment
+git pull
+```
+
+**Check your work actually arrived:**
+
+```bash
+git log --oneline -3        # your commit should be in this list
+```
+
+Tidy up the merged branch while you are here (optional):
+
+```bash
+git branch -d feat/<your-branch>              # local
+git push origin --delete feat/<your-branch>   # on GitHub
+```
+
+### 4 · Test locally
+
+Paste once per terminal session:
+
+```bash
+dev() { docker compose -f docker-compose.dev.yml --env-file .env.dev "$@"; }
+```
+
+Then rebuild whichever part you changed and open it:
+
+```bash
+dev up -d --build nginx      # frontend changed
+dev up -d --build backend    # backend changed — then: dev restart nginx
+```
+
+**Confirm you are on the dev stack before testing anything that submits or
+emails:**
+
+```bash
+curl -s http://127.0.0.1:8083/api/health; echo
+# {"status":"ok","env":"development","dev":true,
+#  "mailRedirected":true,"salesforceReadonly":true}
+```
+
+`"dev":true` = safe. Then open **http://127.0.0.1:8083/admin** and hard refresh
+(`Cmd+Shift+R`).
+
+If your change isn't there, the rebuild didn't take — ask the container directly:
+
+```bash
+docker exec wholesale-dev-nginx-1 \
+  sh -c "grep -l 'text from your change' /usr/share/nginx/html/assets/*.js"
+```
+
+A path printed = it's in the build. Silence = rebuild again, and re-read
+[the one rule](local-workflow.md#the-one-rule).
+
+### What happens after
+
+The loop above ends at "it works on my laptop". Getting it in front of your
+manager and then to customers is steps 6–11 of
+[the full sequence](#the-full-sequence) — deploy `feat/dev-environment` to the
+dev site on the VM, get approval, then PR that branch into `main`.
+
 ---
 
 ## Two things that trip everyone up
