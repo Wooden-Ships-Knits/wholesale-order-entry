@@ -108,9 +108,9 @@ def rep_notice_email(ctx: dict) -> tuple[str, str]:
     that the body below states the link was sent instantly, which is not true
     of a held order — see routers/orders.py.
 
-    Wording supplied by Wooden Ships 2026-08-06; keep it as written. **bold**
-    and __underline__ would render in the HTML part and be stripped from the
-    plain-text one (email/mailer.py), but this copy uses neither.
+    Wording supplied by Wooden Ships 2026-08-06; keep it as written. The
+    **bold** run renders in the HTML part and has its markers stripped from the
+    plain-text one — see email/mailer.py::html_from_text.
     """
     subject = (
         f"Draft order/Need Signature - {ctx['season_label']} - {_store(ctx)}" + _tag(ctx)
@@ -123,7 +123,7 @@ Upon receipt, our system instantly sent a link to the customer. They can sign di
 
 Attached is a PDF copy of the order for your reference and so you can follow up with your account if they don't sign the order soon.
 
-As much as possible, we encourage you to have the customer immediately open their email as soon as you click on the "send to Customer" so they can sign on the spot and complete the process. This will save you from following up and having orders sit unsubmitted.
+**As much as possible, we encourage you to have the customer immediately open their email as soon as you click on the "send to Customer" so they can sign on the spot and complete the process.** This will save you from following up and having orders sit unsubmitted.
 
 You will receive a Notification email once the customer has actually signed the order.
 
