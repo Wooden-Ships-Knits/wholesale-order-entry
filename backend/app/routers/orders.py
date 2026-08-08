@@ -143,19 +143,14 @@ def _send_signature_request(
             total_amount=order.total_amount,
             short_id=str(order_id)[:8],
         )
-        # CC the rep who wrote the order (falling back to the territory's
-        # lead rep). None when neither resolves in the sheet — send anyway
-        # rather than hold the buyer's link hostage to a sheet lookup.
-        cc = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
-        if not cc:
-            logger.info(
-                "No rep email for writer %r / territory %r — signature request "
-                "for order %s sent without CC",
-                order.order_written_by, order.sales_territory, str(order_id)[:8],
-            )
+        # NO CC (2026-08-06). The body is a signing link, and the link is a
+        # bearer credential — copying the rep put it in their inbox and let
+        # them sign on the buyer's behalf. The rep hears about the order
+        # through send_rep_notice at submit instead, which carries the PDF but
+        # no link.
         if not mailer.send_email(
             draft["to"], draft["subject"], draft["body"],
-            [(filename, pdf_bytes, "pdf")], cc=cc,
+            [(filename, pdf_bytes, "pdf")],
             html=mailer.html_from_text(draft["body"]),
         ):
             logger.error(
@@ -466,6 +461,22 @@ def submit_order(
     # the copies above: a slow Gmail must not hold up the confirmation screen.
     # Last, so any conflict verdict is already committed — see the note above.
     if order.signature_token:
+        # The rep's own copy, replacing the CC they used to get on the request
+        # below. Sent regardless of the conflict hold: the rep wrote this order
+        # and should know it arrived even if the buyer isn't being asked yet.
+        rep_to = sheets_client.rep_email_for_order(
+            order.order_written_by, order.sales_territory
+        )
+        if rep_to:
+            background.add_task(
+                order_email.send_rep_notice, rep_to, email_ctx, pdf_bytes, filename
+            )
+        else:
+            logger.info(
+                "No rep email for writer %r / territory %r — order %s submitted "
+                "without notifying a rep",
+                order.order_written_by, order.sales_territory, str(order.id)[:8],
+            )
         background.add_task(_send_signature_request, order.id, pdf_bytes, filename)
 
     logger.info(

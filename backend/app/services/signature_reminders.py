@@ -29,7 +29,6 @@ from app.email import mailer, signature_template
 from app.pdf import context as pdf_context
 from app.pdf import render as pdf_render
 from app.salesforce import mapping
-from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +81,8 @@ def _send(order: Order) -> bool:
         total_amount=order.total_amount,
         short_id=str(order.id)[:8],
     )
-    cc = sheets_client.rep_email_for_order(order.order_written_by, order.sales_territory)
+    # No CC — see routers/orders.py::_send_signature_request. The link must not
+    # reach the rep's inbox, and a chaser is the same link five more times.
 
     # Re-rendered from the order row rather than read off disk: the buyer may
     # have been sent a link before an admin corrected the store or the ship
@@ -106,7 +106,7 @@ def _send(order: Order) -> bool:
         )
 
     return mailer.send_email(
-        draft["to"], draft["subject"], draft["body"], attachments, cc=cc,
+        draft["to"], draft["subject"], draft["body"], attachments,
         html=mailer.html_from_text(draft["body"]),
     )
 
