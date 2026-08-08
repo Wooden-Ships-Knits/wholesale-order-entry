@@ -1,5 +1,7 @@
 # Release flow — laptop → dev → production
 
+> Lost in the flow? [`README.md`](README.md) has the whole picture in two diagrams.
+
 How a change gets from your editor to `order-form.woodenships-wholesale.com`.
 
 > For the loop *before* this one — running both stacks on your own laptop, which
@@ -22,7 +24,7 @@ How a change gets from your editor to `order-form.woodenships-wholesale.com`.
 | Local port | `0.0.0.0:8082` | `127.0.0.1:8083` (never public) |
 | Compose project | `wholesale-order-entry` | `wholesale-dev` |
 | Env file | `.env` | `.env.dev` |
-| Branch it should run | `main` | whatever is under review |
+| Branch it should run | `main` | `feat/dev-environment` (integration) |
 | Email | real reps and buyers | test inboxes only |
 | Database | real | its own, separate |
 
@@ -95,8 +97,14 @@ Worth checking before you hand it over:
 
 ## 4. Merge
 
-Open a PR from the branch into `main` and merge it there, not locally — the PR
-is the record of what changed and why.
+Two merges, not one — see [`README.md`](README.md#1-dev-means-two-different-things):
+
+1. **`feat/<your-branch>` → `feat/dev-environment`** — done before the dev
+   deploy in §2, since the dev site serves the integration branch.
+2. **`feat/dev-environment` → `main`** — only after your manager has approved it
+   on the dev site. This is the release gate.
+
+Merge both on GitHub, not locally — the PR is the record of what changed and why.
 
 ## 5. Deploy to production
 

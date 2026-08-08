@@ -330,6 +330,7 @@ docker compose exec backend alembic revision -m "…"       # new (hand-written)
 | `docs/PRD.md` | product requirements, every form field |
 | `docs/architecture.md` | system design, data model, SF mapping, API |
 | `docs/SETUP.md` | environment & deployment |
+| **`docs/deploy/README.md`** | **the full picture, with diagrams — start here for anything deploy-related** |
 | `docs/deploy/local-workflow.md` | the laptop loop: rebuilds, 502s, why an edit didn't show |
 | `docs/deploy/deploy-to-dev.md` | push → PR → pull on the VM → run on dev |
 | `docs/deploy/release-flow.md` | branch → dev → production on the VM |

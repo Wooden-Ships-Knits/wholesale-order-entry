@@ -1,5 +1,7 @@
 # Local workflow — testing your edits with Docker
 
+> Lost in the flow? [`README.md`](README.md) has the whole picture in two diagrams.
+
 The laptop half of the release flow. [`release-flow.md`](release-flow.md)
 covers the VM (branch → dev → production); this covers the loop before that, on
 your own machine.
