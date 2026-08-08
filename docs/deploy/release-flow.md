@@ -2,6 +2,10 @@
 
 How a change gets from your editor to `order-form.woodenships-wholesale.com`.
 
+> For the loop *before* this one — running both stacks on your own laptop, which
+> rebuild a given change needs, and why an edit sometimes doesn't show up at all
+> — see [`local-workflow.md`](local-workflow.md).
+
 ```
   laptop                GitHub                    GCP VM (34.101.92.203)
 ┌──────────┐   push   ┌──────────────┐   pull   ┌───────────────────────────┐
@@ -43,6 +47,9 @@ See [CI](#ci--what-exists-and-what-does-not) for the caveat about the current
 baseline.
 
 ## 2. Deploy that branch to dev
+
+> Step-by-step version of this section, including the PR and migrations:
+> [`deploy-to-dev.md`](deploy-to-dev.md).
 
 On the VM:
 
