@@ -38,9 +38,19 @@ to the running backend container):
 cd frontend && npm install && npm run dev   # → http://localhost:5173
 ```
 
+> ⚠️ **The dev server proxies `/api` to `localhost:8082` — the *production*
+> stack** (`frontend/vite.config.js:18`). Hot-reloading UI, but a real database,
+> real outbound email and a Salesforce org that accepts writes. Fine for pure UI
+> work; before testing submit, Accept or anything that emails, point it at the
+> dev stack on `:8083` instead. Check with
+> `curl -s http://localhost:5173/api/health` — `"dev":true` is safe.
+
 > **Rule of thumb:** frontend change → `docker compose up -d --build nginx`
 > (or use the dev server). Backend change → `docker compose up -d --build backend`.
 > The containers do **not** pick up source edits on their own.
+
+Full loop, and why an edit sometimes doesn't show up at all:
+**`docs/deploy/local-workflow.md`**.
 
 ---
 
@@ -320,6 +330,10 @@ docker compose exec backend alembic revision -m "…"       # new (hand-written)
 | `docs/PRD.md` | product requirements, every form field |
 | `docs/architecture.md` | system design, data model, SF mapping, API |
 | `docs/SETUP.md` | environment & deployment |
+| `docs/deploy/local-workflow.md` | the laptop loop: rebuilds, 502s, why an edit didn't show |
+| `docs/deploy/deploy-to-dev.md` | push → PR → pull on the VM → run on dev |
+| `docs/deploy/release-flow.md` | branch → dev → production on the VM |
+| `docs/dev-environment.md` | the dev stack and the switches that make it safe |
 | `docs/conflict-checker.md` | nearby-stockist conflict check |
 | `docs/superpowers/specs/` | design specs (conflict check, admin page) |
 | `docs/*.drawio` / `*.png` | order-flow diagrams |

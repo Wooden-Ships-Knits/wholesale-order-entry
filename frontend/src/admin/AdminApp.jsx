@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getOrders, getSession, logout, pollReplies } from './api'
+import { exportOrdersXlsx } from './exportOrders'
 import { EMPTY_FILTERS, filterOrders, hasActiveFilters } from './filterOrders'
 import Login from './Login'
 import OrderTable from './OrderTable'
@@ -33,6 +34,7 @@ export default function AdminApp() {
   const [loading, setLoading] = useState(false)
   const [polling, setPolling] = useState(false)
   const [pollMsg, setPollMsg] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   const setField = (key, value) => setFilters((f) => ({ ...f, [key]: value }))
 
@@ -80,6 +82,21 @@ export default function AdminApp() {
       else setError(err.message)
     } finally {
       setPolling(false)
+    }
+  }
+
+  // Download the visible rows as .xlsx. Exports `visibleOrders`, not `orders`,
+  // so the file matches the table exactly — status chips and column filters
+  // included. Nothing is sent to the server; the rows are already here.
+  async function exportXlsx() {
+    setExporting(true)
+    setError('')
+    try {
+      await exportOrdersXlsx(visibleOrders)
+    } catch (err) {
+      setError(`Export failed: ${err.message}`)
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -158,6 +175,24 @@ export default function AdminApp() {
               title="Capture new conflict replies and run the AI classifier"
             >
               {polling ? 'Checking…' : 'Check replies'}
+            </button>
+            {/* Exports exactly what the table is showing — say so in the
+                tooltip, because the button sits next to the filters that
+                decide it. */}
+            <button
+              type="button"
+              className="link-btn"
+              onClick={exportXlsx}
+              disabled={exporting || !visibleOrders.length}
+              title={
+                visibleOrders.length
+                  ? `Download ${visibleOrders.length} order${
+                      visibleOrders.length === 1 ? '' : 's'
+                    } as an Excel file`
+                  : 'Nothing to export'
+              }
+            >
+              {exporting ? 'Exporting…' : 'Export to Excel'}
             </button>
             {pollMsg && <span className="poll-msg">{pollMsg}</span>}
           </div>
