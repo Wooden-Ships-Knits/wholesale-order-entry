@@ -1249,6 +1249,12 @@ button:hover {
 .unknown {
   color: #aaa;
 }
+/* Numeric cells (order quantity). Right-aligned so the digits line up down the
+   column and an unusually large order is visible without reading it. */
+.admin-table td.num {
+  text-align: right;
+  white-space: nowrap;
+}
 /* Tax-cert cell for a new account with no upload: "No" stacked over the button */
 .cert-missing {
   display: flex;
@@ -1663,6 +1669,14 @@ button:hover {
    as a problem, not as a neutral "pending" — someone has to send it by hand. */
 .sig-unsent {
   color: #b03a2e;
+}
+
+/* Waiting on the conflict inquiry, not broken — so it must not look like
+   .sig-unsent above, which means "someone has to act". */
+.sig-held {
+  color: #7a5c1f;
+  font-weight: 600;
+  cursor: help;
 }
 
 /* Read-only values in the sign page's header grid — same weight as a filled

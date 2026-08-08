@@ -76,12 +76,35 @@ def _conflict_point(order: Order) -> tuple[float, float] | None:
     return None
 
 
-def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str) -> None:
+def signature_on_conflict_hold(order: Order) -> bool:
+    """Is this order's signing link being withheld pending a conflict decision?
+
+    A new store whose location clashes with an existing stockist may not get to
+    place this order at all, so asking them to sign it first is the wrong way
+    round — the buyer signs, then hears the order can't proceed. The link waits
+    until the rep answers the conflict inquiry (2026-08-06).
+
+    Only a CONFIRMED conflict holds. has_conflict None means the check hasn't
+    run, failed, or had no coordinates; treating that as a hold would silently
+    strand every order the check couldn't reach a verdict on.
+
+    Released by admin.set_conflict_resolution when the outcome is "cleared". A
+    "real_conflict" outcome holds forever on purpose: nothing auto-sends after
+    the rep says a store is a genuine clash, and the team can still send by
+    hand from /admin if they decide otherwise.
+    """
+    return order.has_conflict is True and order.conflict_resolution is None
+
+
+def _send_signature_request(
+    order_id: uuid.UUID, pdf_bytes: bytes | None = None, filename: str | None = None
+) -> None:
     """Background: email the buyer their signing link, then record the send.
 
     The card-masked PDF is attached so the buyer can read the order before
-    opening the link — it is passed in from submit rather than re-rendered
-    here, so the attachment is byte-identical to the copy saved on disk.
+    opening the link. Submit passes it in, so the attachment is byte-identical
+    to the copy saved on disk; the conflict-release path has no such copy to
+    hand and lets it be re-rendered from the order row below.
 
     signature_requested_at is stamped only AFTER the SMTP call succeeds, so the
     admin column's "Email Sent ✓" means the mail really left. A failure leaves
@@ -94,6 +117,23 @@ def _send_signature_request(order_id: uuid.UUID, pdf_bytes: bytes, filename: str
         order = db.get(Order, order_id)
         if order is None or not order.signature_token:
             return
+        # Re-read, not re-checked at queue time: the conflict check is the
+        # background task immediately before this one, so the verdict only
+        # exists by now.
+        if signature_on_conflict_hold(order):
+            logger.info(
+                "Order %s has an outstanding conflict — signing link held until "
+                "the inquiry is resolved",
+                str(order_id)[:8],
+            )
+            return
+        if pdf_bytes is None:
+            context = pdf_context_builder.build(order)
+            context["card"] = pdf_context_builder.masked_card(order)
+            pdf_bytes = pdf_render.render_order_pdf(context)
+            filename = pdf_render.order_pdf_filename(
+                order.season_code, order.buyer_name or "", order.created_at, order.id
+            )
         draft = signature_template.build(
             to_email=order.signature_email,
             sign_url=sign.sign_url(order.signature_token),
@@ -400,10 +440,12 @@ def submit_order(
             order.order_copy_email, email_ctx, pdf_bytes, filename, rep=rep_to,
         )
 
-    # The buyer asked us to send the order out for signature. Background, like
-    # the copies above: a slow Gmail must not hold up the confirmation screen.
-    if order.signature_token:
-        background.add_task(_send_signature_request, order.id, pdf_bytes, filename)
+    # ORDER MATTERS from here down. Starlette runs background tasks in the
+    # order they were added, and the signature request below refuses to send
+    # while a conflict is outstanding — so the conflict check has to have
+    # committed its verdict first. Queued the other way round (as it was until
+    # 2026-08-06) has_conflict is still None when the email goes out, and the
+    # hold can never trigger.
 
     # New accounts only: check whether an existing stockist is too close, so
     # /admin can flag it. Runs in the background — a slow Google/Salesforce
@@ -419,6 +461,12 @@ def submit_order(
             )
         else:
             background.add_task(_run_conflict_check, order.id, *point)
+
+    # The buyer asked us to send the order out for signature. Background, like
+    # the copies above: a slow Gmail must not hold up the confirmation screen.
+    # Last, so any conflict verdict is already committed — see the note above.
+    if order.signature_token:
+        background.add_task(_send_signature_request, order.id, pdf_bytes, filename)
 
     logger.info(
         "Order %s persisted: season=%s items=%d qty=%d total=%s pdf=%s",

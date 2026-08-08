@@ -368,6 +368,13 @@ function SignatureCell({ order: o, sent, drafting, cancelling, onDraft, onCancel
       <div className="cert-missing">
         {o.signatureEmailSent || sent ? (
           <span className="sf-created">Email Sent ✓ waiting for signature</span>
+        ) : o.signatureHeldForConflict ? (
+          /* Deliberately unsent, waiting on the conflict inquiry. Distinct from
+             the failure below: nobody should "send it manually" here — clearing
+             the conflict releases it on its own. */
+          <span className="sig-held" title="Clearing the conflict sends this automatically">
+            Held — conflict outstanding
+          </span>
         ) : (
           /* The token exists but the send failed (SMTP down at submit). Say so
              rather than showing a reassuring "sent" the buyer never received. */
@@ -639,6 +646,7 @@ export default function OrderTable({
             <th>Order ID</th>
             <th>Signature</th>
             <th>Season</th>
+            <th>Quantity</th>
             <th>Shipping Window</th>
             <th>Account Name</th>
             <th>Written By</th>
@@ -718,6 +726,10 @@ export default function OrderTable({
                 ))}
               </select>
             </th>
+            {/* Quantity has no filter: a free-text or range control over a
+                number nobody searches by would cost a column of width for
+                nothing. The header row still needs the cell to stay aligned. */}
+            <th aria-hidden="true" />
             <th>
               <select
                 aria-label="Filter by shipping window"
@@ -841,7 +853,7 @@ export default function OrderTable({
         <tbody>
           {!orders.length && (
             <tr>
-              <td className="admin-empty-row" colSpan={16}>
+              <td className="admin-empty-row" colSpan={17}>
                 {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
               </td>
             </tr>
@@ -884,6 +896,10 @@ export default function OrderTable({
                   resolved from this season's price book when the order was
                   submitted, so changing it would misprice every line. */}
               <td>{o.seasonCode || <span className="unknown">—</span>}</td>
+              {/* Total pieces as the order stands. A buyer who changed the
+                  quantities at signing changed this too — the Signature cell
+                  is where the before/after shows. */}
+              <td className="num">{o.totalQty ?? <span className="unknown">—</span>}</td>
               <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
               <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
               {/* Internal Use "Order written by" — only rep-filled orders carry
