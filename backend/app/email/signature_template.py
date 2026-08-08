@@ -18,7 +18,6 @@ def build(
     *,
     to_email: str | None,
     sign_url: str,
-    cc_email: str | None = None,
     account_name: str | None = None,
     season_label: str | None = None,
     total_qty: int | None = None,
@@ -27,9 +26,10 @@ def build(
 ) -> dict:
     """-> {to, cc, subject, body}.
 
-    cc is the territory's lead rep (same lookup as the tax-cert request), so
-    the rep sees that their buyer was asked to sign. It may be empty when the
-    territory is unknown — the admin fills it in before sending.
+    cc is always empty (2026-08-06): the body is a signing link, and a link is
+    a bearer credential — copying the rep let them sign on the buyer's behalf.
+    The key stays in the return value so the admin draft modal still renders a
+    CC field the team can fill in by hand.
 
     No expiry date is passed in: the body says "the link will expire so don't
     delay" rather than naming a day (wording set 2026-08-06). That also suits
@@ -83,7 +83,7 @@ Wooden Ships
 
     return {
         "to": (to_email or "").strip(),
-        "cc": (cc_email or "").strip(),
+        "cc": "",
         "subject": subject,
         "body": body,
     }

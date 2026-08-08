@@ -94,6 +94,49 @@ def order_copy_email(ctx: dict) -> tuple[str, str]:
     return subject, body
 
 
+def rep_notice_email(ctx: dict) -> tuple[str, str]:
+    """The rep's own copy of an order they wrote, sent at submit.
+
+    Replaces the CC they used to get on the buyer's signature request. That CC
+    was dropped because the request's body IS the signing link, and a link is a
+    bearer credential — a rep holding one could sign on the buyer's behalf. So
+    this carries the same PDF and says the same thing about status, and
+    deliberately carries NO link.
+
+    Sent whether or not the signing link went out, including while an order is
+    held for a conflict: the rep wrote it, so they should know it landed. NOTE
+    that the body below states the link was sent instantly, which is not true
+    of a held order — see routers/orders.py.
+
+    Wording supplied by Wooden Ships 2026-08-06; keep it as written. The
+    **bold** run renders in the HTML part and has its markers stripped from the
+    plain-text one — see email/mailer.py::html_from_text.
+    """
+    subject = (
+        f"Draft order/Need Signature - {ctx['season_label']} - {_store(ctx)}" + _tag(ctx)
+    )
+    body = """Hi there,
+
+We have received an unsigned Draft Order for this account! We appreciate it!
+
+Upon receipt, our system instantly sent a link to the customer. They can sign digitally and immediately submit. They can also edit any part of the order if they want.
+
+Attached is a PDF copy of the order for your reference and so you can follow up with your account if they don't sign the order soon.
+
+**As much as possible, we encourage you to have the customer immediately open their email as soon as you click on the "send to Customer" so they can sign on the spot and complete the process.** This will save you from following up and having orders sit unsubmitted.
+
+You will receive a Notification email once the customer has actually signed the order.
+
+Until we receive the signed copy, reviewed it and accepted the order, the order is in Draft status. This means the order is not in our system. It will not appear in any report and the yarn is not held, the capacity is not booked and the ship window is not locked.
+
+If you have any questions, please feel free to reply to this email.
+
+Thank you!
+Wooden Ships
+"""
+    return subject, body
+
+
 def signed_email(ctx: dict) -> tuple[str, str]:
     """Notice for an order the BUYER has just signed through the emailed link.
 
@@ -132,6 +175,15 @@ def send_signed_copy(ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
     subject, body = signed_email(ctx)
     return mailer.send_email(
         settings.admin_email, subject, body, [(filename, pdf_bytes, "pdf")],
+        html=mailer.html_from_text(body),
+    )
+
+
+def send_rep_notice(to: str, ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
+    """The rep's copy at submit, with the PDF and no signing link."""
+    subject, body = rep_notice_email(ctx)
+    return mailer.send_email(
+        to, subject, body, [(filename, pdf_bytes, "pdf")],
         html=mailer.html_from_text(body),
     )
 
