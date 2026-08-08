@@ -23,6 +23,7 @@ from app.db.models import Order
 from app.db.session import get_db
 from app.email import inbound, order_email
 from app.pdf import render as pdf_render
+from app.routers import orders
 from app.routers.accounts import account_city_state
 from app.salesforce import account_search
 from app.salesforce import client as sf_client
@@ -134,6 +135,14 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         # True only once the email actually left (see orders._send_signature_request);
         # a requested-but-unsent order shows as still needing to go out.
         "signatureEmailSent": o.signature_requested_at is not None,
+        # The link exists but is deliberately unsent, waiting on the conflict
+        # inquiry. Without this the cell reads "Not sent — send it manually",
+        # which is the opposite of what the team should do.
+        "signatureHeldForConflict": (
+            orders.signature_on_conflict_hold(o)
+            and bool(o.signature_token)
+            and o.signature_requested_at is None
+        ),
         "signatureEmail": o.signature_email,
         # A usable link is out there right now, so admin edits are blocked
         # (_reject_if_awaiting_signature). The token itself is never sent.
@@ -193,8 +202,14 @@ def _reject_if_awaiting_signature(order: Order, what: str) -> None:
     dangerous case is Accept: it pushes the CURRENT lines to Salesforce as a
     Kugamon Draft and is idempotent on sf_order_id, so if the buyer then signs
     with different quantities the two systems disagree permanently and nothing
-    ever reconciles them. Ship window and account relink are the milder version
-    of the same race — last write wins, silently.
+    ever reconciles them. The ship window is the milder version of the same
+    race — last write wins, silently — but it is what the buyer is agreeing to,
+    so it stays frozen too.
+
+    Account relink used to be blocked here as well and no longer is (see
+    relink_account): correcting the store touches nothing in Salesforce until
+    Accept, and blocking it meant a mis-linked order could only be fixed by
+    revoking the buyer's link.
 
     The escape hatch is POST /orders/{id}/cancel-signature: revoke the link and
     the order is ordinary again. That is deliberate rather than a force flag —
@@ -370,19 +385,44 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
 
 @router.post("/orders/{order_id}/conflict-resolution", dependencies=[AdminRequired])
 def set_conflict_resolution(
-    order_id: str, payload: ConflictResolutionRequest, db: Session = Depends(get_db)
+    order_id: str,
+    payload: ConflictResolutionRequest,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
 ) -> dict:
     """Record how a conflict inquiry ended so the row closes instead of sitting
-    at "waiting for the response". Purely a local status stamp — nothing is sent
-    and Salesforce is not touched."""
+    at "waiting for the response". A local status stamp — Salesforce is not
+    touched — with one side effect: clearing the conflict releases a signing
+    link that was held back for it.
+
+    "cleared" means the rep says this store may proceed, so the buyer can now
+    be asked to sign. "real_conflict" sends nothing: the order is not going
+    ahead, and mailing the buyer a signing link would invite them to commit to
+    an order the team is about to decline. The team can still send it by hand.
+    """
     order = db.get(Order, order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
+    was_held = orders.signature_on_conflict_hold(order)
     order.conflict_resolution = payload.outcome
     order.conflict_resolution_note = payload.note or None
     order.conflict_resolved_at = datetime.now(timezone.utc)
     db.commit()
     logger.info("Order %s conflict marked %s", str(order.id)[:8], payload.outcome)
+
+    # Only for a link that never went out: signature_requested_at is stamped on
+    # a successful send, so a re-cleared conflict can't re-mail a buyer who was
+    # already asked.
+    if (
+        was_held
+        and payload.outcome == "cleared"
+        and order.signature_token
+        and order.signature_requested_at is None
+    ):
+        logger.info(
+            "Order %s conflict cleared — releasing the held signing link", str(order.id)[:8]
+        )
+        background.add_task(orders._send_signature_request, order.id)
     return _row(order)
 
 
@@ -441,6 +481,14 @@ def relink_account(order_id: str, payload: AccountLinkRequest, db: Session = Dep
     the order at submit, so they follow the new link; leaving them would mean an
     order that reads "Nashville" while routing to the Midwest rep. Addresses are
     NOT touched — the rep entered where it actually ships, which is order data.
+
+    Deliberately NOT frozen while a signing link is live, unlike Accept and the
+    ship window (2026-08-06). Nothing here reaches Salesforce — that happens on
+    Accept — so the worst case is a buyer holding an open tab that still names
+    the old store; the sign page reads account_name live, so a reload shows the
+    corrected one. Accept stays frozen because it pushes the current lines as a
+    Kugamon Draft and can never be reconciled if the buyer then signs different
+    quantities.
     """
     order = db.get(Order, order_id)
     if order is None:
@@ -452,7 +500,6 @@ def relink_account(order_id: str, payload: AccountLinkRequest, db: Session = Dep
             status_code=409,
             detail=f"This order is already {order.status} — its account can no longer be changed.",
         )
-    _reject_if_awaiting_signature(order, "its account can't be changed")
 
     before = (order.account_name, order.sf_account_id)
 
