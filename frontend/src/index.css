@@ -978,6 +978,46 @@ button:hover {
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
+
+/* ---- metric cards (rep dashboard) ---- */
+/* Read-only summary; the status chips below are the filter control. Plain
+   <div>s rather than buttons — nothing here is clickable, and a button would
+   also inherit the global dark-fill/white-text/uppercase rule and need three
+   overrides to undo it. Wraps rather than scrolls: five cards on a narrow
+   laptop should stack, not hide. */
+.metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 9.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #d8d4cc;
+  background: #f7f5f1;
+}
+.metric-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #55524c;
+}
+.metric-value {
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+/* Reserved even when empty (the component renders a space), so cards with and
+   without a sub-line still align along the bottom. */
+.metric-sub {
+  min-height: 1rem;
+  font-size: 0.72rem;
+  color: #888;
+}
 /* Top-level admin sections: Orders | Conflict check */
 .admin-tabs {
   display: flex;

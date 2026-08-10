@@ -2,15 +2,18 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import AdminApp from './admin/AdminApp.jsx'
+import RepsApp from './reps/RepsApp.jsx'
 import SignPage from './sign/SignPage.jsx'
 import DevBanner from './components/DevBanner.jsx'
 import './index.css'
 import './conflict/conflict.css'
 
-// Three pages, no router dependency:
+// Four pages, no router dependency:
 //   /order_form   — the buyer order form
 //   /admin        — internal monitoring + the stockist conflict-check tab
 //                   (asks for the admin password first)
+//   /reps         — a sales rep's read-only view of their own orders
+//                   (its own sign-in; a rep session is not an admin session)
 //   /sign/<token> — the buyer signing an order from an emailed link
 // Anything else redirects to the order form, except the old conflict-tool
 // URLs, which now live inside /admin.
@@ -19,6 +22,7 @@ const path = window.location.pathname.replace(/\/+$/, '') || '/'
 const PAGES = {
   '/order_form': App,
   '/admin': AdminApp,
+  '/reps': RepsApp,
 }
 
 const CONFLICT_LEGACY = ['/check-conflict', '/conflict.html']
