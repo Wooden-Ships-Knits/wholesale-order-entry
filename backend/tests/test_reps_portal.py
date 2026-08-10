@@ -430,6 +430,7 @@ REP_ROW_KEYS = {
     "totalQty",
     "shipWindow",
     "accountName",
+    "totalAmount",
     "orderWrittenBy",
     "salesTerritory",
     "notes",
@@ -457,13 +458,17 @@ def test_the_endpoint_serializes_exactly_the_allowed_keys(client):
     assert set(client.get("/api/reps-portal/orders").json()["orders"][0]) == REP_ROW_KEYS
 
 
-def test_rep_row_carries_no_money():
-    """The id IS present (the Order ID cell links to the PDF), but no dollar
-    figures — quantity is on the rep's column list, money is not."""
-    row = _rep_row(_order())
+def test_rep_row_carries_the_order_value_but_not_the_presignature_snapshot():
+    """The Value column needs totalAmount (added 2026-08-10). orig_total_amount
+    stays server-side — signatureEdited already carries that comparison, so
+    sending it would expose what the order was worth before the buyer trimmed
+    it for no benefit."""
+    row = _rep_row(_order(orig_total_amount=Decimal("3000.00"), orig_total_qty=40))
     assert row["shortId"] == "2b1f9c4e"
     assert row["id"] == str(_order().id)
-    assert not any("amount" in key.lower() for key in row)
+    assert row["totalAmount"] == 1800.0
+    assert "origTotalAmount" not in row
+    assert row["signatureEdited"] is True
 
 
 # ------------------------------------------------------------------ order PDF

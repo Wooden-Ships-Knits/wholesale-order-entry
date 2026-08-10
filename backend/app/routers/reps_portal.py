@@ -158,6 +158,11 @@ def _rep_row(o: Order) -> dict:
         "totalQty": o.total_qty,
         "shipWindow": o.ship_window,
         "accountName": o.account_name,
+        # Order value at the prices in force when it was submitted. Added
+        # 2026-08-10 at the business's request — v1 deliberately sent a rep no
+        # money at all. The PRE-signature snapshot (orig_total_amount) is still
+        # withheld: signatureEdited carries that comparison instead.
+        "totalAmount": float(o.total_amount) if o.total_amount is not None else None,
         "orderWrittenBy": o.order_written_by,
         "salesTerritory": o.sales_territory,
         "notes": o.notes,

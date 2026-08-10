@@ -1,4 +1,4 @@
-// The rep's order table: eleven read-only columns. The only action is the
+// The rep's order table: twelve read-only columns. The only action is the
 // Order ID link, which opens that order's buyer-facing PDF.
 //
 // Styling reuses the .admin-table classes so the two internal pages read as one
@@ -8,6 +8,11 @@
 import { pdfUrl } from './api'
 
 const DASH = <span className="unknown">—</span>
+
+// Same format as /admin and the signing page, so an amount reads identically
+// wherever it appears.
+const money = (n) =>
+  (Number(n) || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 
 function shortDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -91,6 +96,7 @@ export default function RepOrderTable({ orders }) {
           <th>QTY</th>
           <th>Ship Window</th>
           <th>Account Name</th>
+          <th>Value</th>
           <th>Written By</th>
           <th>Sales Territory</th>
           <th>Notes</th>
@@ -100,7 +106,7 @@ export default function RepOrderTable({ orders }) {
       <tbody>
         {orders.length === 0 && (
           <tr>
-            <td className="admin-empty-row" colSpan={11}>
+            <td className="admin-empty-row" colSpan={12}>
               No orders yet.
             </td>
           </tr>
@@ -133,6 +139,9 @@ export default function RepOrderTable({ orders }) {
             <td className="num">{o.totalQty}</td>
             <td>{o.shipWindow || DASH}</td>
             <td>{o.accountName || DASH}</td>
+            <td className="num">
+              {o.totalAmount == null ? DASH : money(o.totalAmount)}
+            </td>
             <td>{o.orderWrittenBy || DASH}</td>
             <td>{o.salesTerritory || DASH}</td>
             <td className="notes-cell" title={o.notes || ''}>

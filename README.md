@@ -221,7 +221,7 @@ a `GOOGLE_MAPS_SERVER_API_KEY`, the check degrades to straight-line distance
 **Conflict check**, and **Reports**.
 
 The Orders table columns: Date, Order ID (links to the PDF), Signature, Season,
-QTY, Total Amount, Ship Window, Account Name, Written By, Sales
+QTY, Ship Window, Account Name, Value, Written By, Sales
 Territory, New account, Rank, Potential conflict, Tax certificate, Payment,
 Notes, Special Instruction, Decision. Files are streamed through authenticated
 endpoints (never served statically, since they carry buyer and tax data).
@@ -327,7 +327,7 @@ reset. Design notes: `docs/superpowers/specs/2026-07-18-admin-order-monitoring.m
 ## Rep dashboard
 
 `/reps` — a sales rep signs in and sees their own orders, read-only: **Date ·
-Order ID · Signature · Season · QTY · Ship Window · Account Name ·
+Order ID · Signature · Season · QTY · Ship Window · Account Name · Value ·
 Written By · Sales Territory · Notes · Decision**. Reps send nothing and change
 nothing; there is no accept/decline and no emailing. The Order ID links to that
 order's **buyer-facing** PDF (card masked to `•••• last4`) — scoped server-side,
