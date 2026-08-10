@@ -52,8 +52,6 @@ export default function RepsApp() {
   if (rep === null) return <p className="admin-empty">Loading…</p>
   if (!rep) return <RepLogin onSignedIn={(name) => setRep(name)} />
 
-  const total = counts?.total ?? orders.length
-
   return (
     <main className="admin">
       <header className="admin-head">
@@ -88,11 +86,8 @@ export default function RepsApp() {
             {f.label}
           </button>
         ))}
-        {/* "3 of 12" while a chip is active, so a filtered table can never be
-            mistaken for "these are all your orders". */}
-        <span className="filter-count">
-          {filter ? `${orders.length} of ${total}` : total} orders
-        </span>
+        {/* No row count here: the Total orders card above already carries the
+            book size, and the active chip is what says the table is narrowed. */}
         <button type="button" className="link-btn" onClick={load} disabled={loading}>
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>
