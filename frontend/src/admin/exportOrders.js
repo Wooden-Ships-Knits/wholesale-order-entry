@@ -22,9 +22,9 @@ const COLUMNS = [
   { header: 'Signature', width: 34 },
   { header: 'Season', width: 9 },
   { header: 'QTY', width: 8 },
-  { header: 'Total Amount', width: 14 },
   { header: 'Ship Window', width: 16 },
   { header: 'Account Name', width: 30 },
+  { header: 'Value', width: 14 },
   { header: 'Written By', width: 18 },
   { header: 'Sales Territory', width: 18 },
   { header: 'New account', width: 24 },
@@ -208,9 +208,9 @@ export function orderSheetData(orders) {
       // Total pieces as the order stands. A buyer who changed quantities at
       // signing changed this too — the Signature column carries the before/after.
       number(o.totalQty),
-      money(o.totalAmount),
       text(o.shipWindow),
       text(o.accountName),
+      money(o.totalAmount),
       text(o.orderWrittenBy),
       text(o.salesTerritory),
       text(newAccountText(o)),

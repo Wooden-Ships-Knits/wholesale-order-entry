@@ -667,9 +667,9 @@ export default function OrderTable({
             <th>Signature</th>
             <th>Season</th>
             <th>QTY</th>
-            <th>Total Amount</th>
             <th>Ship Window</th>
             <th>Account Name</th>
+            <th>Value</th>
             <th>Written By</th>
             <th>Sales Territory</th>
             <th>New account</th>
@@ -747,11 +747,10 @@ export default function OrderTable({
                 ))}
               </select>
             </th>
-            {/* Quantity and Total Amount have no filter: a free-text or range
-                control over a number nobody searches by would cost a column of
-                width for nothing. The header row still needs the cells to stay
-                aligned — one per column, or everything to the right shifts. */}
-            <th aria-hidden="true" />
+            {/* QTY has no filter: a free-text or range control over a number
+                nobody searches by would cost a column of width for nothing. The
+                header row still needs the cell to stay aligned — one per
+                column, or everything to the right shifts. */}
             <th aria-hidden="true" />
             <th>
               <select
@@ -776,6 +775,8 @@ export default function OrderTable({
                 onChange={(e) => onFilterChange('accountName', e.target.value)}
               />
             </th>
+            {/* Value: unfiltered, same reasoning as QTY. */}
+            <th aria-hidden="true" />
             <th>
               <select
                 aria-label="Filter by Written By"
@@ -923,13 +924,13 @@ export default function OrderTable({
                   quantities at signing changed this too — the Signature cell
                   is where the before/after shows. */}
               <td className="num">{o.totalQty ?? <span className="unknown">—</span>}</td>
+              <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
+              <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
               {/* Order value at the prices in force when it was submitted. Like
-                  Quantity, a buyer who edited at signing changed this too. */}
+                  QTY, a buyer who edited at signing changed this too. */}
               <td className="num">
                 {o.totalAmount == null ? <span className="unknown">—</span> : money(o.totalAmount)}
               </td>
-              <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
-              <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
               {/* Internal Use "Order written by" — only rep-filled orders carry
                   one, so a dash here means the customer submitted it. */}
               <td>{o.orderWrittenBy || <span className="unknown">—</span>}</td>
@@ -1107,8 +1108,10 @@ export default function OrderTable({
                 Total — {orders.length} order{orders.length === 1 ? '' : 's'}
               </td>
               <td className="num">{totals.qty}</td>
+              {/* Ship Window + Account Name sit between the two figures. */}
+              <td colSpan={2} />
               <td className="num">{money(totals.amount)}</td>
-              <td colSpan={12} />
+              <td colSpan={10} />
             </tr>
           </tfoot>
         )}

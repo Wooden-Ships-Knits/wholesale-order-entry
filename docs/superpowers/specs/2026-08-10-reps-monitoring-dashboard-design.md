@@ -149,7 +149,7 @@ the thing to revisit if the orders table reaches tens of thousands of rows.
 A dedicated `_rep_row()`, **not** `admin._row()`. It emits exactly these keys:
 
 ```
-id, shortId, createdAt, seasonCode, totalQty, shipWindow, accountName,
+id, shortId, createdAt, seasonCode, totalQty, shipWindow, accountName, totalAmount,
 orderWrittenBy, salesTerritory, notes, status, statusReason, statusAt,
 signatureRequested, signatureEmailSent, signatureEmail, signatureSignedAt,
 signatureName, signatureEdited, origTotalQty
@@ -157,10 +157,11 @@ signatureName, signatureEdited, origTotalQty
 
 Two deliberate omissions:
 
-- **No money.** Quantity is on the column list, dollar totals are not.
-  `signatureEdited` is computed server-side by comparing the pre-signature
-  snapshot against the current totals, so `origTotalAmount` and `totalAmount`
-  stay on the server while the rep still sees "edited: 40 → 22 pcs".
+- **No PRE-signature money.** `totalAmount` is sent (the Value column, added
+  2026-08-10 — v1 sent a rep no money at all). `origTotalAmount` is not:
+  `signatureEdited` is computed server-side by comparing the snapshot against
+  the current totals, so the rep sees "edited: 40 → 22 pcs" without being told
+  what the order was worth before the buyer trimmed it.
 - **No card, conflict, certificate or Salesforce fields**, at all.
 
 The route makes no Salesforce call, unlike the admin list, and does not run the
@@ -236,7 +237,7 @@ Reuses the existing `.admin*` CSS classes so it reads as the same product. The
 header is "My orders — <name>" with Sign out.
 
 Columns, left to right: **Date · Order ID · Signature · Season · QTY ·
-Ship Window · Account Name · Written By · Sales Territory · Notes ·
+Ship Window · Account Name · Value · Written By · Sales Territory · Notes ·
 Decision**. The Order ID links to that order's PDF (see §4b).
 
 Toolbar: status chips (All / Awaiting review / Accepted / Declined) and
