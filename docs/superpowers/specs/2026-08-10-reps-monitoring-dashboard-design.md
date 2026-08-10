@@ -173,10 +173,11 @@ Columns, left to right: **Date · Order ID · Signature · Season · Quantity ·
 Shipping Window · Account Name · Written By · Sales Territory · Notes ·
 Decision**.
 
-Toolbar: status chips (All / Awaiting review / Accepted / Declined), a row
-count, and Refresh. All is the default — a rep wants their whole recent book,
-unlike the office, which triages the pending queue. No per-column filters, no
-Excel export, no reply polling.
+Toolbar: status chips (All / Awaiting review / Accepted / Declined) and
+Refresh. All is the default — a rep wants their whole recent book, unlike the
+office, which triages the pending queue. No row count (the Total orders card
+carries the book size and the active chip says the table is narrowed), no
+per-column filters, no Excel export, no reply polling.
 
 Two traps in the shared stylesheet, worth knowing before adding any
 button-shaped control here: the global `button` rule is dark-fill **and**
