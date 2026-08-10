@@ -1,4 +1,5 @@
 """/api/reps-portal — sign-in, order ownership, and the payload allowlist."""
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -10,11 +11,16 @@ from fastapi.testclient import TestClient
 from app.admin.security import hash_password, require_admin
 from app.config import settings
 from app.db.session import get_db
+from app import reps_auth
 from app.main import app
+from app.reps_auth import REP_NAMES
 from app.routers import reps_portal
-from app.routers.reps_portal import REP_NAMES, _owns, _rep_row
+from app.routers.reps_portal import _owns, _rep_row
 
-PASSWORD = "rep-secret"
+# One password per rep — the whole point of the scheme is that Aviva's does not
+# open Rande's dashboard, so the fixtures need two distinct ones.
+PASSWORD = "aviva-test-pw"
+RANDE_PASSWORD = "rande-test-pw"
 AVIVA = "aviva@wooden-ships.com"
 RANDE = "rande@wooden-ships.com"
 
@@ -72,6 +78,15 @@ def _sheet_routing(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _clear_login_guard():
+    """The throttle is a module-level singleton, so failures from one test would
+    otherwise count against the next and eventually lock the whole file out."""
+    reps_portal.guard.reset()
+    yield
+    reps_portal.guard.reset()
+
+
+@pytest.fixture(autouse=True)
 def _isolate_dependency_overrides():
     """Undo this module's overrides, and any admin bypass another module left.
 
@@ -88,7 +103,16 @@ def _isolate_dependency_overrides():
 
 @pytest.fixture
 def client(monkeypatch):
-    monkeypatch.setattr(settings, "reps_password_hash", hash_password(PASSWORD))
+    monkeypatch.setattr(
+        settings,
+        "reps_password_hashes",
+        json.dumps(
+            {
+                "avivalandin": hash_password(PASSWORD),
+                "randecohen": hash_password(RANDE_PASSWORD),
+            }
+        ),
+    )
     # https base URL, because SessionMiddleware is built with https_only=True
     # (the production default, baked in at import time). Over http:// the
     # client discards the Secure cookie and every signed-in test looks logged
@@ -146,9 +170,76 @@ def test_a_bad_name_and_a_bad_password_are_indistinguishable(client):
     assert bad_name.json()["detail"] == bad_pass.json()["detail"]
 
 
-def test_login_is_disabled_when_no_hash_is_configured(client, monkeypatch):
-    monkeypatch.setattr(settings, "reps_password_hash", "")
+def test_login_is_disabled_when_no_hashes_are_configured(client, monkeypatch):
+    monkeypatch.setattr(settings, "reps_password_hashes", "")
     assert _sign_in(client).status_code == 503
+
+
+# ------------------------------------- one password per rep (revised 2026-08-10)
+
+def test_a_reps_password_does_not_open_another_reps_dashboard(client):
+    """The reason per-rep hashes exist. Under the old shared password this was a
+    successful sign-in as Rande, and his whole book with it."""
+    assert _sign_in(client, name="Rande Cohen", password=PASSWORD).status_code == 401
+
+
+def test_each_rep_signs_in_with_their_own_password(client):
+    assert _sign_in(client, name="Rande Cohen", password=RANDE_PASSWORD).status_code == 200
+    assert client.get("/api/reps-portal/session").json()["name"] == "Rande Cohen"
+
+
+def test_a_rep_with_no_hash_entry_cannot_sign_in(client):
+    """On the roster but absent from REPS_PASSWORD_HASHES — no password works."""
+    assert _sign_in(client, name="Kitty Tally", password=PASSWORD).status_code == 401
+    assert _sign_in(client, name="Kitty Tally", password=RANDE_PASSWORD).status_code == 401
+
+
+def test_a_hash_entry_off_the_roster_is_ignored(client, monkeypatch):
+    """A stale entry must not outlive the name's removal from REP_NAMES."""
+    monkeypatch.setattr(
+        settings, "reps_password_hashes", json.dumps({"formerrep": hash_password("x")})
+    )
+    assert _sign_in(client, name="Former Rep", password="x").status_code == 401
+
+
+def test_malformed_hashes_disable_sign_in_without_crashing(client, monkeypatch):
+    """A typo in one env value must not take the order form down with it."""
+    monkeypatch.setattr(settings, "reps_password_hashes", "{not json")
+    assert _sign_in(client).status_code == 401
+    assert client.get("/api/health").status_code == 200
+
+
+def test_repeated_failures_are_throttled(client):
+    """word-NN passwords are only safe against a script because of this."""
+    for _ in range(reps_portal.guard._max_per_ip):
+        assert _sign_in(client, password="wrong").status_code == 401
+    blocked = _sign_in(client, password="wrong")
+    assert blocked.status_code == 429
+    assert "Retry-After" in blocked.headers
+
+
+def test_the_throttle_outranks_a_correct_password(client):
+    """Checked before verification, so a locked-out attacker cannot tell a
+    right guess from a wrong one."""
+    for _ in range(reps_portal.guard._max_per_ip):
+        _sign_in(client, password="wrong")
+    assert _sign_in(client, password=PASSWORD).status_code == 429
+
+
+def test_a_successful_sign_in_clears_the_throttle(client):
+    """A rep who mistypes a few times then gets it right is not locked out."""
+    for _ in range(reps_portal.guard._max_per_ip - 1):
+        _sign_in(client, password="wrong")
+    assert _sign_in(client).status_code == 200
+    for _ in range(reps_portal.guard._max_per_ip - 1):
+        _sign_in(client, password="wrong")
+    assert _sign_in(client).status_code == 200
+
+
+def test_the_name_lookup_tolerates_spacing_and_case():
+    raw = json.dumps({"avivalandin": hash_password(PASSWORD)})
+    assert reps_auth.verify_rep("Aviva Landin", PASSWORD, raw) is True
+    assert reps_auth.verify_rep("Aviva Landin", "wrong", raw) is False
 
 
 def test_logout_ends_the_session(client):

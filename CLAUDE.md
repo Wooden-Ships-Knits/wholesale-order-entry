@@ -53,7 +53,7 @@ docker-compose.yml
 - `GET /api/accounts/nearby?lat&lng&k&maxMinutes` — new-customer conflict check (k nearest wholesale stockists; conflict = drive < 20 min default; straight-line fallback without a Google server key). Tool page = the *Conflict check* tab in `/admin` (`frontend/src/conflict/`, `/check-conflict` + `/conflict.html` 301 there); also wired into the order form as a rep-only warning modal (rep + new account + Ship To coords → dismissible popup, never blocks; stockist names hidden from customers). See docs/conflict-checker.md.
 - `POST /api/conflict-email` — admin-only; drafts an **internal** email to the rep about a new store's inquiry, listing the conflicting nearby stockists by name with drive time / distance / last-order season (returns `{to, subject, body}`, sends nothing). Takes `orderId` (admin order table — store, rep, ship coords and state come from the order) or `storeName`/`repName`/`state`/`address`/`lat`/`lng` (conflict-check tab). The backend recomputes the conflicting neighbors from the coordinates. Names the stockists on purpose — the email goes to the rep, not the applicant.
 - `POST /api/orders`  → validate, persist (no card#), render PDF + save uploaded tax cert, email admin
-- `GET /api/reps-portal/*` — the rep dashboard at `/reps` (`frontend/src/reps/`): a rep signs in with their name + the shared `REPS_PASSWORD_HASH` password and sees **only their own** orders, read-only (11 columns, no actions, no PDF, no emailing). Ownership reuses `sheets_client.rep_email_for_order` — Written By first, Sales Territory owner as the fallback — so the page and the rep's inbox always agree; an unresolvable rep sees nothing rather than everything. `_rep_row()` is a **separate serializer** from admin's `_row()` and must never emit card, conflict, certificate, Salesforce or dollar fields — `test_reps_portal.REP_ROW_KEYS` pins the exact key set. A rep session and an admin session are separate keys in the same cookie; neither passes the other's guard. See docs/superpowers/specs/2026-08-10-reps-monitoring-dashboard-design.md.
+- `GET /api/reps-portal/*` — the rep dashboard at `/reps` (`frontend/src/reps/`): a rep signs in with their name + **their own** password (one hash per rep in `REPS_PASSWORD_HASHES`, roster + verification in `app/reps_auth.py` — never one shared password, or the name dropdown becomes a way into a colleague's book) and sees **only their own** orders, read-only (11 columns, no actions, no PDF, no emailing). Ownership reuses `sheets_client.rep_email_for_order` — Written By first, Sales Territory owner as the fallback — so the page and the rep's inbox always agree; an unresolvable rep sees nothing rather than everything. `_rep_row()` is a **separate serializer** from admin's `_row()` and must never emit card, conflict, certificate, Salesforce or dollar fields — `test_reps_portal.REP_ROW_KEYS` pins the exact key set. A rep session and an admin session are separate keys in the same cookie; neither passes the other's guard. See docs/superpowers/specs/2026-08-10-reps-monitoring-dashboard-design.md.
 - `GET /api/health`
 
 ## Environment variables (.env.example)
@@ -91,10 +91,12 @@ ADMIN_EMAIL=wholesale@wooden-ships.com
 GOOGLE_MAPS_SERVER_API_KEY=
 CONFLICT_MAX_MINUTES=20
 
-# Rep dashboard (/reps) — one password shared by all reps, hashed with
-#   docker compose exec backend python -m app.admin.security "your-password"
-# Blank = rep sign-in disabled entirely.
-REPS_PASSWORD_HASH=
+# Rep dashboard (/reps) — ONE PASSWORD PER REP as a JSON map of normalized
+# name -> hash. Never one shared password: the login is a name dropdown, so a
+# shared one lets any rep open a colleague's book. Build the whole value with
+#   docker compose exec backend python -m app.reps_auth "Aviva Landin=..." ...
+# Blank or malformed = rep sign-in disabled (and nothing else breaks).
+REPS_PASSWORD_HASHES=
 ```
 
 Frontend env (`frontend/.env`, see `frontend/.env.example`):
