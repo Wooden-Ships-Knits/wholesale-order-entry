@@ -87,6 +87,11 @@ class Settings(BaseSettings):
     #   docker compose exec backend python -m app.admin.security "your-password"
     # Empty hash disables sign-in entirely (no admin access).
     admin_password_hash: str = ""
+    # Rep monitoring page (/reps) — one password shared by all reps, hashed the
+    # same way as the admin one (python -m app.admin.security "..."). The rep
+    # picks their name on the login screen; the password only proves they are
+    # on the sales team. Empty hash disables rep sign-in entirely.
+    reps_password_hash: str = ""
     # Signs the admin session cookie. Rotating it logs everyone out.
     session_secret: str = ""
     # Set false only for local http dev; cookies are Secure in production.
