@@ -1,8 +1,11 @@
-// The rep's order table: eleven read-only columns, no actions.
+// The rep's order table: eleven read-only columns. The only action is the
+// Order ID link, which opens that order's buyer-facing PDF.
 //
 // Styling reuses the .admin-table classes so the two internal pages read as one
 // product. The cells are written here rather than shared with OrderTable
 // because every admin cell is wrapped around a button a rep must never see.
+
+import { pdfUrl } from './api'
 
 const DASH = <span className="unknown">—</span>
 
@@ -85,8 +88,8 @@ export default function RepOrderTable({ orders }) {
           <th>Order ID</th>
           <th>Signature</th>
           <th>Season</th>
-          <th>Quantity</th>
-          <th>Shipping Window</th>
+          <th>QTY</th>
+          <th>Ship Window</th>
           <th>Account Name</th>
           <th>Written By</th>
           <th>Sales Territory</th>
@@ -119,7 +122,12 @@ export default function RepOrderTable({ orders }) {
                 })}
               </span>
             </td>
-            <td>{o.shortId}</td>
+            {/* Opens the buyer-facing PDF in a new tab, same as /admin. */}
+            <td title={o.id}>
+              <a href={pdfUrl(o.id)} target="_blank" rel="noreferrer">
+                <code>{o.shortId}</code>
+              </a>
+            </td>
             <SignatureCell order={o} />
             <td>{o.seasonCode}</td>
             <td className="num">{o.totalQty}</td>

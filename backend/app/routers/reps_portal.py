@@ -15,6 +15,7 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -23,6 +24,7 @@ from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
 from app.login_guard import LoginGuard, client_ip
+from app.pdf import render as pdf_render
 from app.reps_auth import REP_NAMES, verify_rep
 from app.sheets import client as sheets_client
 
@@ -146,6 +148,10 @@ def _rep_row(o: Order) -> dict:
       * no card / conflict / certificate / Salesforce fields at all
     """
     return {
+        # The Order ID cell links to the order PDF, so the page needs the real
+        # id. It is a lookup key, not a capability: /reps-portal/orders/{id}/pdf
+        # re-checks ownership, so holding another rep's id gets you a 404.
+        "id": str(o.id),
         "shortId": str(o.id)[:8],
         "createdAt": o.created_at.isoformat() if o.created_at else None,
         "seasonCode": o.season_code,
@@ -272,3 +278,44 @@ def list_orders(
         "counts": counts,
         "message": None,
     }
+
+
+@router.get("/orders/{order_id}/pdf")
+def download_pdf(
+    order_id: str,
+    rep_name: str = RepRequired,
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    """The buyer-facing order PDF, for one of THIS rep's own orders.
+
+    Always the masked copy — card shown as •••• last4. There is deliberately no
+    `full=1` here: the admin copy carrying the whole card number exists for the
+    monitoring team to key into Kugamon, and nothing on this page needs it.
+
+    An order the signed-in rep does not own returns 404, not 403: a rep should
+    not be able to probe which order ids exist outside their own book. Same
+    reason the ownership check comes before the file is even named.
+    """
+    rep_email = sheets_client.rep_email_for_writer(rep_name)
+    order = db.get(Order, order_id)
+    if order is None or not rep_email or not _owns(order, rep_email.casefold()):
+        logger.info("Rep %s was refused order %s", rep_name, str(order_id)[:8])
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    filename = pdf_render.order_pdf_filename(
+        order.season_code, order.buyer_name or "", order.created_at, order.id
+    )
+    try:
+        path = pdf_render.safe_output_path(filename)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid file")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # inline → the browser renders it in the tab instead of downloading.
+    return FileResponse(
+        path,
+        media_type="application/pdf",
+        filename=filename,
+        content_disposition_type="inline",
+    )

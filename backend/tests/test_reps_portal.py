@@ -41,6 +41,7 @@ def _order(**over):
         total_amount=Decimal("1800.00"),
         ship_window="9/1-20",
         account_name="A Pied Boutique",
+        buyer_name="Jane Buyer",  # part of the PDF filename
         order_written_by=None,
         sales_territory=None,
         notes=None,
@@ -126,8 +127,11 @@ def _sign_in(client, name="Aviva Landin", password=PASSWORD):
     return client.post("/api/reps-portal/login", json={"name": name, "password": password})
 
 
-def _stub_orders(orders):
-    """Serve a fixed list of orders instead of querying Postgres."""
+def _stub_orders(orders, by_id=None):
+    """Serve a fixed list of orders instead of querying Postgres.
+
+    `by_id` backs db.get(), which the PDF route uses to look one order up.
+    """
     class _Result:
         def scalars(self):
             return iter(orders)
@@ -135,6 +139,9 @@ def _stub_orders(orders):
     class _Db:
         def execute(self, _stmt):
             return _Result()
+
+        def get(self, _model, pk):
+            return (by_id or {}).get(str(pk))
 
     app.dependency_overrides[get_db] = lambda: _Db()
 
@@ -416,6 +423,7 @@ def test_the_response_is_capped(client):
 # dollar fields, which is precisely how a "just add one column" change would
 # otherwise leak them.
 REP_ROW_KEYS = {
+    "id",
     "shortId",
     "createdAt",
     "seasonCode",
@@ -449,11 +457,73 @@ def test_the_endpoint_serializes_exactly_the_allowed_keys(client):
     assert set(client.get("/api/reps-portal/orders").json()["orders"][0]) == REP_ROW_KEYS
 
 
-def test_rep_row_carries_no_money_and_no_full_order_id():
+def test_rep_row_carries_no_money():
+    """The id IS present (the Order ID cell links to the PDF), but no dollar
+    figures — quantity is on the rep's column list, money is not."""
     row = _rep_row(_order())
     assert row["shortId"] == "2b1f9c4e"
-    assert str(_order().id) not in row.values()
+    assert row["id"] == str(_order().id)
     assert not any("amount" in key.lower() for key in row)
+
+
+# ------------------------------------------------------------------ order PDF
+
+def _pdf_fixture(tmp_path, monkeypatch, order):
+    """Put a file where the PDF route will look for this order's copy."""
+    from app.pdf import render as pdf_render
+
+    monkeypatch.setattr(settings, "pdf_output_dir", str(tmp_path))
+    name = pdf_render.order_pdf_filename(
+        order.season_code, order.buyer_name or "", order.created_at, order.id
+    )
+    (tmp_path / name).write_bytes(b"%PDF-1.4 fake")
+    return name
+
+
+def test_a_rep_can_open_their_own_order_pdf(client, tmp_path, monkeypatch):
+    mine = _order(order_written_by="Aviva Landin")
+    _pdf_fixture(tmp_path, monkeypatch, mine)
+    _stub_orders([mine], by_id={str(mine.id): mine})
+
+    _sign_in(client)
+    r = client.get(f"/api/reps-portal/orders/{mine.id}/pdf")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "application/pdf"
+
+
+def test_a_rep_cannot_open_another_reps_order_pdf(client, tmp_path, monkeypatch):
+    """404 rather than 403 — a rep should not be able to probe which order ids
+    exist outside their own book."""
+    theirs = _order(order_written_by="Rande Cohen")
+    _pdf_fixture(tmp_path, monkeypatch, theirs)
+    _stub_orders([theirs], by_id={str(theirs.id): theirs})
+
+    _sign_in(client)  # signed in as Aviva
+    assert client.get(f"/api/reps-portal/orders/{theirs.id}/pdf").status_code == 404
+
+
+def test_the_order_pdf_requires_a_rep_session(client):
+    _stub_orders([])
+    assert client.get(f"/api/reps-portal/orders/{uuid.uuid4()}/pdf").status_code == 401
+
+
+def test_an_unknown_order_id_is_a_404(client):
+    _stub_orders([])
+    _sign_in(client)
+    assert client.get(f"/api/reps-portal/orders/{uuid.uuid4()}/pdf").status_code == 404
+
+
+def test_there_is_no_full_card_copy_route_for_reps(client, tmp_path, monkeypatch):
+    """?full=1 is an admin-only concept; the rep route must ignore it and serve
+    the masked copy rather than growing a second meaning."""
+    mine = _order(order_written_by="Aviva Landin")
+    name = _pdf_fixture(tmp_path, monkeypatch, mine)
+    _stub_orders([mine], by_id={str(mine.id): mine})
+
+    _sign_in(client)
+    r = client.get(f"/api/reps-portal/orders/{mine.id}/pdf?full=1")
+    assert r.status_code == 200
+    assert r.content == (tmp_path / name).read_bytes()  # the masked file, not a card copy
 
 
 def test_signature_not_required_when_the_form_was_signed_on_the_spot():

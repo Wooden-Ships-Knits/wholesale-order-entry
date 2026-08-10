@@ -687,15 +687,13 @@ def create_account(order_id: str, db: Session = Depends(get_db)) -> dict:
 # ------------------------------------------------------------------ files
 
 def _safe_output_path(filename: str) -> Path:
-    """Resolve a filename inside pdf_output_dir, refusing anything that escapes it."""
-    base = Path(settings.pdf_output_dir).resolve()
-    path = (base / filename).resolve()
-    if not path.is_relative_to(base):
-        logger.warning("Blocked path traversal attempt: %r", filename)
+    """HTTP wrapper over pdf_render.safe_output_path (shared with /reps)."""
+    try:
+        return pdf_render.safe_output_path(filename)
+    except ValueError:
         raise HTTPException(status_code=400, detail="Invalid file")
-    if not path.is_file():
+    except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
-    return path
 
 
 @router.get("/orders/{order_id}/pdf", dependencies=[AdminRequired])

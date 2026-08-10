@@ -173,6 +173,7 @@ other's guard.
 | GET | `/reps-portal/names` | Login roster for the rep dashboard |
 | POST | `/reps-portal/login` · `/logout` · GET `/session` | Rep auth |
 | GET | `/reps-portal/orders` | The signed-in rep's own orders (read-only) |
+| GET | `/reps-portal/orders/{id}/pdf` | That order's masked PDF, if the rep owns it (404 otherwise) |
 
 ---
 
@@ -220,7 +221,7 @@ a `GOOGLE_MAPS_SERVER_API_KEY`, the check degrades to straight-line distance
 **Conflict check**, and **Reports**.
 
 The Orders table columns: Date, Order ID (links to the PDF), Signature, Season,
-Quantity, Total Amount, Shipping Window, Account Name, Written By, Sales
+QTY, Total Amount, Ship Window, Account Name, Written By, Sales
 Territory, New account, Rank, Potential conflict, Tax certificate, Payment,
 Notes, Special Instruction, Decision. Files are streamed through authenticated
 endpoints (never served statically, since they carry buyer and tax data).
@@ -326,9 +327,11 @@ reset. Design notes: `docs/superpowers/specs/2026-07-18-admin-order-monitoring.m
 ## Rep dashboard
 
 `/reps` — a sales rep signs in and sees their own orders, read-only: **Date ·
-Order ID · Signature · Season · Quantity · Shipping Window · Account Name ·
+Order ID · Signature · Season · QTY · Ship Window · Account Name ·
 Written By · Sales Territory · Notes · Decision**. Reps send nothing and change
-nothing; there is no accept/decline, no emailing, and no file download.
+nothing; there is no accept/decline and no emailing. The Order ID links to that
+order's **buyer-facing** PDF (card masked to `•••• last4`) — scoped server-side,
+so another rep's id returns 404, never the `?full=1` admin card copy.
 
 **Metric cards** sit above the table, read-only: Total orders (with total
 pieces) · Awaiting signature (with "longest N days") · Awaiting review ·

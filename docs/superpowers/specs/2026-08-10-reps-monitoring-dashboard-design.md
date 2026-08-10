@@ -57,6 +57,7 @@ carries rows that are not reps. Adding a rep is a one-line change.
 | `POST /api/reps-portal/logout` | none | pops the rep key |
 | `GET /api/reps-portal/session` | none | `{authenticated, name}` |
 | `GET /api/reps-portal/orders` | rep | the rep's orders |
+| `GET /api/reps-portal/orders/{id}/pdf` | rep | that order's PDF, if the rep owns it (§4b) |
 
 `session["rep"]` holds the signed-in name and is a **separate key** from
 `session["admin"]` inside the same signed cookie. A rep session fails
@@ -148,16 +149,14 @@ the thing to revisit if the orders table reaches tens of thousands of rows.
 A dedicated `_rep_row()`, **not** `admin._row()`. It emits exactly these keys:
 
 ```
-shortId, createdAt, seasonCode, totalQty, shipWindow, accountName,
+id, shortId, createdAt, seasonCode, totalQty, shipWindow, accountName,
 orderWrittenBy, salesTerritory, notes, status, statusReason, statusAt,
 signatureRequested, signatureEmailSent, signatureEmail, signatureSignedAt,
 signatureName, signatureEdited, origTotalQty
 ```
 
-Three deliberate omissions:
+Two deliberate omissions:
 
-- **No full order UUID.** Nothing on the page acts on an order, so `shortId` is
-  all a rep needs; the id that admin routes accept never reaches them.
 - **No money.** Quantity is on the column list, dollar totals are not.
   `signatureEdited` is computed server-side by comparing the pre-signature
   snapshot against the current totals, so `origTotalAmount` and `totalAmount`
@@ -166,6 +165,28 @@ Three deliberate omissions:
 
 The route makes no Salesforce call, unlike the admin list, and does not run the
 expired-card-copy purge — that is the admin page's housekeeping.
+
+## 4b. The order PDF (added 2026-08-10)
+
+`GET /api/reps-portal/orders/{id}/pdf` — the Order ID cell links to it, as on
+`/admin`. v1 deliberately had no PDF; the business asked for it afterwards, so
+the order id is now in the payload (it was previously withheld precisely
+because nothing acted on an order).
+
+Three rules make that safe:
+
+- **Ownership is re-checked server-side** with the same `_owns` used by the
+  list. The id in the payload is a lookup key, not a capability.
+- **404, never 403**, for an order the rep does not own — a rep must not be able
+  to probe which order ids exist outside their own book. The check runs before
+  the file is even named.
+- **Always the masked copy.** There is no `full=1` here. The admin copy showing
+  the whole card number exists for the monitoring team to key into Kugamon;
+  nothing on this page needs it, so the parameter simply does not exist.
+
+The traversal guard moved to `pdf_render.safe_output_path` when the second
+router needed it — a guard like that should never exist in two copies. It
+raises `ValueError` / `FileNotFoundError`; each router maps those to 400 / 404.
 
 ## 4a. Metric cards (added 2026-08-10)
 
@@ -214,9 +235,9 @@ no change because the SPA fallback already covers unknown paths.
 Reuses the existing `.admin*` CSS classes so it reads as the same product. The
 header is "My orders — <name>" with Sign out.
 
-Columns, left to right: **Date · Order ID · Signature · Season · Quantity ·
-Shipping Window · Account Name · Written By · Sales Territory · Notes ·
-Decision**.
+Columns, left to right: **Date · Order ID · Signature · Season · QTY ·
+Ship Window · Account Name · Written By · Sales Territory · Notes ·
+Decision**. The Order ID links to that order's PDF (see §4b).
 
 Toolbar: status chips (All / Awaiting review / Accepted / Declined) and
 Refresh. All is the default — a rep wants their whole recent book, unlike the
@@ -258,7 +279,7 @@ fetch wrapper rather than reaching into `admin/api.js` internals.
 
 ## 7. Out of scope for v1
 
-No emailing of any kind, no accept/decline, no order PDF, no tax certificate, no
+No emailing of any kind, no accept/decline, no tax certificate, no
 conflict information, no card data, no dollar totals, no Excel export.
 
 ## 8. Open questions
