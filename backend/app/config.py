@@ -87,11 +87,14 @@ class Settings(BaseSettings):
     #   docker compose exec backend python -m app.admin.security "your-password"
     # Empty hash disables sign-in entirely (no admin access).
     admin_password_hash: str = ""
-    # Rep monitoring page (/reps) — one password shared by all reps, hashed the
-    # same way as the admin one (python -m app.admin.security "..."). The rep
-    # picks their name on the login screen; the password only proves they are
-    # on the sales team. Empty hash disables rep sign-in entirely.
-    reps_password_hash: str = ""
+    # Rep monitoring page (/reps) — ONE PASSWORD PER REP, as a JSON object of
+    # normalized-name -> pbkdf2 hash. Not one shared password: the login is a
+    # name dropdown, so a shared one would let any rep read a colleague's book.
+    # Build the value with:
+    #   docker compose exec backend python -m app.reps_auth "Aviva Landin=..."
+    # Empty (or malformed) disables rep sign-in entirely. Kept as a str and
+    # parsed in app.reps_auth so a typo here cannot crash the whole app.
+    reps_password_hashes: str = ""
     # Signs the admin session cookie. Rotating it logs everyone out.
     session_secret: str = ""
     # Set false only for local http dev; cookies are Secure in production.

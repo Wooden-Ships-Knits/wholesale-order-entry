@@ -19,10 +19,11 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.admin.security import verify_password
 from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
+from app.login_guard import LoginGuard, client_ip
+from app.reps_auth import REP_NAMES, verify_rep
 from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
@@ -33,23 +34,16 @@ router = APIRouter(prefix="/reps-portal")
 # key on purpose: neither session can be mistaken for the other.
 REP_SESSION_KEY = "rep"
 
-# Who may sign in. A constant rather than the region/rep sheet because this is a
-# security boundary — only these names get a session — and the sheet's Email tab
-# also carries rows that are not reps. Adding a rep is a one-line change here;
-# the name must match the sheet's Name column (column C) or their orders won't
-# resolve (test_reps_portal asserts every name maps to an address).
-REP_NAMES = (
-    "Aviva Landin",
-    "Denise Arnett",
-    "Jason Hilsenrad",
-    "Kitty Tally",
-    "Michael Young",
-    "Rande Cohen",
-    "Vickie Wilde",
-)
+# The roster and the per-rep hashes live in app.reps_auth; re-exported here
+# because REP_NAMES is what this router's routes are about.
 
 # A wrong name and a wrong password say the same thing.
 _BAD_CREDENTIALS = "Incorrect name or password"
+
+# Failed-attempt throttle. Keyed on the rep's name as well as the caller's
+# address, because the login dropdown publishes exactly which names are worth
+# attacking.
+guard = LoginGuard("rep")
 
 # Enough rows for a rep's whole season without letting one request read the
 # entire table. Applied AFTER the ownership filter (see list_orders).
@@ -85,24 +79,28 @@ def list_rep_names() -> dict:
 
 @router.post("/login")
 def login(payload: RepLoginRequest, request: Request) -> dict:
-    if not settings.reps_password_hash:
-        logger.error("Rep login attempted but REPS_PASSWORD_HASH is not set")
+    if not settings.reps_password_hashes.strip():
+        logger.error("Rep login attempted but REPS_PASSWORD_HASHES is not set")
         raise HTTPException(status_code=503, detail="Rep access is not configured")
-    # The name comes from the browser, so it is checked against the roster here
-    # rather than trusted — otherwise any string would become a session identity
-    # and the ownership filter would run on it.
-    if payload.name not in REP_NAMES:
-        logger.warning("Rep login attempted with an unknown name")
+    # Checked before the password, so a locked-out caller cannot tell a correct
+    # guess from a wrong one.
+    ip = client_ip(request)
+    guard.check(ip, payload.name)
+    # Password is checked AGAINST THE NAMED REP, not against a shared secret:
+    # the name is the identity the whole dashboard is filtered by, so a right
+    # password under someone else's name has to fail. verify_rep also re-checks
+    # the roster, so a string the browser invents never becomes a session.
+    if not verify_rep(payload.name, payload.password, settings.reps_password_hashes):
+        # Never log the attempted password. The name is safe to log and is the
+        # only thing that makes repeated failures diagnosable.
+        guard.record_failure(ip, payload.name)
+        logger.warning("Failed rep login attempt for %r", payload.name)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=_BAD_CREDENTIALS
         )
-    if not verify_password(payload.password, settings.reps_password_hash):
-        # Never log the attempted password.
-        logger.warning("Failed rep login attempt for %s", payload.name)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=_BAD_CREDENTIALS
-        )
+    guard.record_success(ip, payload.name)
     request.session[REP_SESSION_KEY] = payload.name
+    logger.info("Rep signed in: %s", payload.name)
     return {"ok": True, "name": payload.name}
 
 

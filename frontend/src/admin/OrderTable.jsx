@@ -17,6 +17,11 @@ import {
 import { distinctValues, rankCode } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
+// Money for display only — the DB keeps numeric. Same format as the signing
+// page so an amount reads identically wherever the team sees it.
+const money = (n) =>
+  (Number(n) || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+
 // Salesforce My Domain — the pushed order record opens at <instance>/<recordId>.
 // Change this if the org's domain changes (e.g. a sandbox).
 const SF_INSTANCE_URL = 'https://wooden-ships.my.salesforce.com'
@@ -446,6 +451,21 @@ export default function OrderTable({
   const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
   const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
 
+  // Footer totals over `orders` (the filtered rows), not `allOrders`: the
+  // figure has to agree with the rows above it, or a filtered view shows a
+  // total nobody can reconcile against what they can see.
+  const totals = useMemo(
+    () =>
+      orders.reduce(
+        (acc, o) => ({
+          qty: acc.qty + (o.totalQty || 0),
+          amount: acc.amount + (Number(o.totalAmount) || 0),
+        }),
+        { qty: 0, amount: 0 },
+      ),
+    [orders],
+  )
+
   // Both header rows are sticky, so the filter row has to sit exactly at the
   // label row's height. That height isn't knowable in CSS — labels wrap
   // differently as column widths, zoom and the loaded font change — so measure
@@ -647,6 +667,7 @@ export default function OrderTable({
             <th>Signature</th>
             <th>Season</th>
             <th>Quantity</th>
+            <th>Total Amount</th>
             <th>Shipping Window</th>
             <th>Account Name</th>
             <th>Written By</th>
@@ -726,9 +747,11 @@ export default function OrderTable({
                 ))}
               </select>
             </th>
-            {/* Quantity has no filter: a free-text or range control over a
-                number nobody searches by would cost a column of width for
-                nothing. The header row still needs the cell to stay aligned. */}
+            {/* Quantity and Total Amount have no filter: a free-text or range
+                control over a number nobody searches by would cost a column of
+                width for nothing. The header row still needs the cells to stay
+                aligned — one per column, or everything to the right shifts. */}
+            <th aria-hidden="true" />
             <th aria-hidden="true" />
             <th>
               <select
@@ -853,7 +876,7 @@ export default function OrderTable({
         <tbody>
           {!orders.length && (
             <tr>
-              <td className="admin-empty-row" colSpan={17}>
+              <td className="admin-empty-row" colSpan={18}>
                 {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
               </td>
             </tr>
@@ -900,6 +923,11 @@ export default function OrderTable({
                   quantities at signing changed this too — the Signature cell
                   is where the before/after shows. */}
               <td className="num">{o.totalQty ?? <span className="unknown">—</span>}</td>
+              {/* Order value at the prices in force when it was submitted. Like
+                  Quantity, a buyer who edited at signing changed this too. */}
+              <td className="num">
+                {o.totalAmount == null ? <span className="unknown">—</span> : money(o.totalAmount)}
+              </td>
               <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
               <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
               {/* Internal Use "Order written by" — only rep-filled orders carry
@@ -1068,6 +1096,22 @@ export default function OrderTable({
             </tr>
           ))}
         </tbody>
+        {/* Totals for the rows on screen — so the figure always matches what
+            the filters are showing rather than the whole table. Rendered only
+            when there is something to add up; a footer reading $0.00 under an
+            empty result reads as a real total of zero. */}
+        {orders.length > 0 && (
+          <tfoot>
+            <tr>
+              <td className="totals-label" colSpan={4}>
+                Total — {orders.length} order{orders.length === 1 ? '' : 's'}
+              </td>
+              <td className="num">{totals.qty}</td>
+              <td className="num">{money(totals.amount)}</td>
+              <td colSpan={12} />
+            </tr>
+          </tfoot>
+        )}
       </table>
     </>
   )

@@ -21,6 +21,7 @@ from app.ai import conflict_reply
 from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
+from app.login_guard import LoginGuard, client_ip
 from app.email import inbound, order_email
 from app.pdf import render as pdf_render
 from app.routers import orders
@@ -36,6 +37,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin")
 
 VALID_STATUSES = {"accepted", "declined"}
+
+# Failed-attempt throttle for the admin password.
+guard = LoginGuard("admin")
 
 
 class LoginRequest(BaseModel):
@@ -61,12 +65,19 @@ def login(payload: LoginRequest, request: Request) -> dict:
     if not settings.admin_password_hash:
         logger.error("Admin login attempted but ADMIN_PASSWORD_HASH is not set")
         raise HTTPException(status_code=503, detail="Admin access is not configured")
+    # Throttle before verifying, so a locked-out caller cannot tell a correct
+    # guess from a wrong one. One account here, so the identity is a constant —
+    # the per-identity counter is what survives an attacker rotating addresses.
+    ip = client_ip(request)
+    guard.check(ip, "admin")
     if not verify_password(payload.password, settings.admin_password_hash):
         # Never log the attempted password.
+        guard.record_failure(ip, "admin")
         logger.warning("Failed admin login attempt")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
         )
+    guard.record_success(ip, "admin")
     request.session[SESSION_KEY] = True
     return {"ok": True}
 

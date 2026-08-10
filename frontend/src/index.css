@@ -1127,6 +1127,22 @@ button:hover {
   font-size: 0.75rem;
   margin-top: 0.15rem;
 }
+/* Totals row. Sticks to the bottom of the viewport for the same reason the
+   header sticks to the top: with a long list the figure you want is otherwise
+   a full scroll away from the rows you are reading. */
+.admin-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #efece6;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px #d8d4cc, 0 -3px 5px -2px rgba(29, 29, 27, 0.18);
+}
+.admin-table .totals-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+}
 
 /* ---- store-name suggestions (order form + admin account picker) ---- */
 /* Name over city/state on two lines: nine "SCOUT & MOLLY'S" rows are
