@@ -666,9 +666,9 @@ export default function OrderTable({
             <th>Order ID</th>
             <th>Signature</th>
             <th>Season</th>
-            <th>Quantity</th>
+            <th>QTY</th>
             <th>Total Amount</th>
-            <th>Shipping Window</th>
+            <th>Ship Window</th>
             <th>Account Name</th>
             <th>Written By</th>
             <th>Sales Territory</th>

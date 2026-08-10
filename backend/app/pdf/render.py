@@ -88,6 +88,27 @@ def cert_filename(season: str, buyer_name: str, created, order_id, original_name
     return f"WS-cert-{season}-{_buyer_slug(buyer_name)}-{created:%Y%m%d}-{str(order_id)[:8]}{ext}"
 
 
+def safe_output_path(filename: str) -> Path:
+    """Resolve a filename inside pdf_output_dir, refusing anything that escapes it.
+
+    Lives here rather than in a router because two routers now stream these
+    files (/admin and the rep dashboard) and a traversal guard is the last
+    thing that should exist in two copies. Callers must derive `filename` from
+    a DB row, never from the request.
+
+    Raises FileNotFoundError when the resolved file is missing, and ValueError
+    when it escapes the output directory — the routers turn those into 404/400.
+    """
+    base = Path(settings.pdf_output_dir).resolve()
+    path = (base / filename).resolve()
+    if not path.is_relative_to(base):
+        logger.warning("Blocked path traversal attempt: %r", filename)
+        raise ValueError("Invalid file")
+    if not path.is_file():
+        raise FileNotFoundError(filename)
+    return path
+
+
 def save_output_file(data: bytes, filename: str) -> str:
     out_dir = Path(settings.pdf_output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

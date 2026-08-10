@@ -32,6 +32,10 @@ export const getRepNames = () => request('/api/reps-portal/names')
 export const getSession = () => request('/api/reps-portal/session')
 export const login = (name, password) => post('/api/reps-portal/login', { name, password })
 export const logout = () => post('/api/reps-portal/logout')
+// The buyer-facing PDF for one of the rep's own orders. Scoped server-side:
+// another rep's id 404s, so this is a link, not a permission.
+export const pdfUrl = (id) => `/api/reps-portal/orders/${id}/pdf`
+
 export const getOrders = (statusFilter) =>
   request(
     `/api/reps-portal/orders${
