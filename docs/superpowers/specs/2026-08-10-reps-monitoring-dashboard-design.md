@@ -6,6 +6,16 @@ A read-only page at `/reps` where a sales representative signs in and sees the
 orders that belong to them: when it came in, whether the buyer has signed, and
 whether the office has accepted it. Reps send nothing and change nothing.
 
+> **Revised 2026-08-11 — the name is typed, not picked.** The sign-in name is a
+> text box and reps type their **first** name; `reps_auth.resolve_name()` turns
+> what was typed into the roster name (case and spacing ignored, a full name
+> still accepted, an ambiguous first name resolving to nobody so two Michaels
+> both have to type a full name). Everything below still holds: the roster name
+> is what lands in the session, so §2's rule that only a `REP_NAMES` entry can
+> hold a session is unchanged, and the throttle is keyed on the resolved rep so
+> re-capitalizing the name buys no extra guesses. `GET /names` survives for the
+> office but the page no longer calls it.
+
 ## 1. Why this is not "/admin with fewer columns"
 
 `/admin` returns the whole customer book with card name, card last 4, expiry,
@@ -52,8 +62,8 @@ carries rows that are not reps. Adding a rep is a one-line change.
 
 | Route | Auth | Behaviour |
 |---|---|---|
-| `GET /api/reps-portal/names` | none | the dropdown list; a login page has to show its own options |
-| `POST /api/reps-portal/login` | none | `{name, password}`; name must be in `REP_NAMES`, password verified constant-time |
+| `GET /api/reps-portal/names` | none | the roster; was the dropdown list, unused by the page since 2026-08-11 |
+| `POST /api/reps-portal/login` | none | `{name, password}`; name must resolve to a `REP_NAMES` entry, password verified constant-time |
 | `POST /api/reps-portal/logout` | none | pops the rep key |
 | `GET /api/reps-portal/session` | none | `{authenticated, name}` |
 | `GET /api/reps-portal/orders` | rep | the rep's orders |

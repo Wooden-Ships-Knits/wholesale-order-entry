@@ -28,7 +28,8 @@ const post = (url, payload) =>
     body: JSON.stringify(payload ?? {}),
   })
 
-export const getRepNames = () => request('/api/reps-portal/names')
+// No roster fetch: the sign-in name is typed, so the page never asks the
+// server who the reps are. `login` returns the roster name it matched.
 export const getSession = () => request('/api/reps-portal/session')
 export const login = (name, password) => post('/api/reps-portal/login', { name, password })
 export const logout = () => post('/api/reps-portal/logout')

@@ -170,7 +170,7 @@ other's guard.
 | GET | `/admin/orders` | Order list for the monitoring table |
 | POST | `/admin/orders/{id}/status` | Accept / decline |
 | GET | `/admin/orders/{id}/pdf` · `/certificate` | Stream the order PDF / tax cert |
-| GET | `/reps-portal/names` | Login roster for the rep dashboard |
+| GET | `/reps-portal/names` | The rep roster (the sign-in page no longer uses it — the name is typed) |
 | POST | `/reps-portal/login` · `/logout` · GET `/session` | Rep auth |
 | GET | `/reps-portal/orders` | The signed-in rep's own orders (read-only) |
 | GET | `/reps-portal/orders/{id}/pdf` | That order's masked PDF, if the rep owns it (404 otherwise) |
@@ -342,10 +342,15 @@ rows would read zero the moment one was used. That is why
 `/api/reps-portal/orders` has no SQL `WHERE status`: it counts the rep's orders
 in one pass, then filters them in Python.
 
-**Sign-in — one password per rep.** The rep picks their name from the roster
-(`REP_NAMES` in `backend/app/reps_auth.py`) and enters **their own** password.
-Not one password shared by all: the login is a name dropdown, so a shared
-password would let any rep pick a colleague's name and read that colleague's
+**Sign-in — one password per rep.** The rep **types their first name** and
+enters **their own** password. The server resolves what was typed against the
+roster (`REP_NAMES` in `backend/app/reps_auth.py`) — case and spacing are
+ignored, and a full name still works — and it is that roster name that goes in
+the session, because every ownership lookup matches on it. A first name shared
+by two reps resolves to nobody: both then have to type their full name.
+
+Not one password shared by all: sign-in only names the rep, so a shared
+password would let anyone type a colleague's name and read that colleague's
 book. Per-rep hashes make the name mean something.
 
 Hashes live in `REPS_PASSWORD_HASHES` as a JSON object keyed by the rep's
