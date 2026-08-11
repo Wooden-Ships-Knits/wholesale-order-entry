@@ -249,6 +249,89 @@ def test_the_name_lookup_tolerates_spacing_and_case():
     assert reps_auth.verify_rep("Aviva Landin", "wrong", raw) is False
 
 
+# ------------------------------- typing your first name (revised 2026-08-11)
+#
+# The name is a text box now, not a dropdown, and reps type just their first
+# name. So the server has to turn whatever was typed into the roster name: the
+# session stores that, and every ownership lookup downstream matches on it.
+
+def test_a_rep_signs_in_with_only_their_first_name(client):
+    r = _sign_in(client, name="Aviva")
+    assert r.status_code == 200
+    # The ROSTER name, not the typed text: "Aviva" would find no orders.
+    assert r.json()["name"] == "Aviva Landin"
+    assert client.get("/api/reps-portal/session").json()["name"] == "Aviva Landin"
+
+
+def test_a_typed_name_ignores_case_and_stray_spaces(client):
+    """Typed by hand on a phone, so " aVIVa " has to be Aviva."""
+    r = _sign_in(client, name="  aVIVa ")
+    assert r.status_code == 200
+    assert r.json()["name"] == "Aviva Landin"
+
+
+def test_the_full_name_still_signs_in(client):
+    """Reps used to pick their full name; the muscle memory still works."""
+    assert _sign_in(client, name="rande cohen", password=RANDE_PASSWORD).status_code == 200
+
+
+def test_a_first_name_still_needs_that_reps_own_password(client):
+    """Typing a colleague's first name is not a way into their book."""
+    assert _sign_in(client, name="Rande", password=PASSWORD).status_code == 401
+
+
+def test_an_unknown_first_name_is_rejected(client):
+    assert _sign_in(client, name="Mallory").status_code == 401
+    assert client.get("/api/reps-portal/session").json()["authenticated"] is False
+
+
+def test_an_ambiguous_first_name_resolves_to_nobody(monkeypatch):
+    """Two Michaels: both sign in with a full name, neither with "Michael".
+
+    Picking one would sooner or later drop a rep into the other's book, and the
+    password check cannot catch it — it is checked against whichever name we
+    guessed.
+    """
+    monkeypatch.setattr(reps_auth, "REP_NAMES", ("Michael Young", "Michael Stone"))
+    assert reps_auth.resolve_name("Michael") is None
+    assert reps_auth.resolve_name("Michael Young") == "Michael Young"
+
+
+def test_an_empty_name_resolves_to_nobody():
+    """A blank box must not fall through to the first rep on the roster."""
+    assert reps_auth.resolve_name("") is None
+    assert reps_auth.resolve_name("   ") is None
+    assert reps_auth.resolve_name(None) is None
+
+
+def test_every_roster_first_name_is_unique():
+    """What makes first-name sign-in safe at all. Adding a second Denise has to
+    fail here — loudly — rather than quietly disabling her sign-in."""
+    firsts = [reps_auth.normalize_name(n.split()[0]) for n in REP_NAMES]
+    assert sorted(set(firsts)) == sorted(firsts)
+
+
+def test_spelling_variants_share_one_throttle_bucket(client):
+    """The per-name counter is keyed on the rep, not on the typed text, so
+    re-capitalizing the name cannot buy a fresh set of guesses.
+
+    Each attempt comes from a different address, so only the per-identity
+    counter can be what stops it.
+    """
+    variants = ["aviva", "AVIVA", "Aviva Landin", " aviva "]
+
+    def attempt(i, name):
+        return client.post(
+            "/api/reps-portal/login",
+            json={"name": name, "password": "wrong"},
+            headers={"X-Forwarded-For": f"10.0.0.{i}"},
+        )
+
+    for i in range(reps_portal.guard._max_per_identity):
+        assert attempt(i, variants[i % len(variants)]).status_code == 401
+    assert attempt(200, "Aviva").status_code == 429
+
+
 def test_logout_ends_the_session(client):
     _sign_in(client)
     client.post("/api/reps-portal/logout")

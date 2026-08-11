@@ -1,7 +1,7 @@
 """Throttle repeated failed sign-ins on the admin and rep logins.
 
-Both logins are a password against a known account, with the account names for
-/reps published by the login dropdown. Without a limit, an attacker gets
+Both logins are a password against a known account, and /reps asks only for a
+rep's first name — cheap to guess. Without a limit, an attacker gets
 unlimited guesses — the rep passwords are short enough that a script would work
 through the space in hours. This makes that attack take years and, more useful,
 makes it loud in the logs long before it succeeds.
