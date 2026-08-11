@@ -146,12 +146,11 @@ def rep_followup_email(ctx: dict) -> tuple[str, str]:
 
     Sent once per order, never repeated — see services/signature_reminders.py.
 
-    Wording supplied by Wooden Ships 2026-08-10; keep it as written. Note this
-    is the ONE subject with no short id on the end — the copy was given in this
-    exact form, and it is addressed to a person who is being asked to pick up
-    the phone, not to file it.
+    Wording supplied by Wooden Ships 2026-08-10; keep it as written.
     """
-    subject = f"❗Pls CALL this account: {_store(ctx)} - {ctx['season_label']}"
+    subject = (
+        f"❗Pls CALL this account: {_store(ctx)} - {ctx['season_label']}" + _tag(ctx)
+    )
     body = """Hi,
 
 We have made 3 attempts to get a Signature on the order you submitted.
