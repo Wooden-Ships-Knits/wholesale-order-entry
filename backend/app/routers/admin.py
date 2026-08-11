@@ -155,6 +155,12 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
             and o.signature_requested_at is None
         ),
         "signatureEmail": o.signature_email,
+        # The request bounced — the address does not exist. Overrides the
+        # reassuring "Email Sent ✓" the row would otherwise show.
+        "signatureBouncedAt": (
+            o.signature_bounced_at.isoformat() if o.signature_bounced_at else None
+        ),
+        "signatureBounceReason": o.signature_bounce_reason,
         # A usable link is out there right now, so admin edits are blocked
         # (_reject_if_awaiting_signature). The token itself is never sent.
         "signatureLinkLive": bool(o.signature_token) and o.signature_signed_at is None,

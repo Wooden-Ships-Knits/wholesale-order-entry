@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import PasswordField from '../components/PasswordField'
 import { getRepNames, login } from './api'
 
 export default function RepLogin({ onSignedIn }) {
@@ -46,15 +47,7 @@ export default function RepLogin({ onSignedIn }) {
           ))}
         </select>
       </label>
-      <label>
-        Password
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
-      </label>
+      <PasswordField value={password} onChange={setPassword} />
       {error && <p className="admin-error">{error}</p>}
       <button type="submit" disabled={busy || !name || !password}>
         {busy ? 'Signing in…' : 'Sign in'}

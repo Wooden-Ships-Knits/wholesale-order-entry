@@ -103,6 +103,15 @@ class Order(Base):
     # settings.signature_reminder_hours, so it is the sweep's cursor as well as
     # a count: never a timestamp, because "which reminder is next" has to
     # survive the schedule being changed.
+    # The signature request bounced — the address does not exist. SMTP
+    # accepting a message only means Gmail took it; a wrong-but-valid address
+    # bounces minutes later, and without this the order sits at
+    # "Email Sent ✓ waiting for signature" while nobody ever received it.
+    # Cleared when the request is sent again, so a corrected address resets it.
+    signature_bounced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # What the mail server said ("Address not found", the SMTP diagnostic), so
+    # /admin can show why without anyone opening the mailbox.
+    signature_bounce_reason: Mapped[str | None] = mapped_column(Text)
     signature_reminders_sent: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
