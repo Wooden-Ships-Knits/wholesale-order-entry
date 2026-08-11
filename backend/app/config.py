@@ -139,6 +139,12 @@ class Settings(BaseSettings):
     imap_user: str = ""
     imap_pass: str = ""
     imap_mailbox: str = "INBOX"
+    # How often the backend reads the mailbox by itself, in minutes (0 = only
+    # when someone presses "Check replies"). This is what turns a bounced
+    # signature request into a red row without anyone watching Gmail.
+    # Automatically disabled on a development instance, which shares the same
+    # mailbox — see app/main.py::_mailbox_polling_enabled.
+    poll_replies_minutes: int = 5
 
     # Conflict-reply classifier (OpenAI). Blank key = disabled: run_classify()
     # no-ops. The model only ever *suggests* a resolution; a human confirms it.
