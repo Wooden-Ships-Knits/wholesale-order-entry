@@ -1397,6 +1397,54 @@ button:hover {
   letter-spacing: normal;
   font-weight: normal;
 }
+/* ---- password box with a show/hide eye (components/PasswordField.jsx) ---- */
+/* The wrapper is the positioning context; the input keeps its own styling from
+   the global `label input` rule, with room reserved on the right so a long
+   password never runs under the button. */
+.password-input {
+  position: relative;
+  display: block;
+}
+.password-input input {
+  padding-right: 2.4rem;
+}
+/* Two classes deep on purpose. The sign-in forms style their submit button as
+   `.admin-login button` / `.reps-login button` — a black pill — and that is
+   specificity 0,1,1, which beats a lone `.password-toggle`. The eye would
+   render as a black square sitting on the field. */
+.password-input .password-toggle,
+.password-input .password-toggle:hover,
+.password-input .password-toggle:focus {
+  position: absolute;
+  right: 1px;
+  /* Sits over the input, which has margin-top from `label input` — offset by
+     that much so the button centres on the box rather than on the label. */
+  top: 0.25rem;
+  bottom: 0;
+  width: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: #8b8780;
+  cursor: pointer;
+  /* The same rule sets uppercase + letter-spacing, which would shift the SVG. */
+  text-transform: none;
+  letter-spacing: normal;
+}
+.password-input .password-toggle:hover {
+  color: #1d1d1b;
+}
+/* Edge/IE draw their own reveal control; two eyes side by side is worse than
+   either alone. Chrome's password-manager key is not suppressible and is left. */
+.password-input input::-ms-reveal,
+.password-input input::-ms-clear {
+  display: none;
+}
+
 .admin-error {
   background: #fdf3f2;
   border: 1px solid #7a281f;

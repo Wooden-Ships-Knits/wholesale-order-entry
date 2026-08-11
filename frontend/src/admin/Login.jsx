@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { login } from './api'
+import PasswordField from '../components/PasswordField'
 
 export default function Login({ onSignedIn }) {
   const [password, setPassword] = useState('')
@@ -24,16 +25,7 @@ export default function Login({ onSignedIn }) {
   return (
     <form className="admin-login" onSubmit={submit}>
       <h1>Admin sign-in</h1>
-      <label>
-        Password
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          autoFocus
-        />
-      </label>
+      <PasswordField value={password} onChange={setPassword} autoFocus />
       {error && <p className="admin-error">{error}</p>}
       <button type="submit" disabled={busy || !password}>
         {busy ? 'Signing in…' : 'Sign in'}
