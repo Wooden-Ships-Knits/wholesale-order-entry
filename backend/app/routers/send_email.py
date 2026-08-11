@@ -133,6 +133,10 @@ def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db))
                 # without the admin retyping the address.
                 if payload.kind == "signature":
                     order.signature_email = to
+                    # Sent again, possibly to a corrected address — drop any
+                    # recorded bounce so the row and the chasers reset.
+                    order.signature_bounced_at = None
+                    order.signature_bounce_reason = None
                 db.commit()
         except Exception:
             logger.exception("Sent email but could not stamp order %s", payload.orderId)

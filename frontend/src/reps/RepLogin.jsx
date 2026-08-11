@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { login } from './api'
+import { useEffect, useState } from 'react'
+import PasswordField from '../components/PasswordField'
+import { getRepNames, login } from './api'
 
 export default function RepLogin({ onSignedIn }) {
   const [name, setName] = useState('')
@@ -44,15 +45,7 @@ export default function RepLogin({ onSignedIn }) {
           spellCheck={false}
         />
       </label>
-      <label>
-        Password
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
-      </label>
+      <PasswordField value={password} onChange={setPassword} />
       {error && <p className="admin-error">{error}</p>}
       <button type="submit" disabled={busy || !name.trim() || !password}>
         {busy ? 'Signing in…' : 'Sign in'}

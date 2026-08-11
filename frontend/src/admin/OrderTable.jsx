@@ -300,8 +300,14 @@ function PaymentCell({ order: o }) {
   if (!o.paymentMethod) return <td><span className="unknown">—</span></td>
 
   const isCard = o.paymentMethod === 'Credit Card'
+  // Yellow while a card copy is still sitting there unkeyed. Accept and Decline
+  // both destroy it — the number exists nowhere else (CLAUDE.md rule 1) — so
+  // deciding before someone has keyed it into Kugamon loses it for good, which
+  // is exactly what happened on 2026-08-10. The colour is the warning: an
+  // "Open card" chip on a yellow cell means there is still work to do here.
+  const unkeyedCard = isCard && o.hasCardCopy
   return (
-    <td>
+    <td className={unkeyedCard ? 'flag-yellow' : undefined}>
       <div className="cert-missing">
         <span>{o.paymentMethod}</span>
         {isCard && (o.cardLast4 || o.cardExp) && (
@@ -371,7 +377,14 @@ function SignatureCell({ order: o, sent, drafting, cancelling, onDraft, onCancel
   return (
     <td className="flag-yellow">
       <div className="cert-missing">
-        {o.signatureEmailSent || sent ? (
+        {o.signatureBouncedAt ? (
+          /* The address does not exist. Checked FIRST: signatureEmailSent is
+             also true here (Gmail accepted it before bouncing), so without
+             this the row would claim "Sent ✓" for an email nobody received. */
+          <span className="sig-unsent" title={o.signatureBounceReason || 'Delivery failed'}>
+            Undeliverable — check the address
+          </span>
+        ) : o.signatureEmailSent || sent ? (
           <span className="sf-created">Email Sent ✓ waiting for signature</span>
         ) : o.signatureHeldForConflict ? (
           /* Deliberately unsent, waiting on the conflict inquiry. Distinct from
@@ -633,10 +646,18 @@ export default function OrderTable({
     // confirm the live-org write first.
     if (status === 'accepted') {
       const name = order.accountName || 'this order'
+      // Accepting destroys the encrypted card copy, and the number exists
+      // nowhere else — so say so BEFORE the click, not after. This is the
+      // mistake that lost a card on 2026-08-10.
+      const cardWarning = order.hasCardCopy
+        ? '\n\nWARNING: the card number has not been opened yet. Accepting ' +
+          'deletes it permanently — key it into Kugamon first.'
+        : ''
       if (
         !window.confirm(
           `Accept "${name}" and create the order in Salesforce (Kugamon Draft)?\n\n` +
-            'For a new account, create its Salesforce account first.',
+            'For a new account, create its Salesforce account first.' +
+            cardWarning,
         )
       )
         return

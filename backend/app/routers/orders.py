@@ -159,6 +159,11 @@ def _send_signature_request(
             )
             return
         order.signature_requested_at = datetime.now(timezone.utc)
+        # A fresh send clears any previous failure: the address may have been
+        # corrected, and a stale "bounced" would keep the row red and keep the
+        # chasers switched off.
+        order.signature_bounced_at = None
+        order.signature_bounce_reason = None
         db.commit()
         logger.info("Signature request sent for order %s", str(order_id)[:8])
     except Exception:

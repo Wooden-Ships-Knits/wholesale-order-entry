@@ -12,7 +12,7 @@ no-ops when IMAP isn't configured so the app runs without inbound credentials.
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from email import message_from_bytes, policy
 from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime, parseaddr
@@ -44,6 +44,139 @@ _SUBJECT_TOKEN_RE = re.compile(
 
 # A tax-cert reply's certificate is one of these attached to the message.
 _CERT_EXTS = {".pdf", ".jpg", ".jpeg", ".png"}
+
+# ------------------------------------------------------------------ bounces
+# A bounce is NOT a reply: it comes from the mail system, not the buyer, and
+# carries none of our correlation tokens. It is recognised by shape instead —
+# RFC 3464 delivery-status reports — with a sender check as a fallback for the
+# providers that send a plain-text failure notice.
+_DSN_SENDERS = ("mailer-daemon", "postmaster", "mail-delivery")
+# "Final-Recipient: rfc822; molly@monkeesofhighpoint.com"
+_FINAL_RECIPIENT_RE = re.compile(
+    r"^(?:Final|Original)-Recipient:\s*[^;]*;\s*(.+)$", re.I | re.M
+)
+# "Status: 5.1.1" — 5.x.x is permanent (the address is wrong), 4.x.x is a
+# temporary defer that the sending server will retry on its own.
+_DSN_STATUS_RE = re.compile(r"^Status:\s*([245])\.(\d+)\.(\d+)", re.I | re.M)
+_DIAGNOSTIC_RE = re.compile(r"^Diagnostic-Code:\s*(.+)$", re.I | re.M)
+# The short id we put at the end of every order subject, recovered from the
+# bounced original that the DSN quotes back.
+_SHORT_ID_RE = re.compile(r"\b([0-9a-f]{8})\b")
+
+
+@dataclass
+class ParsedBounce:
+    """A permanent delivery failure, and who it was for."""
+
+    recipient: str
+    reason: str
+    # Short ids found in the quoted original subject; used to disambiguate when
+    # the same address is on more than one outstanding order.
+    short_ids: list[str] = field(default_factory=list)
+    message_id: str | None = None
+    received_at: datetime | None = None
+
+
+def _is_bounce(msg: Message) -> bool:
+    ctype = (msg.get_content_type() or "").lower()
+    if ctype == "multipart/report":
+        return "delivery-status" in str(msg.get_param("report-type") or "").lower()
+    sender = parseaddr(str(msg.get("From") or ""))[1].lower()
+    return any(s in sender for s in _DSN_SENDERS)
+
+
+def extract_bounce(raw: bytes) -> ParsedBounce | None:
+    """A ParsedBounce for a PERMANENT failure, else None.
+
+    Temporary failures (4.x.x) are ignored on purpose: the sending server keeps
+    retrying, and flagging the order would tell the team an address is wrong
+    when the message is still on its way.
+    """
+    try:
+        msg = message_from_bytes(raw, policy=policy.default)
+    except Exception:
+        logger.warning("Could not parse an inbound message while scanning for bounces")
+        return None
+    if not _is_bounce(msg):
+        return None
+
+    # Walk the whole message: the delivery-status part holds the machine-
+    # readable fields, and the rfc822 part quotes what we originally sent.
+    status_text, original_subject = "", ""
+    for part in msg.walk():
+        ctype = (part.get_content_type() or "").lower()
+        if ctype == "message/delivery-status":
+            status_text += str(part)
+        elif ctype in ("message/rfc822", "text/rfc822-headers"):
+            for sub in part.walk() if part.is_multipart() else [part]:
+                original_subject += " " + str(sub.get("Subject") or "")
+
+    permanent = _DSN_STATUS_RE.search(status_text)
+    if permanent and permanent.group(1) != "5":
+        return None  # 4.x.x — still being retried, not a wrong address
+    if not permanent and not _is_bounce(msg):
+        return None
+
+    recipients = [r.strip().strip("<>") for r in _FINAL_RECIPIENT_RE.findall(status_text)]
+    if not recipients:
+        return None
+
+    diag = _DIAGNOSTIC_RE.search(status_text)
+    reason = (diag.group(1).strip() if diag else "").strip()
+    if not reason:
+        reason = "Address not found" if permanent else "Delivery failed"
+
+    return ParsedBounce(
+        recipient=recipients[0].lower(),
+        reason=reason[:500],
+        short_ids=_SHORT_ID_RE.findall(original_subject.lower()),
+        message_id=str(msg.get("Message-ID") or "") or None,
+        received_at=_received_at(msg),
+    )
+
+
+def parse_bounces(raws: Iterable[bytes]) -> list[ParsedBounce]:
+    return [b for b in (extract_bounce(r) for r in raws) if b is not None]
+
+
+def apply_bounce(db, bounce: ParsedBounce) -> Order | None:
+    """Stamp the order whose signature request this bounce is for, or None.
+
+    Matched on the failed recipient against orders still waiting on a
+    signature. When one address has several outstanding orders, the short id
+    quoted back in the DSN picks the right one; without it we would flag an
+    order whose email may have been fine.
+    """
+    candidates = list(
+        db.execute(
+            select(Order).where(
+                Order.signature_signed_at.is_(None),
+                Order.signature_requested_at.is_not(None),
+                Order.signature_email.isnot(None),
+            )
+        ).scalars()
+    )
+    matches = [
+        o for o in candidates if (o.signature_email or "").strip().lower() == bounce.recipient
+    ]
+    if len(matches) > 1 and bounce.short_ids:
+        narrowed = [o for o in matches if str(o.id)[:8] in bounce.short_ids]
+        if narrowed:
+            matches = narrowed
+    if not matches:
+        logger.info(
+            "Bounce for %s matched no order awaiting a signature", bounce.recipient
+        )
+        return None
+    # Newest first: a resent request is the one that just bounced.
+    order = sorted(matches, key=lambda o: o.signature_requested_at, reverse=True)[0]
+    order.signature_bounced_at = bounce.received_at or datetime.now(timezone.utc)
+    order.signature_bounce_reason = bounce.reason
+    logger.warning(
+        "Signature request for order %s bounced (%s): %s",
+        str(order.id)[:8], bounce.recipient, bounce.reason,
+    )
+    return order
 
 
 @dataclass
@@ -219,12 +352,25 @@ def run_poll(db) -> int:
     try:
         conn.login(settings.imap_user, settings.imap_pass)
         conn.select(settings.imap_mailbox)
-        replies = parse_replies(fetch_unseen_raw(conn))
+        # Fetched once and scanned twice: fetching marks messages \Seen, so a
+        # second pass over the mailbox would find nothing.
+        raws = fetch_unseen_raw(conn)
     finally:
         try:
             conn.logout()
         except Exception:
             pass
+
+    replies = parse_replies(raws)
+
+    # Bounces are handled before replies and independently of them: a delivery
+    # failure carries none of our correlation tokens, so parse_replies drops it.
+    bounced = 0
+    for b in parse_bounces(raws):
+        if apply_bounce(db, b) is not None:
+            bounced += 1
+    if bounced:
+        db.commit()
 
     if not replies:
         return 0
