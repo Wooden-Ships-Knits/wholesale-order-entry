@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     # rather than mail the buyer a URL that 410s. Keep the final entry below
     # signature_link_days * 24 if either is ever changed.
     signature_reminder_hours: list[int] = [48, 120, 360, 528, 696]
+    # A single nudge to the REP when their order is still unsigned this many
+    # hours after the request went out — 6 days, i.e. one day after the buyer's
+    # second chaser, when it is clear the emails alone are not landing. 0
+    # disables it. Sent once per order, never repeated.
+    rep_followup_hours: int = 144
 
     # The two notices the team sends itself at ADMIN_EMAIL — "New wholesale
     # order" and "Order signed". Off since 2026-08-06: every order is already

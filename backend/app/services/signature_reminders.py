@@ -25,10 +25,11 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db.models import Order
-from app.email import mailer, signature_template
+from app.email import mailer, order_email, signature_template
 from app.pdf import context as pdf_context
 from app.pdf import render as pdf_render
 from app.salesforce import mapping
+from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,98 @@ def _send(order: Order) -> bool:
         draft["to"], draft["subject"], draft["body"], attachments,
         html=mailer.html_from_text(draft["body"]),
     )
+
+
+def _order_pdf(order: Order) -> tuple[str, bytes] | None:
+    """(filename, bytes) of the order's card-masked PDF, or None if it fails."""
+    try:
+        context = pdf_context.build(order)
+        context["card"] = pdf_context.masked_card(order)
+        return (
+            pdf_render.order_pdf_filename(
+                order.season_code, order.buyer_name or "", order.created_at, order.id
+            ),
+            pdf_render.render_order_pdf(context),
+        )
+    except Exception:
+        logger.exception("Order %s: PDF render failed", str(order.id)[:8])
+        return None
+
+
+def send_due_rep_followups(db: Session) -> int:
+    """One nudge to the rep per order still unsigned after rep_followup_hours.
+
+    Deliberately NOT filtered on signature_bounced_at, unlike the buyer's
+    chasers: a bounced address is the case where the rep most needs telling,
+    because nothing will reach the buyer by email at all until someone corrects
+    it. The chasers stop; this one still goes.
+
+    rep_followup_sent_at is written and committed BEFORE the send, so a crash
+    costs this nudge rather than repeating it on every tick — the same trade
+    the buyer's chasers make, and the right one for a once-per-order email.
+    """
+    if settings.rep_followup_hours <= 0:
+        return 0
+
+    now = datetime.now(timezone.utc)
+    due = list(
+        db.scalars(
+            select(Order).where(
+                Order.signature_token.is_not(None),
+                Order.signature_signed_at.is_(None),
+                Order.signature_requested_at.is_not(None),
+                Order.signature_token_expires_at > now,
+                Order.status == "submitted",
+                Order.rep_followup_sent_at.is_(None),
+                Order.signature_requested_at
+                <= now - timedelta(hours=settings.rep_followup_hours),
+            )
+        )
+    )
+
+    sent = 0
+    for order in due:
+        short_id = str(order.id)[:8]
+        rep_to = sheets_client.rep_email_for_order(
+            order.order_written_by, order.sales_territory
+        )
+        if not rep_to:
+            logger.info(
+                "Order %s is still unsigned but no rep email resolves for writer "
+                "%r / territory %r — no follow-up sent",
+                short_id, order.order_written_by, order.sales_territory,
+            )
+            # Stamped anyway: without a rep address there is nobody to tell,
+            # and leaving it null would re-check this order every hour forever.
+            order.rep_followup_sent_at = now
+            db.commit()
+            continue
+
+        order.rep_followup_sent_at = now
+        db.commit()
+
+        rendered = _order_pdf(order)
+        if rendered is None:
+            continue
+        filename, pdf_bytes = rendered
+        ctx = {
+            "short_id": short_id,
+            "season_code": order.season_code,
+            "season_label": mapping.season_label(order.season_code),
+            "account_name": order.account_name,
+            "buyer_name": order.buyer_name,
+            "total_qty": order.total_qty,
+            "total_amount": order.total_amount,
+        }
+        try:
+            if order_email.send_rep_followup(rep_to, ctx, pdf_bytes, filename):
+                sent += 1
+                logger.info("Rep follow-up sent for unsigned order %s", short_id)
+            else:
+                logger.error("Rep follow-up for order %s could not be sent", short_id)
+        except Exception:
+            logger.exception("Rep follow-up for order %s raised", short_id)
+    return sent
 
 
 def send_due_reminders(db: Session) -> int:
