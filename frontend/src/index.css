@@ -978,6 +978,46 @@ button:hover {
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
+
+/* ---- metric cards (rep dashboard) ---- */
+/* Read-only summary; the status chips below are the filter control. Plain
+   <div>s rather than buttons — nothing here is clickable, and a button would
+   also inherit the global dark-fill/white-text/uppercase rule and need three
+   overrides to undo it. Wraps rather than scrolls: five cards on a narrow
+   laptop should stack, not hide. */
+.metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 9.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #d8d4cc;
+  background: #f7f5f1;
+}
+.metric-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #55524c;
+}
+.metric-value {
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+/* Reserved even when empty (the component renders a space), so cards with and
+   without a sub-line still align along the bottom. */
+.metric-sub {
+  min-height: 1rem;
+  font-size: 0.72rem;
+  color: #888;
+}
 /* Top-level admin sections: Orders | Conflict check */
 .admin-tabs {
   display: flex;
@@ -1086,6 +1126,22 @@ button:hover {
   color: #888;
   font-size: 0.75rem;
   margin-top: 0.15rem;
+}
+/* Totals row. Sticks to the bottom of the viewport for the same reason the
+   header sticks to the top: with a long list the figure you want is otherwise
+   a full scroll away from the rows you are reading. */
+.admin-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #efece6;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px #d8d4cc, 0 -3px 5px -2px rgba(29, 29, 27, 0.18);
+}
+.admin-table .totals-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
 }
 
 /* ---- store-name suggestions (order form + admin account picker) ---- */
@@ -1341,6 +1397,54 @@ button:hover {
   letter-spacing: normal;
   font-weight: normal;
 }
+/* ---- password box with a show/hide eye (components/PasswordField.jsx) ---- */
+/* The wrapper is the positioning context; the input keeps its own styling from
+   the global `label input` rule, with room reserved on the right so a long
+   password never runs under the button. */
+.password-input {
+  position: relative;
+  display: block;
+}
+.password-input input {
+  padding-right: 2.4rem;
+}
+/* Two classes deep on purpose. The sign-in forms style their submit button as
+   `.admin-login button` / `.reps-login button` — a black pill — and that is
+   specificity 0,1,1, which beats a lone `.password-toggle`. The eye would
+   render as a black square sitting on the field. */
+.password-input .password-toggle,
+.password-input .password-toggle:hover,
+.password-input .password-toggle:focus {
+  position: absolute;
+  right: 1px;
+  /* Sits over the input, which has margin-top from `label input` — offset by
+     that much so the button centres on the box rather than on the label. */
+  top: 0.25rem;
+  bottom: 0;
+  width: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: #8b8780;
+  cursor: pointer;
+  /* The same rule sets uppercase + letter-spacing, which would shift the SVG. */
+  text-transform: none;
+  letter-spacing: normal;
+}
+.password-input .password-toggle:hover {
+  color: #1d1d1b;
+}
+/* Edge/IE draw their own reveal control; two eyes side by side is worse than
+   either alone. Chrome's password-manager key is not suppressible and is left. */
+.password-input input::-ms-reveal,
+.password-input input::-ms-clear {
+  display: none;
+}
+
 .admin-error {
   background: #fdf3f2;
   border: 1px solid #7a281f;

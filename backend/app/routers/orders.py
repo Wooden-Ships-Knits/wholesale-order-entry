@@ -76,6 +76,50 @@ def _conflict_point(order: Order) -> tuple[float, float] | None:
     return None
 
 
+# Bill To / Ship To fields that may not be left blank, as (attribute, label).
+# Validated here rather than by making them required on the Pydantic models:
+# BillTo/ShipTo are shared with the signing page and with `bill_to: BillTo =
+# BillTo()`, so required fields there would break constructing an empty one.
+# This is also where the message is written for a human rather than for a
+# schema — "Bill To: street is required", not "field required".
+_REQUIRED_BILL_TO = (
+    ("buyer_name", "buyer name"),
+    ("street", "street"),
+    ("city_state", "city / state"),
+    ("zip", "zip"),
+    ("tel", "telephone"),
+)
+_REQUIRED_SHIP_TO = (
+    ("street", "street"),
+    ("city_state", "city / state"),
+    ("zip", "zip"),
+    ("resale_tax_id", "resale tax ID"),
+)
+
+
+def _address_errors(payload: OrderSubmission) -> list[dict]:
+    """Every blank Bill To / Ship To field, as one error each.
+
+    All of them at once, not the first: an address with three empty boxes
+    should cost one round trip, not three. Ship To email is not listed —
+    ShipTo.email is a required EmailStr, so a missing one never reaches here.
+    """
+    out: list[dict] = []
+    for section, required, label in (
+        (payload.bill_to, _REQUIRED_BILL_TO, "Bill To"),
+        (payload.ship_to, _REQUIRED_SHIP_TO, "Ship To"),
+    ):
+        for attr, human in required:
+            if not (getattr(section, attr, "") or "").strip():
+                out.append(
+                    {
+                        "code": f"{label.lower().replace(' ', '_')}_{attr}",
+                        "message": f"{label}: {human} is required.",
+                    }
+                )
+    return out
+
+
 def signature_on_conflict_hold(order: Order) -> bool:
     """Is this order's signing link being withheld pending a conflict decision?
 
@@ -159,6 +203,11 @@ def _send_signature_request(
             )
             return
         order.signature_requested_at = datetime.now(timezone.utc)
+        # A fresh send clears any previous failure: the address may have been
+        # corrected, and a stale "bounced" would keep the row red and keep the
+        # chasers switched off.
+        order.signature_bounced_at = None
+        order.signature_bounce_reason = None
         db.commit()
         logger.info("Signature request sent for order %s", str(order_id)[:8])
     except Exception:
@@ -221,6 +270,8 @@ def submit_order(
     # OrderSubmission already requires.
     if not payload.terms.draft_signature and not payload.terms.signature_name.strip():
         errors.append({"code": "signature", "message": "Signature is required."})
+
+    errors.extend(_address_errors(payload))
 
     # Quantities → priced lines. Shared with the signature-link path, so both
     # re-resolve prices from the price book and enforce the same minimums.

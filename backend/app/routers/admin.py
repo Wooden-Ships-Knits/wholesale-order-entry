@@ -21,6 +21,7 @@ from app.ai import conflict_reply
 from app.config import settings
 from app.db.models import Order
 from app.db.session import get_db
+from app.login_guard import LoginGuard, client_ip
 from app.email import inbound, order_email
 from app.pdf import render as pdf_render
 from app.routers import orders
@@ -36,6 +37,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin")
 
 VALID_STATUSES = {"accepted", "declined"}
+
+# Failed-attempt throttle for the admin password.
+guard = LoginGuard("admin")
 
 
 class LoginRequest(BaseModel):
@@ -61,12 +65,19 @@ def login(payload: LoginRequest, request: Request) -> dict:
     if not settings.admin_password_hash:
         logger.error("Admin login attempted but ADMIN_PASSWORD_HASH is not set")
         raise HTTPException(status_code=503, detail="Admin access is not configured")
+    # Throttle before verifying, so a locked-out caller cannot tell a correct
+    # guess from a wrong one. One account here, so the identity is a constant —
+    # the per-identity counter is what survives an attacker rotating addresses.
+    ip = client_ip(request)
+    guard.check(ip, "admin")
     if not verify_password(payload.password, settings.admin_password_hash):
         # Never log the attempted password.
+        guard.record_failure(ip, "admin")
         logger.warning("Failed admin login attempt")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
         )
+    guard.record_success(ip, "admin")
     request.session[SESSION_KEY] = True
     return {"ok": True}
 
@@ -144,6 +155,12 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
             and o.signature_requested_at is None
         ),
         "signatureEmail": o.signature_email,
+        # The request bounced — the address does not exist. Overrides the
+        # reassuring "Email Sent ✓" the row would otherwise show.
+        "signatureBouncedAt": (
+            o.signature_bounced_at.isoformat() if o.signature_bounced_at else None
+        ),
+        "signatureBounceReason": o.signature_bounce_reason,
         # A usable link is out there right now, so admin edits are blocked
         # (_reject_if_awaiting_signature). The token itself is never sent.
         "signatureLinkLive": bool(o.signature_token) and o.signature_signed_at is None,
@@ -676,15 +693,13 @@ def create_account(order_id: str, db: Session = Depends(get_db)) -> dict:
 # ------------------------------------------------------------------ files
 
 def _safe_output_path(filename: str) -> Path:
-    """Resolve a filename inside pdf_output_dir, refusing anything that escapes it."""
-    base = Path(settings.pdf_output_dir).resolve()
-    path = (base / filename).resolve()
-    if not path.is_relative_to(base):
-        logger.warning("Blocked path traversal attempt: %r", filename)
+    """HTTP wrapper over pdf_render.safe_output_path (shared with /reps)."""
+    try:
+        return pdf_render.safe_output_path(filename)
+    except ValueError:
         raise HTTPException(status_code=400, detail="Invalid file")
-    if not path.is_file():
+    except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
-    return path
 
 
 @router.get("/orders/{order_id}/pdf", dependencies=[AdminRequired])

@@ -11,6 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config import settings
 from app.db.session import SessionLocal
 from app.services import signature_reminders
+from app.tasks import poll_replies
 from app.routers import (
     accounts,
     admin,
@@ -21,6 +22,7 @@ from app.routers import (
     products,
     reports,
     reps,
+    reps_portal,
     seasons,
     send_email,
     ship_windows,
@@ -65,13 +67,61 @@ def _reminder_pass() -> None:
         db.close()
 
 
+def _mailbox_polling_enabled() -> tuple[bool, str]:
+    """Should this instance poll the shared mailbox on a timer? (yes/no, why).
+
+    Two refusals, both about not stealing someone else's mail:
+
+      * IMAP unconfigured — nothing to poll.
+      * dev_mail_rewrite on — this is a development instance, and dev and
+        production read the SAME wholesale@ mailbox. Fetching marks messages
+        \\Seen, so an automatic dev poll would silently consume the bounces and
+        rep replies production is waiting for. The "Check replies" button still
+        works there, so a developer can poll deliberately; it just never
+        happens behind their back.
+    """
+    if not settings.imap_configured:
+        return False, "IMAP is not configured"
+    if settings.dev_mail_rewrite:
+        return False, "development instance — it shares production's mailbox"
+    if settings.poll_replies_minutes <= 0:
+        return False, "POLL_REPLIES_MINUTES is 0"
+    return True, ""
+
+
+async def _poll_replies_loop() -> None:
+    """Capture inbound replies and delivery failures on a timer.
+
+    Until now this only ran when someone pressed "Check replies", so a bounced
+    signature request sat unnoticed — the order kept showing "Email Sent ✓"
+    while the buyer had never received anything.
+    """
+    enabled, why = _mailbox_polling_enabled()
+    if not enabled:
+        logger.info("Automatic reply polling is off: %s", why)
+        return
+    interval = settings.poll_replies_minutes * 60
+    logger.info("Automatic reply polling every %d minutes", settings.poll_replies_minutes)
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            await run_in_threadpool(poll_replies.run_once)
+        except Exception:
+            logger.exception("Reply poll failed")
+
+
 @contextlib.asynccontextmanager
 async def lifespan(_app: FastAPI):
-    task = asyncio.create_task(_reminder_loop())
+    tasks = [
+        asyncio.create_task(_reminder_loop()),
+        asyncio.create_task(_poll_replies_loop()),
+    ]
     yield
-    task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await task
+    for t in tasks:
+        t.cancel()
+    for t in tasks:
+        with contextlib.suppress(asyncio.CancelledError):
+            await t
 
 
 app = FastAPI(title="Wooden Ships Wholesale Order Form", lifespan=lifespan)
@@ -106,6 +156,7 @@ app.include_router(accounts.router, prefix="/api")
 app.include_router(reps.router, prefix="/api")
 app.include_router(orders.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(reps_portal.router, prefix="/api")
 app.include_router(conflict_email.router, prefix="/api")
 app.include_router(send_email.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")

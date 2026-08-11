@@ -87,6 +87,14 @@ class Settings(BaseSettings):
     #   docker compose exec backend python -m app.admin.security "your-password"
     # Empty hash disables sign-in entirely (no admin access).
     admin_password_hash: str = ""
+    # Rep monitoring page (/reps) — ONE PASSWORD PER REP, as a JSON object of
+    # normalized-name -> pbkdf2 hash. Not one shared password: the login is a
+    # name dropdown, so a shared one would let any rep read a colleague's book.
+    # Build the value with:
+    #   docker compose exec backend python -m app.reps_auth "Aviva Landin=..."
+    # Empty (or malformed) disables rep sign-in entirely. Kept as a str and
+    # parsed in app.reps_auth so a typo here cannot crash the whole app.
+    reps_password_hashes: str = ""
     # Signs the admin session cookie. Rotating it logs everyone out.
     session_secret: str = ""
     # Set false only for local http dev; cookies are Secure in production.
@@ -130,6 +138,12 @@ class Settings(BaseSettings):
     imap_user: str = ""
     imap_pass: str = ""
     imap_mailbox: str = "INBOX"
+    # How often the backend reads the mailbox by itself, in minutes (0 = only
+    # when someone presses "Check replies"). This is what turns a bounced
+    # signature request into a red row without anyone watching Gmail.
+    # Automatically disabled on a development instance, which shares the same
+    # mailbox — see app/main.py::_mailbox_polling_enabled.
+    poll_replies_minutes: int = 5
 
     # Conflict-reply classifier (OpenAI). Blank key = disabled: run_classify()
     # no-ops. The model only ever *suggests* a resolution; a human confirms it.

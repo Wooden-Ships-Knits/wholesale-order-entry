@@ -66,6 +66,7 @@ See `.env.example` for the full list. The essentials:
 | `SHIPPING_WINDOW_SHEET_ID` | Google Sheet of per-season ship windows |
 | `GOOGLE_MAPS_SERVER_API_KEY` | **server** key for the conflict check (Geocoding + Distance Matrix); empty → straight-line fallback |
 | `ADMIN_PASSWORD_HASH` | hashed admin password (see [Admin](#admin-monitoring-page)) |
+| `REPS_PASSWORD_HASHES` | JSON map of rep → hashed password, one each (see [Rep dashboard](#rep-dashboard)) |
 | `SESSION_SECRET` | signs the admin session cookie |
 | `SESSION_COOKIE_SECURE` | `true` in production (https); `false` for local http |
 
@@ -149,7 +150,9 @@ backend/app/
 ## API surface
 
 All under `/api`. Public endpoints feed the order form; `/api/admin/*` require a
-signed-in session.
+signed-in admin session and `/api/reps-portal/*` a signed-in rep session. The
+two sessions are separate keys in the same cookie — neither satisfies the
+other's guard.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -167,6 +170,10 @@ signed-in session.
 | GET | `/admin/orders` | Order list for the monitoring table |
 | POST | `/admin/orders/{id}/status` | Accept / decline |
 | GET | `/admin/orders/{id}/pdf` · `/certificate` | Stream the order PDF / tax cert |
+| GET | `/reps-portal/names` | Login roster for the rep dashboard |
+| POST | `/reps-portal/login` · `/logout` · GET `/session` | Rep auth |
+| GET | `/reps-portal/orders` | The signed-in rep's own orders (read-only) |
+| GET | `/reps-portal/orders/{id}/pdf` | That order's masked PDF, if the rep owns it (404 otherwise) |
 
 ---
 
@@ -213,10 +220,18 @@ a `GOOGLE_MAPS_SERVER_API_KEY`, the check degrades to straight-line distance
 `/admin` — password-gated, three tabs: **Orders** (the monitoring table),
 **Conflict check**, and **Reports**.
 
-The Orders table columns: Date, Order ID (links to the PDF), Account Name, Sales
-Territory, New account, Rank, Potential conflict, Tax certificate, Notes, Special
-Instruction, Decision. Files are streamed through authenticated endpoints (never
-served statically, since they carry buyer and tax data).
+The Orders table columns: Date, Order ID (links to the PDF), Signature, Season,
+QTY, Ship Window, Account Name, Value, Written By, Sales
+Territory, New account, Rank, Potential conflict, Tax certificate, Payment,
+Notes, Special Instruction, Decision. Files are streamed through authenticated
+endpoints (never served statically, since they carry buyer and tax data).
+
+A **totals row** is pinned to the bottom of the table with the order count,
+total pieces and total value. It sums the rows **on screen**, not the whole
+table — so with a status chip or a column filter active the figure agrees with
+what you can see rather than with something you can't. It is hidden entirely
+when nothing matches; a footer reading `$0.00` under an empty result would read
+as a real total of zero.
 
 ### "New account" and the Create account button
 
@@ -306,6 +321,78 @@ docker compose up -d backend
 
 The password is stored only as a PBKDF2 hash — it cannot be recovered, only
 reset. Design notes: `docs/superpowers/specs/2026-07-18-admin-order-monitoring.md`.
+
+---
+
+## Rep dashboard
+
+`/reps` — a sales rep signs in and sees their own orders, read-only: **Date ·
+Order ID · Signature · Season · QTY · Ship Window · Account Name · Value ·
+Written By · Sales Territory · Notes · Decision**. Reps send nothing and change
+nothing; there is no accept/decline and no emailing. The Order ID links to that
+order's **buyer-facing** PDF (card masked to `•••• last4`) — scoped server-side,
+so another rep's id returns 404, never the `?full=1` admin card copy.
+
+**Metric cards** sit above the table, read-only: Total orders (with total
+pieces) · Awaiting signature (with "longest N days") · Awaiting review ·
+Accepted · Declined. The status chips are the only filter control. The counts
+come from the server and always describe the rep's **whole** book, never the
+filtered view — the chips filter server-side, so cards derived from the visible
+rows would read zero the moment one was used. That is why
+`/api/reps-portal/orders` has no SQL `WHERE status`: it counts the rep's orders
+in one pass, then filters them in Python.
+
+**Sign-in — one password per rep.** The rep picks their name from the roster
+(`REP_NAMES` in `backend/app/reps_auth.py`) and enters **their own** password.
+Not one password shared by all: the login is a name dropdown, so a shared
+password would let any rep pick a colleague's name and read that colleague's
+book. Per-rep hashes make the name mean something.
+
+Hashes live in `REPS_PASSWORD_HASHES` as a JSON object keyed by the rep's
+normalized name. Build the whole value in one command — mind the **leading
+space**, which keeps the plaintext out of your shell history:
+
+```bash
+ docker compose exec backend python -m app.reps_auth \
+    "Aviva Landin=first-password" "Denise Arnett=second-password" ...
+# paste the printed REPS_PASSWORD_HASHES=… line into .env
+docker compose up -d backend
+```
+
+It prints the **entire** value, so pass every rep unless you mean to lock the
+others out; a partial run warns you. Rotating one rep means re-running with all
+seven. Passwords are stored only as PBKDF2 hashes — they cannot be recovered,
+only reset. An empty or malformed value disables rep sign-in and nothing else
+(it is parsed defensively so a typo cannot take the order form down).
+
+A name must appear in **both** `REP_NAMES` and the hash map to sign in, so
+removing a departing rep from the roster is enough to lock them out even if
+their hash is still in `.env`.
+
+The rep session lives under its own key in the session cookie, so a rep session
+is rejected by `require_admin` and an admin session by `require_rep`.
+
+**Failed sign-ins are throttled** on both this login and the admin one
+(`backend/app/login_guard.py`): 10 failures per IP and 20 per account in a
+rolling 15 minutes, then `429` with a `Retry-After` until the window clears. A
+successful sign-in clears the counters. The per-account counter is what makes
+short passwords safe — `X-Forwarded-For` is caller-supplied, so the per-IP
+counter alone could be evaded by rotating the header. It is in-process, so it
+assumes a single backend replica.
+
+**Whose order is it?** The same rule that routes the order email
+(`sheets_client.rep_email_for_order`): Written By is the authority, the Sales
+Territory owner is the fallback for customer-filled orders. So the dashboard and
+the rep's inbox always agree. A rep whose name is missing from the region/rep
+sheet sees **no** orders and a message saying why — never the unfiltered list.
+
+**What a rep can receive** is pinned by `test_reps_portal.REP_ROW_KEYS`:
+`_rep_row()` is a separate serializer from the admin one and never emits card,
+conflict, certificate, Salesforce or dollar fields. Add a column and that test
+fails until the key set is updated deliberately.
+
+Design notes:
+`docs/superpowers/specs/2026-08-10-reps-monitoring-dashboard-design.md`.
 
 ---
 

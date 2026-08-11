@@ -21,9 +21,10 @@ const COLUMNS = [
   { header: 'Order ID', width: 12 },
   { header: 'Signature', width: 34 },
   { header: 'Season', width: 9 },
-  { header: 'Quantity', width: 10 },
-  { header: 'Shipping Window', width: 18 },
+  { header: 'QTY', width: 8 },
+  { header: 'Ship Window', width: 16 },
   { header: 'Account Name', width: 30 },
+  { header: 'Value', width: 14 },
   { header: 'Written By', width: 18 },
   { header: 'Sales Territory', width: 18 },
   { header: 'New account', width: 24 },
@@ -79,6 +80,16 @@ const text = (value) => (value ? { value: String(value), type: String } : null)
  *  rather than falsiness. */
 const number = (value) =>
   value == null || Number.isNaN(Number(value)) ? null : { value: Number(value), type: Number }
+
+/** A money cell: a real number wearing a currency format.
+ *
+ *  Not text like "$1,800.00" — the column has to SUM, which is most of the
+ *  reason anyone exports this. Excel does the formatting. */
+const MONEY_FORMAT = '"$"#,##0.00'
+const money = (value) => {
+  const cell = number(value)
+  return cell && { ...cell, format: MONEY_FORMAT }
+}
 
 // Joined with " · " so a single cell can carry what the table stacks vertically
 // (method + card summary, Yes + how it was resolved) and still read as one line.
@@ -199,6 +210,7 @@ export function orderSheetData(orders) {
       number(o.totalQty),
       text(o.shipWindow),
       text(o.accountName),
+      money(o.totalAmount),
       text(o.orderWrittenBy),
       text(o.salesTerritory),
       text(newAccountText(o)),

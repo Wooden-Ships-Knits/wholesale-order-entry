@@ -63,6 +63,10 @@ def _candidates(db: Session, now: datetime) -> list[Order]:
                 Order.signature_requested_at.is_not(None),
                 Order.signature_token_expires_at > now,
                 Order.status == "submitted",
+                # The address bounced — five more chasers would go to the same
+                # dead mailbox. Cleared when the request is sent again, so a
+                # corrected address resumes the schedule.
+                Order.signature_bounced_at.is_(None),
             )
         )
     )

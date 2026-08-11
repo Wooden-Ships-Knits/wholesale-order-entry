@@ -17,6 +17,11 @@ import {
 import { distinctValues, rankCode } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
+// Money for display only — the DB keeps numeric. Same format as the signing
+// page so an amount reads identically wherever the team sees it.
+const money = (n) =>
+  (Number(n) || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+
 // Salesforce My Domain — the pushed order record opens at <instance>/<recordId>.
 // Change this if the org's domain changes (e.g. a sandbox).
 const SF_INSTANCE_URL = 'https://wooden-ships.my.salesforce.com'
@@ -295,8 +300,14 @@ function PaymentCell({ order: o }) {
   if (!o.paymentMethod) return <td><span className="unknown">—</span></td>
 
   const isCard = o.paymentMethod === 'Credit Card'
+  // Yellow while a card copy is still sitting there unkeyed. Accept and Decline
+  // both destroy it — the number exists nowhere else (CLAUDE.md rule 1) — so
+  // deciding before someone has keyed it into Kugamon loses it for good, which
+  // is exactly what happened on 2026-08-10. The colour is the warning: an
+  // "Open card" chip on a yellow cell means there is still work to do here.
+  const unkeyedCard = isCard && o.hasCardCopy
   return (
-    <td>
+    <td className={unkeyedCard ? 'flag-yellow' : undefined}>
       <div className="cert-missing">
         <span>{o.paymentMethod}</span>
         {isCard && (o.cardLast4 || o.cardExp) && (
@@ -366,7 +377,14 @@ function SignatureCell({ order: o, sent, drafting, cancelling, onDraft, onCancel
   return (
     <td className="flag-yellow">
       <div className="cert-missing">
-        {o.signatureEmailSent || sent ? (
+        {o.signatureBouncedAt ? (
+          /* The address does not exist. Checked FIRST: signatureEmailSent is
+             also true here (Gmail accepted it before bouncing), so without
+             this the row would claim "Sent ✓" for an email nobody received. */
+          <span className="sig-unsent" title={o.signatureBounceReason || 'Delivery failed'}>
+            Undeliverable — check the address
+          </span>
+        ) : o.signatureEmailSent || sent ? (
           <span className="sf-created">Email Sent ✓ waiting for signature</span>
         ) : o.signatureHeldForConflict ? (
           /* Deliberately unsent, waiting on the conflict inquiry. Distinct from
@@ -445,6 +463,21 @@ export default function OrderTable({
   const ranks = useMemo(() => distinctValues(allOrders, (o) => rankCode(o.rank)), [allOrders])
   const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
   const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
+
+  // Footer totals over `orders` (the filtered rows), not `allOrders`: the
+  // figure has to agree with the rows above it, or a filtered view shows a
+  // total nobody can reconcile against what they can see.
+  const totals = useMemo(
+    () =>
+      orders.reduce(
+        (acc, o) => ({
+          qty: acc.qty + (o.totalQty || 0),
+          amount: acc.amount + (Number(o.totalAmount) || 0),
+        }),
+        { qty: 0, amount: 0 },
+      ),
+    [orders],
+  )
 
   // Both header rows are sticky, so the filter row has to sit exactly at the
   // label row's height. That height isn't knowable in CSS — labels wrap
@@ -613,10 +646,18 @@ export default function OrderTable({
     // confirm the live-org write first.
     if (status === 'accepted') {
       const name = order.accountName || 'this order'
+      // Accepting destroys the encrypted card copy, and the number exists
+      // nowhere else — so say so BEFORE the click, not after. This is the
+      // mistake that lost a card on 2026-08-10.
+      const cardWarning = order.hasCardCopy
+        ? '\n\nWARNING: the card number has not been opened yet. Accepting ' +
+          'deletes it permanently — key it into Kugamon first.'
+        : ''
       if (
         !window.confirm(
           `Accept "${name}" and create the order in Salesforce (Kugamon Draft)?\n\n` +
-            'For a new account, create its Salesforce account first.',
+            'For a new account, create its Salesforce account first.' +
+            cardWarning,
         )
       )
         return
@@ -646,9 +687,10 @@ export default function OrderTable({
             <th>Order ID</th>
             <th>Signature</th>
             <th>Season</th>
-            <th>Quantity</th>
-            <th>Shipping Window</th>
+            <th>QTY</th>
+            <th>Ship Window</th>
             <th>Account Name</th>
+            <th>Value</th>
             <th>Written By</th>
             <th>Sales Territory</th>
             <th>New account</th>
@@ -726,9 +768,10 @@ export default function OrderTable({
                 ))}
               </select>
             </th>
-            {/* Quantity has no filter: a free-text or range control over a
-                number nobody searches by would cost a column of width for
-                nothing. The header row still needs the cell to stay aligned. */}
+            {/* QTY has no filter: a free-text or range control over a number
+                nobody searches by would cost a column of width for nothing. The
+                header row still needs the cell to stay aligned — one per
+                column, or everything to the right shifts. */}
             <th aria-hidden="true" />
             <th>
               <select
@@ -753,6 +796,8 @@ export default function OrderTable({
                 onChange={(e) => onFilterChange('accountName', e.target.value)}
               />
             </th>
+            {/* Value: unfiltered, same reasoning as QTY. */}
+            <th aria-hidden="true" />
             <th>
               <select
                 aria-label="Filter by Written By"
@@ -853,7 +898,7 @@ export default function OrderTable({
         <tbody>
           {!orders.length && (
             <tr>
-              <td className="admin-empty-row" colSpan={17}>
+              <td className="admin-empty-row" colSpan={18}>
                 {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
               </td>
             </tr>
@@ -902,6 +947,11 @@ export default function OrderTable({
               <td className="num">{o.totalQty ?? <span className="unknown">—</span>}</td>
               <ShipWindowCell order={o} onChanged={onChanged} onError={onError} />
               <AccountNameCell order={o} onChanged={onChanged} onError={onError} />
+              {/* Order value at the prices in force when it was submitted. Like
+                  QTY, a buyer who edited at signing changed this too. */}
+              <td className="num">
+                {o.totalAmount == null ? <span className="unknown">—</span> : money(o.totalAmount)}
+              </td>
               {/* Internal Use "Order written by" — only rep-filled orders carry
                   one, so a dash here means the customer submitted it. */}
               <td>{o.orderWrittenBy || <span className="unknown">—</span>}</td>
@@ -1068,6 +1118,24 @@ export default function OrderTable({
             </tr>
           ))}
         </tbody>
+        {/* Totals for the rows on screen — so the figure always matches what
+            the filters are showing rather than the whole table. Rendered only
+            when there is something to add up; a footer reading $0.00 under an
+            empty result reads as a real total of zero. */}
+        {orders.length > 0 && (
+          <tfoot>
+            <tr>
+              <td className="totals-label" colSpan={4}>
+                Total — {orders.length} order{orders.length === 1 ? '' : 's'}
+              </td>
+              <td className="num">{totals.qty}</td>
+              {/* Ship Window + Account Name sit between the two figures. */}
+              <td colSpan={2} />
+              <td className="num">{money(totals.amount)}</td>
+              <td colSpan={10} />
+            </tr>
+          </tfoot>
+        )}
       </table>
     </>
   )
