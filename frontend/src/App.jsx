@@ -353,6 +353,24 @@ export default function App() {
         )
     }
     if (!shipTo.email) problems.push('Ship To email is required.')
+    // Every Bill To / Ship To box, mirroring orders.py::_address_errors. Named
+    // individually rather than "complete the address" because Street/City/Zip
+    // are HIDDEN until the map search fills them — a buyer who skipped the
+    // search has no visible empty field to notice, so the message has to say
+    // which section is unfinished.
+    const addressChecks = [
+      [billTo.buyerName, 'Bill To: buyer name is required.'],
+      [billTo.street, 'Bill To: street is required — search for the billing address.'],
+      [billTo.cityState, 'Bill To: city / state is required.'],
+      [billTo.zip, 'Bill To: zip is required.'],
+      [billTo.tel, 'Bill To: telephone is required.'],
+      [shipTo.street, 'Ship To: street is required — search for the shipping address.'],
+      [shipTo.cityState, 'Ship To: city / state is required.'],
+      [shipTo.zip, 'Ship To: zip is required.'],
+    ]
+    for (const [value, message] of addressChecks) {
+      if (!String(value ?? '').trim()) problems.push(message)
+    }
     if (!shipTo.resaleTaxId?.trim()) problems.push('Resale tax ID is required.')
     // How the order gets signed follows from who filled the form: a rep sends
     // it to the buyer at the Ship To address (already required above), a
