@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import PasswordField from '../components/PasswordField'
-import { getRepNames, login } from './api'
+import { login } from './api'
 
 export default function RepLogin({ onSignedIn }) {
   const [name, setName] = useState('')
