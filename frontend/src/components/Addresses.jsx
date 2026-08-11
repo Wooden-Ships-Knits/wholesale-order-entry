@@ -53,7 +53,8 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
     }
     if (type !== 'tel') return
     // On leaving the field, flag an incomplete number (1–9 digits). Empty is
-    // fine — the phone isn't required.
+    // handled by `required` instead, so this only complains about a half-typed
+    // one rather than about an untouched field.
     const digits = (e.target.value || '').replace(/\D/g, '')
     if (digits.length > 0 && digits.length < 10) {
       setWarning('Phone number must be 10 digits.')
@@ -142,6 +143,7 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
           onChange={(v) => setBillTo('buyerName', v)}
           autoComplete="name"
           titleCaseOnBlur
+          required
         />
         {showLocationSearch && (
           <AddressMap
@@ -159,12 +161,12 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
 
         {billHasAddress && (
           <>
-            <Field label="Street" value={billTo.street} onChange={(v) => setBillTo('street', v)} />
-            <Field label="City / State" value={billTo.cityState} onChange={(v) => setBillTo('cityState', v)} />
-            <Field label="Zip" value={billTo.zip} onChange={(v) => setBillTo('zip', v)} />
+            <Field label="Street" value={billTo.street} onChange={(v) => setBillTo('street', v)} required />
+            <Field label="City / State" value={billTo.cityState} onChange={(v) => setBillTo('cityState', v)} required />
+            <Field label="Zip" value={billTo.zip} onChange={(v) => setBillTo('zip', v)} required />
           </>
         )}
-        <Field label="Tel" value={billTo.tel} onChange={(v) => setBillTo('tel', v)} type="tel" placeholder="Example: (423) 240-9340" />
+        <Field label="Tel" value={billTo.tel} onChange={(v) => setBillTo('tel', v)} type="tel" placeholder="Example: (423) 240-9340" required />
       </div>
       <div className="address-col">
         <div className="col-head">
@@ -207,15 +209,17 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
           <>
             <Field
               label="Street"
+              required
               value={shipTo.street}
               onChange={(v) => setShipUnlink('street', v)}
             />
             <Field
               label="City / State"
+              required
               value={shipTo.cityState}
               onChange={(v) => setShipUnlink('cityState', v)}
             />
-            <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipUnlink('zip', v)} />
+            <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipUnlink('zip', v)} required />
           </>
         )}
         <Field label="Resale tax ID" value={shipTo.resaleTaxId} onChange={(v) => setShipTo('resaleTaxId', v)} required />
