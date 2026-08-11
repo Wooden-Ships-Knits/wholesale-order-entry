@@ -1,11 +1,14 @@
-// The rep's order table: twelve read-only columns. The only action is the
-// Order ID link, which opens that order's buyer-facing PDF.
+// The rep's order table: twelve read-only columns, with a per-column filter
+// row under the headers. The only action is the Order ID link, which opens
+// that order's buyer-facing PDF.
 //
 // Styling reuses the .admin-table classes so the two internal pages read as one
 // product. The cells are written here rather than shared with OrderTable
 // because every admin cell is wrapped around a button a rep must never see.
 
+import { useEffect, useMemo, useRef } from 'react'
 import { pdfUrl } from './api'
+import { distinctValues, STATUS_FILTERS } from './filterOrders'
 
 const DASH = <span className="unknown">—</span>
 
@@ -84,11 +87,41 @@ function DecisionCell({ order: o }) {
   )
 }
 
-export default function RepOrderTable({ orders }) {
+export default function RepOrderTable({
+  orders, // already filtered by RepsApp
+  allOrders, // unfiltered, so the dropdown options don't shrink as you filter
+  filters,
+  onFilterChange,
+  statusFilter, // the server-side Decision filter, shared with the toolbar chips
+  onStatusFilterChange,
+}) {
+  // Dropdown options come from the unfiltered rows: picking a territory must
+  // not remove the other territories from the list you picked it from.
+  const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
+  const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
+  const writers = useMemo(() => distinctValues(allOrders, (o) => o.orderWrittenBy), [allOrders])
+  const territories = useMemo(() => distinctValues(allOrders, (o) => o.salesTerritory), [allOrders])
+
+  // Both header rows are sticky, so the filter row has to sit exactly at the
+  // label row's height. That height isn't knowable in CSS — labels wrap
+  // differently as column widths, zoom and the loaded font change — so measure
+  // it and publish it as --admin-head-h, same as /admin's table does.
+  const headRowRef = useRef(null)
+  useEffect(() => {
+    const row = headRowRef.current
+    if (!row) return
+    const table = row.closest('table')
+    const sync = () => table?.style.setProperty('--admin-head-h', `${row.offsetHeight}px`)
+    sync()
+    const observer = new ResizeObserver(sync)
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <table className="admin-table">
       <thead>
-        <tr>
+        <tr ref={headRowRef}>
           <th>Date</th>
           <th>Order ID</th>
           <th>Signature</th>
@@ -102,12 +135,161 @@ export default function RepOrderTable({ orders }) {
           <th>Notes</th>
           <th>Decision</th>
         </tr>
+        {/* Per-column filters, same controls as /admin. Every cell is bound to
+            one key of the `filters` object owned by RepsApp ('' = no filter),
+            except Decision, which drives the server-side status filter the
+            toolbar chips also set — one column, one control. */}
+        <tr className="filter-row">
+          <th>
+            {/* <label> wraps each input, so the word is also the accessible
+                name and clicking it focuses the field. */}
+            <div className="filter-range">
+              <label>
+                <span>From</span>
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  max={filters.dateTo || undefined}
+                  onChange={(e) => onFilterChange('dateFrom', e.target.value)}
+                />
+              </label>
+              <label>
+                <span>To</span>
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  min={filters.dateFrom || undefined}
+                  onChange={(e) => onFilterChange('dateTo', e.target.value)}
+                />
+              </label>
+            </div>
+          </th>
+          <th>
+            <input
+              type="search"
+              placeholder="ID"
+              aria-label="Filter by order ID"
+              value={filters.shortId}
+              onChange={(e) => onFilterChange('shortId', e.target.value)}
+            />
+          </th>
+          <th>
+            {/* Fixed options, not distinctValues: "Unsigned" has to stay
+                selectable even when nothing is currently unsigned, which is
+                exactly when someone wants to check. */}
+            <select
+              aria-label="Filter by signature"
+              value={filters.sign}
+              onChange={(e) => onFilterChange('sign', e.target.value)}
+            >
+              <option value="">All</option>
+              <option value="yes">Signed</option>
+              <option value="no">Unsigned</option>
+            </select>
+          </th>
+          <th>
+            <select
+              aria-label="Filter by season"
+              value={filters.season}
+              onChange={(e) => onFilterChange('season', e.target.value)}
+            >
+              <option value="">All</option>
+              {seasons.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </th>
+          {/* QTY has no filter: a free-text or range control over a number
+              nobody searches by would cost a column of width for nothing. The
+              header row still needs the cell to stay aligned — one per column,
+              or everything to the right shifts. */}
+          <th aria-hidden="true" />
+          <th>
+            <select
+              aria-label="Filter by shipping window"
+              value={filters.shipWindow}
+              onChange={(e) => onFilterChange('shipWindow', e.target.value)}
+            >
+              <option value="">All</option>
+              {shipWindows.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
+            </select>
+          </th>
+          <th>
+            <input
+              type="search"
+              placeholder="Search…"
+              aria-label="Filter by account name"
+              value={filters.accountName}
+              onChange={(e) => onFilterChange('accountName', e.target.value)}
+            />
+          </th>
+          {/* Value: unfiltered, same reasoning as QTY. */}
+          <th aria-hidden="true" />
+          <th>
+            <select
+              aria-label="Filter by Written By"
+              value={filters.writtenBy}
+              onChange={(e) => onFilterChange('writtenBy', e.target.value)}
+            >
+              <option value="">All</option>
+              {writers.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
+            </select>
+          </th>
+          <th>
+            <select
+              aria-label="Filter by sales territory"
+              value={filters.territory}
+              onChange={(e) => onFilterChange('territory', e.target.value)}
+            >
+              <option value="">All</option>
+              {territories.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </th>
+          <th>
+            <input
+              type="search"
+              placeholder="Search…"
+              aria-label="Filter by notes"
+              value={filters.notes}
+              onChange={(e) => onFilterChange('notes', e.target.value)}
+            />
+          </th>
+          <th>
+            {/* Bound to the same state as the toolbar chips — changing either
+                one moves the other, and the rows are re-fetched server-side. */}
+            <select
+              aria-label="Filter by decision"
+              value={statusFilter}
+              onChange={(e) => onStatusFilterChange(e.target.value)}
+            >
+              {STATUS_FILTERS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </th>
+        </tr>
       </thead>
       <tbody>
         {orders.length === 0 && (
           <tr>
             <td className="admin-empty-row" colSpan={12}>
-              No orders yet.
+              {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
             </td>
           </tr>
         )}
