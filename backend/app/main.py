@@ -63,6 +63,9 @@ def _reminder_pass() -> None:
     db = SessionLocal()
     try:
         signature_reminders.send_due_reminders(db)
+        # Same pass, same session: both walk the unsigned orders, and running
+        # them together keeps "what happens on the hour" in one place.
+        signature_reminders.send_due_rep_followups(db)
     finally:
         db.close()
 

@@ -137,6 +137,48 @@ Wooden Ships
     return subject, body
 
 
+def rep_followup_email(ctx: dict) -> tuple[str, str]:
+    """Day-6 nudge to the REP: their buyer still has not signed.
+
+    The buyer is already chased on days 2, 5, 15, 22 and 29. This is the one
+    that goes to the person who wrote the order, on the theory that by day six
+    a phone call is worth more than a sixth email to the same inbox.
+
+    Sent once per order, never repeated — see services/signature_reminders.py.
+
+    Wording supplied by Wooden Ships 2026-08-10; keep it as written. Note this
+    is the ONE subject with no short id on the end — the copy was given in this
+    exact form, and it is addressed to a person who is being asked to pick up
+    the phone, not to file it.
+    """
+    subject = f"❗Pls CALL this account: {_store(ctx)} - {ctx['season_label']}"
+    body = """Hi,
+
+We have made 3 attempts to get a Signature on the order you submitted.
+
+Email is not working. **Could you please call the account**, ask them to find the email, click and sign.
+
+It's fast and easy to sign. But until they do, these orders are NOT in the system. They are not in your reports. No yarn, capacity, or ship window is held for them.
+
+As much as possible, avoid entering orders "later" or in "batches." Pls enter while still with the buyer, have them open the email and sign on the spot as they would if you had a paper order.
+
+If you have any questions or feedback, just reply to this email.
+
+Thank you!
+Wooden Ships
+"""
+    return subject, body
+
+
+def send_rep_followup(to: str, ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
+    """The day-6 nudge, to the rep, with the PDF and no signing link."""
+    subject, body = rep_followup_email(ctx)
+    return mailer.send_email(
+        to, subject, body, [(filename, pdf_bytes, "pdf")],
+        html=mailer.html_from_text(body),
+    )
+
+
 def signed_email(ctx: dict) -> tuple[str, str]:
     """Notice for an order the BUYER has just signed through the emailed link.
 
