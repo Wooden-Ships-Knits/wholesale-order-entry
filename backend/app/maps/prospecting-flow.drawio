@@ -1,0 +1,129 @@
+<mxfile host="65bd71144e">
+    <diagram id="prospecting" name="Prospecting pipeline">
+        <mxGraphModel dx="1820" dy="891" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2336" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="lg0" value="Prospecting — finding new stockists in a territory&#xa;see notebooks/PROSPECTING.md" style="text;html=1;fontSize=15;fontStyle=1;align=left;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="24" width="360" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg1" value="Our data / our code" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="86" width="150" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg2" value="Already built — reuse" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="118" width="150" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg3" value="External API (billed)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="150" width="150" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg4" value="Dropped" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="182" width="150" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg5" value="Not built yet" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="214" width="150" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="blocker" value="&lt;b&gt;BLOCKED TODAY&lt;/b&gt;&#xa;GOOGLE_MAPS_SERVER_API_KEY has HTTP-referrer&#xa;restrictions, which every Google web-service API&#xa;refuses:&#xa;&#xa;&quot;REQUEST_DENIED — API keys with referer&#xa;restrictions cannot be used with this API&quot;&#xa;&#xa;Blocks BOTH Places (below) and Distance Matrix,&#xa;so the conflict check is already running in&#xa;straight-line mode in production.&#xa;&#xa;Fix in Cloud console: restrict by IP, not referrer,&#xa;and enable Places + Distance Matrix on the key." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=8;verticalAlign=top;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="86" width="300" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="n1" value="Territory&#xa;e.g. &quot;FL - Jason Hilsenrad&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="60" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n2" value="States in this territory&#xa;sheets/client.py::territory_for_state()&#xa;REGION tab — state code → territory label" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="150" width="320" height="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="n3" value="Search origins&#xa;city centres above a population threshold&#xa;&#xa;NOT a ring around existing stores — that only&#xa;searches where we already sell" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="256" width="320" height="86" as="geometry"/>
+                </mxCell>
+                <mxCell id="n4" value="&lt;b&gt;Places — Nearby Search&lt;/b&gt;&#xa;type=clothing_store · keyword=boutique&#xa;20 results/page, 60 max per origin&#xa;→ more origins, not bigger radii" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="382" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="n5" value="Raw candidates&#xa;name · lat/lng · place_id · types" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="470" y="502" width="260" height="54" as="geometry"/>
+                </mxCell>
+                <mxCell id="n6" value="Already a Salesforce account?&#xa;&#xa;name similarity AND proximity (~100 m)&#xa;— neither alone is reliable" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="596" width="360" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="n7" value="Drop — already a customer&#xa;&#xa;Handing a rep their own store as a&#xa;&quot;new prospect&quot; costs their trust in the&#xa;whole list" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="620" width="260" height="84" as="geometry"/>
+                </mxCell>
+                <mxCell id="n8" value="&lt;b&gt;Places — Place Details&lt;/b&gt;&#xa;+ website, address, categories&#xa;second billed call per candidate —&#xa;so it runs AFTER dedupe, not before" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="766" width="320" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="n9" value="&lt;b&gt;Conflict check&lt;/b&gt;&#xa;app/geo/conflict.py::find_nearby()&#xa;&#xa;&amp;lt; 20 min drive · ordered in last 3 yrs ·&#xa;EXCLUDED_RANKS never count&#xa;Reused so this list and the order form can&#xa;never disagree about what a conflict is" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="886" width="320" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="n10" value="&lt;b&gt;STEP 1 TABLE&lt;/b&gt;&#xa;store_name · latitude · longitude · website&#xa;potential_conflict (bool)&#xa;&#xa;+ place_id, address, nearest_stockist, drive_minutes&#xa;— so the boolean can be checked, not just trusted" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="1036" width="360" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="n11" value="&lt;b&gt;STEP 2 — qualify from the shop&#39;s own site&lt;/b&gt;&#xa;one polite fetch per candidate, robots.txt honoured&#xa;&#xa;Places says a shop EXISTS. Only the site says whether&#xa;it sells women&#39;s knitwear at our price point.&#xa;Signals: sweater / knitwear, brands carried, stockist page" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="1186" width="360" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="n12" value="Rep-ready list&#xa;CSV + folium map (territory_map.plot)&#xa;candidates and existing stockists on one map" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="1336" width="300" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="note1" value="&lt;b&gt;A territory is a label, not a shape&lt;/b&gt;&#xa;REGION maps STATES to territories, which is only an&#xa;approximation: FL - Jason Hilsenrad holds 140 Florida&#xa;accounts and 1 in Georgia.&#xa;&#xa;So &quot;inside the territory&quot; has to be decided, not looked up." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;dashed=1;verticalAlign=top;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="256" width="330" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="note2" value="&lt;b&gt;Why Places, not a crawler, for step 1&lt;/b&gt;&#xa;· returns name, lat/lng, website already structured&#xa;  and already geocoded — a crawler would have to&#xa;  geocode addresses itself (another paid call, another&#xa;  source of error)&#xa;· within terms of service; scraping result pages is not&#xa;· the crawler earns its place at STEP 2, where the&#xa;  question stops being &quot;does this shop exist?&quot;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;dashed=1;verticalAlign=top;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="392" width="330" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="note3" value="&lt;b&gt;Cost — run cheap filters first&lt;/b&gt;&#xa;Place Details AND the conflict check are billed per&#xa;candidate. Dedupe is free and removes the most rows,&#xa;so it goes first.&#xa;&#xa;Cache by place_id: candidates repeat heavily between&#xa;nearby origins." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;dashed=1;verticalAlign=top;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="766" width="330" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="note4" value="&lt;b&gt;3 FL accounts have no geocode&lt;/b&gt;&#xa;MORLEY(DELRAY BEACH) · ISLAND PURSUIT(SARASOTA)&#xa;· REVIVAL BOUTIQUE&#xa;&#xa;They are invisible to proximity dedupe AND to the&#xa;conflict check, so both will quietly return the wrong&#xa;answer near them." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;dashed=1;verticalAlign=top;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="906" width="330" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="note5" value="&lt;b&gt;STOP HERE AND LOOK&lt;/b&gt;&#xa;Build order: origins → one Places call printed raw →&#xa;dedupe → conflict column → export.&#xa;&#xa;Run dedupe against the 141 known FL accounts first.&#xa;If it cannot recognise stores we KNOW are there, every&#xa;number downstream is inflated — cheaper to learn at&#xa;141 rows than at 2,000." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;dashed=1;verticalAlign=top;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="640" width="330" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="note6" value="&lt;b&gt;Open questions&lt;/b&gt;&#xa;· what makes a shop a real prospect — a signal the&#xa;  team already uses by eye?&#xa;· is a conflicting candidate DROPPED or SHOWN&#xa;  FLAGGED? (a conflict is a judgement call — that is&#xa;  why the rep is asked, not told)&#xa;· who reviews the output, and where does it live?" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;dashed=1;verticalAlign=top;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="1186" width="330" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n1" target="n2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n2" target="n3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n3" target="n4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n4" target="n5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n5" target="n6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="yes" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n6" target="n7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="no — a genuine candidate" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n6" target="n8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n8" target="n9" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n9" target="n10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n10" target="n11" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;" parent="1" source="n11" target="n12" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e12" value="blocks" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;dashed=1;strokeColor=#b85450;endArrow=block;" parent="1" source="blocker" target="n4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e13" value="blocks" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;dashed=1;strokeColor=#b85450;endArrow=block;" parent="1" source="blocker" target="n9" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1420" y="200"/>
+                            <mxPoint x="1420" y="941"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,0 +1,4673 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_8473eb76af626d0bc29085db1355176e {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.Default.css"/>
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_8473eb76af626d0bc29085db1355176e" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_8473eb76af626d0bc29085db1355176e = L.map(
+                "map_8473eb76af626d0bc29085db1355176e",
+                {
+                    center: [29.2676325, -83.626105],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 7,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_938885f8ff2ff6a811c9a281ec66be24 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_938885f8ff2ff6a811c9a281ec66be24.addTo(map_8473eb76af626d0bc29085db1355176e);
+        
+    
+            map_8473eb76af626d0bc29085db1355176e.fitBounds(
+                [[24.553328, -87.215309], [33.981937, -80.036901]],
+                {}
+            );
+        
+    
+            var marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e = L.markerClusterGroup(
+                {
+}
+            );
+        
+    
+            var circle_marker_e55c5a2a38213f8cebf8dbc810300b54 = L.circleMarker(
+                [26.0993, -80.1297],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_37266659a4786ad7fc57a24eebcf4ec9 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_0bbdeebf5338584b78ae53bfb8df7eb1 = $(`<div id="html_0bbdeebf5338584b78ae53bfb8df7eb1" style="width: 100.0%; height: 100.0%;"><b>BAKER'S BAY BLU BOUTIQUE</b><br>Fort Lauderdale, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_37266659a4786ad7fc57a24eebcf4ec9.setContent(html_0bbdeebf5338584b78ae53bfb8df7eb1);
+            
+        
+
+        circle_marker_e55c5a2a38213f8cebf8dbc810300b54.bindPopup(popup_37266659a4786ad7fc57a24eebcf4ec9)
+        ;
+
+        
+    
+    
+            circle_marker_e55c5a2a38213f8cebf8dbc810300b54.bindTooltip(
+                `<div>
+                     BAKER'S BAY BLU BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2fc081e64e75bd50c0b8a815542be08a = L.circleMarker(
+                [28.215476, -80.672068],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_f041bb8305d487b75301b1e74ccc95a9 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_da93b2d2d6200ec3665500690f2bc723 = $(`<div id="html_da93b2d2d6200ec3665500690f2bc723" style="width: 100.0%; height: 100.0%;"><b>LA MODA BOUTIQUE</b><br>Melbourne, FL<br><span style='color:#666'>NGF - Not Going Forward</span></div>`)[0];
+                popup_f041bb8305d487b75301b1e74ccc95a9.setContent(html_da93b2d2d6200ec3665500690f2bc723);
+            
+        
+
+        circle_marker_2fc081e64e75bd50c0b8a815542be08a.bindPopup(popup_f041bb8305d487b75301b1e74ccc95a9)
+        ;
+
+        
+    
+    
+            circle_marker_2fc081e64e75bd50c0b8a815542be08a.bindTooltip(
+                `<div>
+                     LA MODA BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_faaf10b02daf97bca9abaae755492072 = L.circleMarker(
+                [30.377148, -86.338093],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_1f1f86e4b5b1016cdc9c33096662b0ac = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_ec724749bd77272ccaf361be4fb08049 = $(`<div id="html_ec724749bd77272ccaf361be4fb08049" style="width: 100.0%; height: 100.0%;"><b>WHITEWASH BOUTIQUE</b><br>Miramar Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_1f1f86e4b5b1016cdc9c33096662b0ac.setContent(html_ec724749bd77272ccaf361be4fb08049);
+            
+        
+
+        circle_marker_faaf10b02daf97bca9abaae755492072.bindPopup(popup_1f1f86e4b5b1016cdc9c33096662b0ac)
+        ;
+
+        
+    
+    
+            circle_marker_faaf10b02daf97bca9abaae755492072.bindTooltip(
+                `<div>
+                     WHITEWASH BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_69fdc5fd9d61cde7578cdc5900a18b7b = L.circleMarker(
+                [27.199831, -80.254203],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_fbdf0a78ccb30231585fd6dd0fc92da3 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_10ec1d4c8712e3dd1dd16380ce6e4622 = $(`<div id="html_10ec1d4c8712e3dd1dd16380ce6e4622" style="width: 100.0%; height: 100.0%;"><b>LISA GAY FASHIONS</b><br>Stuart, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_fbdf0a78ccb30231585fd6dd0fc92da3.setContent(html_10ec1d4c8712e3dd1dd16380ce6e4622);
+            
+        
+
+        circle_marker_69fdc5fd9d61cde7578cdc5900a18b7b.bindPopup(popup_fbdf0a78ccb30231585fd6dd0fc92da3)
+        ;
+
+        
+    
+    
+            circle_marker_69fdc5fd9d61cde7578cdc5900a18b7b.bindTooltip(
+                `<div>
+                     LISA GAY FASHIONS
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_fffa351a35fb0857fad15927b9fb12f0 = L.circleMarker(
+                [26.848376, -80.094297],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_ebd298bd9478f35a235833529b73ba17 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_8a654103e45c6117e5ba030def2cf6cc = $(`<div id="html_8a654103e45c6117e5ba030def2cf6cc" style="width: 100.0%; height: 100.0%;"><b>VAGABOND APPAREL BOUTIQUE</b><br>Palm Beach Gardens, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_ebd298bd9478f35a235833529b73ba17.setContent(html_8a654103e45c6117e5ba030def2cf6cc);
+            
+        
+
+        circle_marker_fffa351a35fb0857fad15927b9fb12f0.bindPopup(popup_ebd298bd9478f35a235833529b73ba17)
+        ;
+
+        
+    
+    
+            circle_marker_fffa351a35fb0857fad15927b9fb12f0.bindTooltip(
+                `<div>
+                     VAGABOND APPAREL BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_876a2f2cfc75b242f164235ff38e6dcf = L.circleMarker(
+                [29.024158, -80.923975],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_f5e7256c0e5de29f8f80012f477c31db = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_40b8d3bd6f2afd0715b9beed8c94c14f = $(`<div id="html_40b8d3bd6f2afd0715b9beed8c94c14f" style="width: 100.0%; height: 100.0%;"><b>THE POSH PINEAPPLE</b><br>New Smyrna Beach, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_f5e7256c0e5de29f8f80012f477c31db.setContent(html_40b8d3bd6f2afd0715b9beed8c94c14f);
+            
+        
+
+        circle_marker_876a2f2cfc75b242f164235ff38e6dcf.bindPopup(popup_f5e7256c0e5de29f8f80012f477c31db)
+        ;
+
+        
+    
+    
+            circle_marker_876a2f2cfc75b242f164235ff38e6dcf.bindTooltip(
+                `<div>
+                     THE POSH PINEAPPLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b2ae63f592e8cbfbedb215f5ee1c9464 = L.circleMarker(
+                [24.955669, -80.582361],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_03a6474dcc5ab8e3bf75de347dcb84d4 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_88146afe9f720f60adbde6fbb0237cc9 = $(`<div id="html_88146afe9f720f60adbde6fbb0237cc9" style="width: 100.0%; height: 100.0%;"><b>OCEAN DAYZ</b><br>Islamorada, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_03a6474dcc5ab8e3bf75de347dcb84d4.setContent(html_88146afe9f720f60adbde6fbb0237cc9);
+            
+        
+
+        circle_marker_b2ae63f592e8cbfbedb215f5ee1c9464.bindPopup(popup_03a6474dcc5ab8e3bf75de347dcb84d4)
+        ;
+
+        
+    
+    
+            circle_marker_b2ae63f592e8cbfbedb215f5ee1c9464.bindTooltip(
+                `<div>
+                     OCEAN DAYZ
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_fbf4ba29e47f673c135d7f6cc5847c8d = L.circleMarker(
+                [28.354777, -80.725729],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_f784b01bdfafc7d63a65c21183e9e8e2 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_f26f012e74c1f04f8ba2481bbff1075c = $(`<div id="html_f26f012e74c1f04f8ba2481bbff1075c" style="width: 100.0%; height: 100.0%;"><b>GREEN APPLES</b><br>Cocoa, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_f784b01bdfafc7d63a65c21183e9e8e2.setContent(html_f26f012e74c1f04f8ba2481bbff1075c);
+            
+        
+
+        circle_marker_fbf4ba29e47f673c135d7f6cc5847c8d.bindPopup(popup_f784b01bdfafc7d63a65c21183e9e8e2)
+        ;
+
+        
+    
+    
+            circle_marker_fbf4ba29e47f673c135d7f6cc5847c8d.bindTooltip(
+                `<div>
+                     GREEN APPLES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b068e467316b100be1791b7f1f99493c = L.circleMarker(
+                [28.074514, -82.752772],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_90064bfdc72fd4823fb3e894d470d79d = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_d231f7df178ad65d030592a34c68164f = $(`<div id="html_d231f7df178ad65d030592a34c68164f" style="width: 100.0%; height: 100.0%;"><b>CALI GIRL DREAMING</b><br>Palm Harbour, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_90064bfdc72fd4823fb3e894d470d79d.setContent(html_d231f7df178ad65d030592a34c68164f);
+            
+        
+
+        circle_marker_b068e467316b100be1791b7f1f99493c.bindPopup(popup_90064bfdc72fd4823fb3e894d470d79d)
+        ;
+
+        
+    
+    
+            circle_marker_b068e467316b100be1791b7f1f99493c.bindTooltip(
+                `<div>
+                     CALI GIRL DREAMING
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f17e6ac4529f844f5c343ad7512f8120 = L.circleMarker(
+                [27.393812, -82.435408],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c77513262ce7cbc56413febdd03905ea = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_6188fd145a584ed465933ba4fbe024da = $(`<div id="html_6188fd145a584ed465933ba4fbe024da" style="width: 100.0%; height: 100.0%;"><b>WISH ON MAIN STREET</b><br>Lakewood Ranch, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_c77513262ce7cbc56413febdd03905ea.setContent(html_6188fd145a584ed465933ba4fbe024da);
+            
+        
+
+        circle_marker_f17e6ac4529f844f5c343ad7512f8120.bindPopup(popup_c77513262ce7cbc56413febdd03905ea)
+        ;
+
+        
+    
+    
+            circle_marker_f17e6ac4529f844f5c343ad7512f8120.bindTooltip(
+                `<div>
+                     WISH ON MAIN STREET
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_7cc67580ed09b5941520713c764d7270 = L.circleMarker(
+                [26.0983, -80.116614],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_15304d2cb1019b2a4724f2834340e904 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_cbb13ca524f37e3052959dd72d2d5aa6 = $(`<div id="html_cbb13ca524f37e3052959dd72d2d5aa6" style="width: 100.0%; height: 100.0%;"><b>PROPILATES</b><br>Fort Lauderdale, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_15304d2cb1019b2a4724f2834340e904.setContent(html_cbb13ca524f37e3052959dd72d2d5aa6);
+            
+        
+
+        circle_marker_7cc67580ed09b5941520713c764d7270.bindPopup(popup_15304d2cb1019b2a4724f2834340e904)
+        ;
+
+        
+    
+    
+            circle_marker_7cc67580ed09b5941520713c764d7270.bindTooltip(
+                `<div>
+                     PROPILATES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d199a1192c8f7dafe2d1836f7a6a8619 = L.circleMarker(
+                [26.935136, -80.088542],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_0fbadce8846c0466680e8dff70ea183d = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_7dff49923661a31b5c0b6a7c768a70b5 = $(`<div id="html_7dff49923661a31b5c0b6a7c768a70b5" style="width: 100.0%; height: 100.0%;"><b>THE MIXED BAG (JUPITER)</b><br>Jupiter, FL<br><span style='color:#666'>X - Conflict</span></div>`)[0];
+                popup_0fbadce8846c0466680e8dff70ea183d.setContent(html_7dff49923661a31b5c0b6a7c768a70b5);
+            
+        
+
+        circle_marker_d199a1192c8f7dafe2d1836f7a6a8619.bindPopup(popup_0fbadce8846c0466680e8dff70ea183d)
+        ;
+
+        
+    
+    
+            circle_marker_d199a1192c8f7dafe2d1836f7a6a8619.bindTooltip(
+                `<div>
+                     THE MIXED BAG (JUPITER)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b10a89b54b3da2c46415b2a5ce8808bd = L.circleMarker(
+                [26.664271, -80.268245],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_278043ff4b15ea4e67be869d1957223f = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_cddb6665b91111357f04a01f8d91b78b = $(`<div id="html_cddb6665b91111357f04a01f8d91b78b" style="width: 100.0%; height: 100.0%;"><b>THE MIXED BAG (WELLINGTON)</b><br>Wellington, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_278043ff4b15ea4e67be869d1957223f.setContent(html_cddb6665b91111357f04a01f8d91b78b);
+            
+        
+
+        circle_marker_b10a89b54b3da2c46415b2a5ce8808bd.bindPopup(popup_278043ff4b15ea4e67be869d1957223f)
+        ;
+
+        
+    
+    
+            circle_marker_b10a89b54b3da2c46415b2a5ce8808bd.bindTooltip(
+                `<div>
+                     THE MIXED BAG (WELLINGTON)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8bd8b38f56573fe39ae401befd142043 = L.circleMarker(
+                [25.7358, -80.239131],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_43bc41ad198430ca92df6bba91226218 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_9fcdfa7f3a7cf966d61608b2c0894948 = $(`<div id="html_9fcdfa7f3a7cf966d61608b2c0894948" style="width: 100.0%; height: 100.0%;"><b>LESLEY CLOTHING</b><br>Miami, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_43bc41ad198430ca92df6bba91226218.setContent(html_9fcdfa7f3a7cf966d61608b2c0894948);
+            
+        
+
+        circle_marker_8bd8b38f56573fe39ae401befd142043.bindPopup(popup_43bc41ad198430ca92df6bba91226218)
+        ;
+
+        
+    
+    
+            circle_marker_8bd8b38f56573fe39ae401befd142043.bindTooltip(
+                `<div>
+                     LESLEY CLOTHING
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_6b93df7b0e42806ff3895615a3f46ee6 = L.circleMarker(
+                [30.33443, -87.141103],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_420d299858f9a1b9b67973358fddfe72 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_9ebfe61617017fd8608752bea04b3ec6 = $(`<div id="html_9ebfe61617017fd8608752bea04b3ec6" style="width: 100.0%; height: 100.0%;"><b>ENVIE BOUTIQUE</b><br>Pensacola Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_420d299858f9a1b9b67973358fddfe72.setContent(html_9ebfe61617017fd8608752bea04b3ec6);
+            
+        
+
+        circle_marker_6b93df7b0e42806ff3895615a3f46ee6.bindPopup(popup_420d299858f9a1b9b67973358fddfe72)
+        ;
+
+        
+    
+    
+            circle_marker_6b93df7b0e42806ff3895615a3f46ee6.bindTooltip(
+                `<div>
+                     ENVIE BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a980edf71fb89f5a05937043ed594347 = L.circleMarker(
+                [26.654188, -80.292404],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_84a732f836fe93142b992d8c65fa6b48 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_541e6f28d02ed5632a046a3ec9c173bc = $(`<div id="html_541e6f28d02ed5632a046a3ec9c173bc" style="width: 100.0%; height: 100.0%;"><b>SOFIE BELGIUM BOUTIQUE</b><br>Wellington, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_84a732f836fe93142b992d8c65fa6b48.setContent(html_541e6f28d02ed5632a046a3ec9c173bc);
+            
+        
+
+        circle_marker_a980edf71fb89f5a05937043ed594347.bindPopup(popup_84a732f836fe93142b992d8c65fa6b48)
+        ;
+
+        
+    
+    
+            circle_marker_a980edf71fb89f5a05937043ed594347.bindTooltip(
+                `<div>
+                     SOFIE BELGIUM BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a24b93a4a47805b4c4a55210da87d8f3 = L.circleMarker(
+                [27.990967, -82.692512],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_fd69bb411c3b133f8ac15ca9062f0b30 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_154f445880f10f3cce2e52247801d248 = $(`<div id="html_154f445880f10f3cce2e52247801d248" style="width: 100.0%; height: 100.0%;"><b>DAZZLED BOUTIQUE</b><br>Safety Harbor, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_fd69bb411c3b133f8ac15ca9062f0b30.setContent(html_154f445880f10f3cce2e52247801d248);
+            
+        
+
+        circle_marker_a24b93a4a47805b4c4a55210da87d8f3.bindPopup(popup_fd69bb411c3b133f8ac15ca9062f0b30)
+        ;
+
+        
+    
+    
+            circle_marker_a24b93a4a47805b4c4a55210da87d8f3.bindTooltip(
+                `<div>
+                     DAZZLED BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4480788a6ff1b5b9a2c117c32c609c17 = L.circleMarker(
+                [27.652528, -80.356802],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_0c91af2cd67cc7478a6b5260023e415e = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_023476161eb1e4c2acf26d2c20e2387c = $(`<div id="html_023476161eb1e4c2acf26d2c20e2387c" style="width: 100.0%; height: 100.0%;"><b>THE GAZEBO</b><br>Vero Beach, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_0c91af2cd67cc7478a6b5260023e415e.setContent(html_023476161eb1e4c2acf26d2c20e2387c);
+            
+        
+
+        circle_marker_4480788a6ff1b5b9a2c117c32c609c17.bindPopup(popup_0c91af2cd67cc7478a6b5260023e415e)
+        ;
+
+        
+    
+    
+            circle_marker_4480788a6ff1b5b9a2c117c32c609c17.bindTooltip(
+                `<div>
+                     THE GAZEBO
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b611b303b852cb4ec4d99870b3a76336 = L.circleMarker(
+                [30.028529, -84.389561],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_ccf6d3047584af4e5a65c6eee81d4430 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_327e3c3f0ad9b6a0664b6509fe2278c0 = $(`<div id="html_327e3c3f0ad9b6a0664b6509fe2278c0" style="width: 100.0%; height: 100.0%;"><b>GYPSY ROSE BOUTIQUE</b><br>Panacea, FL<br><span style='color:#666'>OOB - Out of Business</span></div>`)[0];
+                popup_ccf6d3047584af4e5a65c6eee81d4430.setContent(html_327e3c3f0ad9b6a0664b6509fe2278c0);
+            
+        
+
+        circle_marker_b611b303b852cb4ec4d99870b3a76336.bindPopup(popup_ccf6d3047584af4e5a65c6eee81d4430)
+        ;
+
+        
+    
+    
+            circle_marker_b611b303b852cb4ec4d99870b3a76336.bindTooltip(
+                `<div>
+                     GYPSY ROSE BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3726bdd65d791ec650925c6ec5b78089 = L.circleMarker(
+                [30.205, -81.3832],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_0c27709185449024f5760861927c47ff = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e248c50c67a8843339ca2088c4618f68 = $(`<div id="html_e248c50c67a8843339ca2088c4618f68" style="width: 100.0%; height: 100.0%;"><b>ELLIE BING</b><br>Ponte Vedra Beach, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_0c27709185449024f5760861927c47ff.setContent(html_e248c50c67a8843339ca2088c4618f68);
+            
+        
+
+        circle_marker_3726bdd65d791ec650925c6ec5b78089.bindPopup(popup_0c27709185449024f5760861927c47ff)
+        ;
+
+        
+    
+    
+            circle_marker_3726bdd65d791ec650925c6ec5b78089.bindTooltip(
+                `<div>
+                     ELLIE BING
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a20a733ae10768af39d660e3b87c42d3 = L.circleMarker(
+                [25.080736, -80.454551],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_0165031f4c02070676fd2beba55d29c3 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_36300c4ff400497ea4c917f97c1bed1c = $(`<div id="html_36300c4ff400497ea4c917f97c1bed1c" style="width: 100.0%; height: 100.0%;"><b>COCO PLUM PLACE</b><br>Key Largo, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_0165031f4c02070676fd2beba55d29c3.setContent(html_36300c4ff400497ea4c917f97c1bed1c);
+            
+        
+
+        circle_marker_a20a733ae10768af39d660e3b87c42d3.bindPopup(popup_0165031f4c02070676fd2beba55d29c3)
+        ;
+
+        
+    
+    
+            circle_marker_a20a733ae10768af39d660e3b87c42d3.bindTooltip(
+                `<div>
+                     COCO PLUM PLACE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_999bd80fd7272ff10fd66450be63f866 = L.circleMarker(
+                [28.59537, -81.350664],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_4cce9e37d4e96bbc08834ce81493a393 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_a3e0e30ad2de59677b79735ccf2a69f1 = $(`<div id="html_a3e0e30ad2de59677b79735ccf2a69f1" style="width: 100.0%; height: 100.0%;"><b>SIEGEL'S CLOTHING</b><br>Winter Park, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_4cce9e37d4e96bbc08834ce81493a393.setContent(html_a3e0e30ad2de59677b79735ccf2a69f1);
+            
+        
+
+        circle_marker_999bd80fd7272ff10fd66450be63f866.bindPopup(popup_4cce9e37d4e96bbc08834ce81493a393)
+        ;
+
+        
+    
+    
+            circle_marker_999bd80fd7272ff10fd66450be63f866.bindTooltip(
+                `<div>
+                     SIEGEL'S CLOTHING
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_1c33fb1e02d77d6cefd71c3cb9ccf9c4 = L.circleMarker(
+                [27.653158, -80.356789],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_0ac2bafa1b95d1cf356e29b9d3f6abbf = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_65c0a33c6896b695ba4597cdaa4ce627 = $(`<div id="html_65c0a33c6896b695ba4597cdaa4ce627" style="width: 100.0%; height: 100.0%;"><b>TREASURE LANE</b><br>Vero Beach, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_0ac2bafa1b95d1cf356e29b9d3f6abbf.setContent(html_65c0a33c6896b695ba4597cdaa4ce627);
+            
+        
+
+        circle_marker_1c33fb1e02d77d6cefd71c3cb9ccf9c4.bindPopup(popup_0ac2bafa1b95d1cf356e29b9d3f6abbf)
+        ;
+
+        
+    
+    
+            circle_marker_1c33fb1e02d77d6cefd71c3cb9ccf9c4.bindTooltip(
+                `<div>
+                     TREASURE LANE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_e318bde6bfa0a3f7588c7684c66156fc = L.circleMarker(
+                [30.335705, -86.163307],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_1a6b5b11caacbc91e30eaed244e99860 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_70b283413efdd3f9dc7075fe00712d3c = $(`<div id="html_70b283413efdd3f9dc7075fe00712d3c" style="width: 100.0%; height: 100.0%;"><b>SUMMER HOUSE LIFESTYLE</b><br>Santa Rosa Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_1a6b5b11caacbc91e30eaed244e99860.setContent(html_70b283413efdd3f9dc7075fe00712d3c);
+            
+        
+
+        circle_marker_e318bde6bfa0a3f7588c7684c66156fc.bindPopup(popup_1a6b5b11caacbc91e30eaed244e99860)
+        ;
+
+        
+    
+    
+            circle_marker_e318bde6bfa0a3f7588c7684c66156fc.bindTooltip(
+                `<div>
+                     SUMMER HOUSE LIFESTYLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b8b2503eed1dfa64fc6542982e7a6ed4 = L.circleMarker(
+                [30.412601, -87.215309],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_8b2a97926b2174ff0bc262505a86e14c = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_92d0666d99e2ae5d3c149aedf578e86f = $(`<div id="html_92d0666d99e2ae5d3c149aedf578e86f" style="width: 100.0%; height: 100.0%;"><b>GRAY BOUTIQUE</b><br>Pensacola, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_8b2a97926b2174ff0bc262505a86e14c.setContent(html_92d0666d99e2ae5d3c149aedf578e86f);
+            
+        
+
+        circle_marker_b8b2503eed1dfa64fc6542982e7a6ed4.bindPopup(popup_8b2a97926b2174ff0bc262505a86e14c)
+        ;
+
+        
+    
+    
+            circle_marker_b8b2503eed1dfa64fc6542982e7a6ed4.bindTooltip(
+                `<div>
+                     GRAY BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a560cc0f9cdad37399372a75972028c3 = L.circleMarker(
+                [27.87918, -82.516159],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_d4ef54e4947b820a359e5d2baf2d5425 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e00cdab2ee00d7fa79764c92d8cb6f3c = $(`<div id="html_e00cdab2ee00d7fa79764c92d8cb6f3c" style="width: 100.0%; height: 100.0%;"><b>CREME DE LA CREME</b><br>Tampa, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_d4ef54e4947b820a359e5d2baf2d5425.setContent(html_e00cdab2ee00d7fa79764c92d8cb6f3c);
+            
+        
+
+        circle_marker_a560cc0f9cdad37399372a75972028c3.bindPopup(popup_d4ef54e4947b820a359e5d2baf2d5425)
+        ;
+
+        
+    
+    
+            circle_marker_a560cc0f9cdad37399372a75972028c3.bindTooltip(
+                `<div>
+                     CREME DE LA CREME
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_50d4d3607bddef6a977769c43ec9af3e = L.circleMarker(
+                [28.091215, -80.566893],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c8adcc1e774cae4f53919b2269bfd2fd = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_af0d37cb5b4e83687c8585fb3b4b32db = $(`<div id="html_af0d37cb5b4e83687c8585fb3b4b32db" style="width: 100.0%; height: 100.0%;"><b>LONGBOARD HOUSE</b><br>Indialantic, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_c8adcc1e774cae4f53919b2269bfd2fd.setContent(html_af0d37cb5b4e83687c8585fb3b4b32db);
+            
+        
+
+        circle_marker_50d4d3607bddef6a977769c43ec9af3e.bindPopup(popup_c8adcc1e774cae4f53919b2269bfd2fd)
+        ;
+
+        
+    
+    
+            circle_marker_50d4d3607bddef6a977769c43ec9af3e.bindTooltip(
+                `<div>
+                     LONGBOARD HOUSE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5819b884d7dec5bc436a89dbcc091888 = L.circleMarker(
+                [27.256369, -82.464145],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_3d85438795f8f7b4247915ded9661e2e = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_8abc80cbfddd10950271e0bdee7ec236 = $(`<div id="html_8abc80cbfddd10950271e0bdee7ec236" style="width: 100.0%; height: 100.0%;"><b>CUSTOMIZED STYLING BY JESSICA</b><br>Sarasota, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_3d85438795f8f7b4247915ded9661e2e.setContent(html_8abc80cbfddd10950271e0bdee7ec236);
+            
+        
+
+        circle_marker_5819b884d7dec5bc436a89dbcc091888.bindPopup(popup_3d85438795f8f7b4247915ded9661e2e)
+        ;
+
+        
+    
+    
+            circle_marker_5819b884d7dec5bc436a89dbcc091888.bindTooltip(
+                `<div>
+                     CUSTOMIZED STYLING BY JESSICA
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_55c0bdb8746ab160ed768f48781a2957 = L.circleMarker(
+                [26.108019, -80.124618],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_84d8146591bfdd464517ec10fd42a7ab = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_b0eb1b809bf20a0cd75e16b0792d64eb = $(`<div id="html_b0eb1b809bf20a0cd75e16b0792d64eb" style="width: 100.0%; height: 100.0%;"><b>LAUDERDALE YACHT CLUB</b><br>Fort Lauderdale, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_84d8146591bfdd464517ec10fd42a7ab.setContent(html_b0eb1b809bf20a0cd75e16b0792d64eb);
+            
+        
+
+        circle_marker_55c0bdb8746ab160ed768f48781a2957.bindPopup(popup_84d8146591bfdd464517ec10fd42a7ab)
+        ;
+
+        
+    
+    
+            circle_marker_55c0bdb8746ab160ed768f48781a2957.bindTooltip(
+                `<div>
+                     LAUDERDALE YACHT CLUB
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4835ebb03d36b62e906780d8355b2a9a = L.circleMarker(
+                [28.981407, -81.260604],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_14d331f0ccfc2d2b2841dab7b904bd42 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e63e136966c1dc19ae4eb5879f092b80 = $(`<div id="html_e63e136966c1dc19ae4eb5879f092b80" style="width: 100.0%; height: 100.0%;"><b>LOCAL STYLEHOUSE</b><br>Deland, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_14d331f0ccfc2d2b2841dab7b904bd42.setContent(html_e63e136966c1dc19ae4eb5879f092b80);
+            
+        
+
+        circle_marker_4835ebb03d36b62e906780d8355b2a9a.bindPopup(popup_14d331f0ccfc2d2b2841dab7b904bd42)
+        ;
+
+        
+    
+    
+            circle_marker_4835ebb03d36b62e906780d8355b2a9a.bindTooltip(
+                `<div>
+                     LOCAL STYLEHOUSE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_74bebc6ae53cba4ffcf80a68dffcf3c9 = L.circleMarker(
+                [28.011661, -82.789525],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_85ab92527d52cec4238f6beb054cef31 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_0b58a1cf7e53d3ec0a1c84b309ec5202 = $(`<div id="html_0b58a1cf7e53d3ec0a1c84b309ec5202" style="width: 100.0%; height: 100.0%;"><b>CITRUS STYLES</b><br>Dunedin, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_85ab92527d52cec4238f6beb054cef31.setContent(html_0b58a1cf7e53d3ec0a1c84b309ec5202);
+            
+        
+
+        circle_marker_74bebc6ae53cba4ffcf80a68dffcf3c9.bindPopup(popup_85ab92527d52cec4238f6beb054cef31)
+        ;
+
+        
+    
+    
+            circle_marker_74bebc6ae53cba4ffcf80a68dffcf3c9.bindTooltip(
+                `<div>
+                     CITRUS STYLES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f550154b821bef6515ce8ba2ea38a1ed = L.circleMarker(
+                [25.922188, -81.72598],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_e9c80d1addec757feab7c4572e7ef3c1 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_43f0f5929564b44b54bff398b04c171b = $(`<div id="html_43f0f5929564b44b54bff398b04c171b" style="width: 100.0%; height: 100.0%;"><b>MARCO BEACH DAISY</b><br>Marco Island, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_e9c80d1addec757feab7c4572e7ef3c1.setContent(html_43f0f5929564b44b54bff398b04c171b);
+            
+        
+
+        circle_marker_f550154b821bef6515ce8ba2ea38a1ed.bindPopup(popup_e9c80d1addec757feab7c4572e7ef3c1)
+        ;
+
+        
+    
+    
+            circle_marker_f550154b821bef6515ce8ba2ea38a1ed.bindTooltip(
+                `<div>
+                     MARCO BEACH DAISY
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8cb89c37013d7959b6e22a23b211c101 = L.circleMarker(
+                [29.038664, -80.899409],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_568b9ff77decbc8dd8dbb844c649492b = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_afc55ebc5ef50a379ed670ee4bd2558d = $(`<div id="html_afc55ebc5ef50a379ed670ee4bd2558d" style="width: 100.0%; height: 100.0%;"><b>VINTAGE THANG</b><br>New Smyrna Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_568b9ff77decbc8dd8dbb844c649492b.setContent(html_afc55ebc5ef50a379ed670ee4bd2558d);
+            
+        
+
+        circle_marker_8cb89c37013d7959b6e22a23b211c101.bindPopup(popup_568b9ff77decbc8dd8dbb844c649492b)
+        ;
+
+        
+    
+    
+            circle_marker_8cb89c37013d7959b6e22a23b211c101.bindTooltip(
+                `<div>
+                     VINTAGE THANG
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_7616e26bf8d4a09ff80897a79e189c64 = L.circleMarker(
+                [26.999342, -82.375599],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_60b12033e825e7daf13f556de806e617 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_26beb265875ebacc60f62b7f5e68f248 = $(`<div id="html_26beb265875ebacc60f62b7f5e68f248" style="width: 100.0%; height: 100.0%;"><b>AURA BOUTIQUE</b><br>Englewood, FL<br><span style='color:#666'>Z - Dev</span></div>`)[0];
+                popup_60b12033e825e7daf13f556de806e617.setContent(html_26beb265875ebacc60f62b7f5e68f248);
+            
+        
+
+        circle_marker_7616e26bf8d4a09ff80897a79e189c64.bindPopup(popup_60b12033e825e7daf13f556de806e617)
+        ;
+
+        
+    
+    
+            circle_marker_7616e26bf8d4a09ff80897a79e189c64.bindTooltip(
+                `<div>
+                     AURA BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_819fbe0440a75e36730037257018cb93 = L.circleMarker(
+                [27.7398, -82.708099],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_235f917a6c77f67fb5dd68bf8e9558b7 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_bc6b4f5ab2ecea154f81ae29f918f5f3 = $(`<div id="html_bc6b4f5ab2ecea154f81ae29f918f5f3" style="width: 100.0%; height: 100.0%;"><b>BOTIKI</b><br>Gulfport, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_235f917a6c77f67fb5dd68bf8e9558b7.setContent(html_bc6b4f5ab2ecea154f81ae29f918f5f3);
+            
+        
+
+        circle_marker_819fbe0440a75e36730037257018cb93.bindPopup(popup_235f917a6c77f67fb5dd68bf8e9558b7)
+        ;
+
+        
+    
+    
+            circle_marker_819fbe0440a75e36730037257018cb93.bindTooltip(
+                `<div>
+                     BOTIKI
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_70f579f82cc674143813c71767c36030 = L.circleMarker(
+                [26.539975, -81.998149],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_25a878a5c00f5b4a7ec5c695793d8004 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_cc328744cc39f6619963f9ad178c5e7e = $(`<div id="html_cc328744cc39f6619963f9ad178c5e7e" style="width: 100.0%; height: 100.0%;"><b>EVA BY THE SEA</b><br>Cape Coral, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_25a878a5c00f5b4a7ec5c695793d8004.setContent(html_cc328744cc39f6619963f9ad178c5e7e);
+            
+        
+
+        circle_marker_70f579f82cc674143813c71767c36030.bindPopup(popup_25a878a5c00f5b4a7ec5c695793d8004)
+        ;
+
+        
+    
+    
+            circle_marker_70f579f82cc674143813c71767c36030.bindTooltip(
+                `<div>
+                     EVA BY THE SEA
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_04568273aa01290dde2e8b736251580b = L.circleMarker(
+                [28.011676, -82.790009],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_5d4b1d719e0cfc7a1329c580b31ce363 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_7ecb17675b73bc2bd93fb63f0adbb0c3 = $(`<div id="html_7ecb17675b73bc2bd93fb63f0adbb0c3" style="width: 100.0%; height: 100.0%;"><b>KEY WEST EXPRESS BOUTIQUE</b><br>Dunedin, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_5d4b1d719e0cfc7a1329c580b31ce363.setContent(html_7ecb17675b73bc2bd93fb63f0adbb0c3);
+            
+        
+
+        circle_marker_04568273aa01290dde2e8b736251580b.bindPopup(popup_5d4b1d719e0cfc7a1329c580b31ce363)
+        ;
+
+        
+    
+    
+            circle_marker_04568273aa01290dde2e8b736251580b.bindTooltip(
+                `<div>
+                     KEY WEST EXPRESS BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4eea74f7b55beb5fca74bc8f65d70186 = L.circleMarker(
+                [26.047012, -80.31297],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_a62aa7924f46fb6418838633effcf59c = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_5c95dcaef34faa4425ab9f5c92c50538 = $(`<div id="html_5c95dcaef34faa4425ab9f5c92c50538" style="width: 100.0%; height: 100.0%;"><b>ESOTERRA BOUTIQUE</b><br>Cooper City, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_a62aa7924f46fb6418838633effcf59c.setContent(html_5c95dcaef34faa4425ab9f5c92c50538);
+            
+        
+
+        circle_marker_4eea74f7b55beb5fca74bc8f65d70186.bindPopup(popup_a62aa7924f46fb6418838633effcf59c)
+        ;
+
+        
+    
+    
+            circle_marker_4eea74f7b55beb5fca74bc8f65d70186.bindTooltip(
+                `<div>
+                     ESOTERRA BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_86a0cb64c1676486deeb8a23bbb23f30 = L.circleMarker(
+                [30.340812, -81.404503],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_071207844f0cf92be4658ff9587917ef = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_f366f7b9cabefb12aa75c221d8e8ad39 = $(`<div id="html_f366f7b9cabefb12aa75c221d8e8ad39" style="width: 100.0%; height: 100.0%;"><b>ATLANTIC BEACH COUNTRY CLUB</b><br>Atlantic Beach, FL<br><span style='color:#666'>NGF - Not Going Forward</span></div>`)[0];
+                popup_071207844f0cf92be4658ff9587917ef.setContent(html_f366f7b9cabefb12aa75c221d8e8ad39);
+            
+        
+
+        circle_marker_86a0cb64c1676486deeb8a23bbb23f30.bindPopup(popup_071207844f0cf92be4658ff9587917ef)
+        ;
+
+        
+    
+    
+            circle_marker_86a0cb64c1676486deeb8a23bbb23f30.bindTooltip(
+                `<div>
+                     ATLANTIC BEACH COUNTRY CLUB
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_18db0aadcbcb962be3b367d07d34a2fb = L.circleMarker(
+                [27.951914, -82.830008],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_49b6177154cdf74312d6405cba5dd4e0 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4753949f2e6b3ee20b6545bfff31c1ca = $(`<div id="html_4753949f2e6b3ee20b6545bfff31c1ca" style="width: 100.0%; height: 100.0%;"><b>BIKINI KEY</b><br>Clearwater, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_49b6177154cdf74312d6405cba5dd4e0.setContent(html_4753949f2e6b3ee20b6545bfff31c1ca);
+            
+        
+
+        circle_marker_18db0aadcbcb962be3b367d07d34a2fb.bindPopup(popup_49b6177154cdf74312d6405cba5dd4e0)
+        ;
+
+        
+    
+    
+            circle_marker_18db0aadcbcb962be3b367d07d34a2fb.bindTooltip(
+                `<div>
+                     BIKINI KEY
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_e52c3c412d30ea8d73a189221b3b4c40 = L.circleMarker(
+                [30.375021, -86.243868],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c02f28962d4a9dd4970767886eb7a75e = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_47535546a8aa3649b505a6623a582fe8 = $(`<div id="html_47535546a8aa3649b505a6623a582fe8" style="width: 100.0%; height: 100.0%;"><b>BLUE DOOR DESIGN</b><br>Santa Rosa Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_c02f28962d4a9dd4970767886eb7a75e.setContent(html_47535546a8aa3649b505a6623a582fe8);
+            
+        
+
+        circle_marker_e52c3c412d30ea8d73a189221b3b4c40.bindPopup(popup_c02f28962d4a9dd4970767886eb7a75e)
+        ;
+
+        
+    
+    
+            circle_marker_e52c3c412d30ea8d73a189221b3b4c40.bindTooltip(
+                `<div>
+                     BLUE DOOR DESIGN
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a3ac55ba6e936e640822dab56a08fe6b = L.circleMarker(
+                [26.751251, -82.261761],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_04877f2dc8feda9cba5fe909fe90e1c5 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_698cf913ddb3a7c7516a0abacf3dcc7b = $(`<div id="html_698cf913ddb3a7c7516a0abacf3dcc7b" style="width: 100.0%; height: 100.0%;"><b>SUNSETS OF BOCA GRANDE</b><br>Boca Grande, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_04877f2dc8feda9cba5fe909fe90e1c5.setContent(html_698cf913ddb3a7c7516a0abacf3dcc7b);
+            
+        
+
+        circle_marker_a3ac55ba6e936e640822dab56a08fe6b.bindPopup(popup_04877f2dc8feda9cba5fe909fe90e1c5)
+        ;
+
+        
+    
+    
+            circle_marker_a3ac55ba6e936e640822dab56a08fe6b.bindTooltip(
+                `<div>
+                     SUNSETS OF BOCA GRANDE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_12c0ed8727ff2e4f9c2bd2ec9e625bdc = L.circleMarker(
+                [28.021844, -81.730336],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c10765134f1f2351fe2ef97a44fdbf33 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_2f0c3fb52e4ed806e5a5241d7c7e3c63 = $(`<div id="html_2f0c3fb52e4ed806e5a5241d7c7e3c63" style="width: 100.0%; height: 100.0%;"><b>ISLAND DREAMING</b><br>Winter Haven, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_c10765134f1f2351fe2ef97a44fdbf33.setContent(html_2f0c3fb52e4ed806e5a5241d7c7e3c63);
+            
+        
+
+        circle_marker_12c0ed8727ff2e4f9c2bd2ec9e625bdc.bindPopup(popup_c10765134f1f2351fe2ef97a44fdbf33)
+        ;
+
+        
+    
+    
+            circle_marker_12c0ed8727ff2e4f9c2bd2ec9e625bdc.bindTooltip(
+                `<div>
+                     ISLAND DREAMING
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_389fa6e1822264918d3cc41c23c0be79 = L.circleMarker(
+                [27.777313, -82.632284],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_2c0917661ad2b9cabda496fdea7c58dd = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_37e18626876f3f44b58062545a7cd6fe = $(`<div id="html_37e18626876f3f44b58062545a7cd6fe" style="width: 100.0%; height: 100.0%;"><b>PINK SOLEIL</b><br>St. Petersburg, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_2c0917661ad2b9cabda496fdea7c58dd.setContent(html_37e18626876f3f44b58062545a7cd6fe);
+            
+        
+
+        circle_marker_389fa6e1822264918d3cc41c23c0be79.bindPopup(popup_2c0917661ad2b9cabda496fdea7c58dd)
+        ;
+
+        
+    
+    
+            circle_marker_389fa6e1822264918d3cc41c23c0be79.bindTooltip(
+                `<div>
+                     PINK SOLEIL
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c957e675152e9f9dcf3a2093e4522eb9 = L.circleMarker(
+                [30.410428, -87.215239],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_d15fb170ddd52434adbaad4f417126bb = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_8c2b0e936143bd41057158ffd864a3ed = $(`<div id="html_8c2b0e936143bd41057158ffd864a3ed" style="width: 100.0%; height: 100.0%;"><b>BLUETIQUE</b><br>Pensacola, FL<br><span style='color:#666'>NGF - Not Going Forward</span></div>`)[0];
+                popup_d15fb170ddd52434adbaad4f417126bb.setContent(html_8c2b0e936143bd41057158ffd864a3ed);
+            
+        
+
+        circle_marker_c957e675152e9f9dcf3a2093e4522eb9.bindPopup(popup_d15fb170ddd52434adbaad4f417126bb)
+        ;
+
+        
+    
+    
+            circle_marker_c957e675152e9f9dcf3a2093e4522eb9.bindTooltip(
+                `<div>
+                     BLUETIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_17ceca15e13ab67502ced0a855d2590a = L.circleMarker(
+                [29.846846, -81.267867],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_6bc0fb6b47f6bd256cdd2cac79ac2c60 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_1809c2e48ee88d0ef91eb7507aa89324 = $(`<div id="html_1809c2e48ee88d0ef91eb7507aa89324" style="width: 100.0%; height: 100.0%;"><b>SUNSHINE SHOP</b><br>St. Augustine, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_6bc0fb6b47f6bd256cdd2cac79ac2c60.setContent(html_1809c2e48ee88d0ef91eb7507aa89324);
+            
+        
+
+        circle_marker_17ceca15e13ab67502ced0a855d2590a.bindPopup(popup_6bc0fb6b47f6bd256cdd2cac79ac2c60)
+        ;
+
+        
+    
+    
+            circle_marker_17ceca15e13ab67502ced0a855d2590a.bindTooltip(
+                `<div>
+                     SUNSHINE SHOP
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_342f93ec8e9301732e59c78ec300b97f = L.circleMarker(
+                [27.336303, -82.531889],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_f8f1e5c64881b2ea22a1986070db4325 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_82ae552bc6ea5b1eddd26c31c6cebd78 = $(`<div id="html_82ae552bc6ea5b1eddd26c31c6cebd78" style="width: 100.0%; height: 100.0%;"><b>SIMPLY JO'S</b><br>Sarasota, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_f8f1e5c64881b2ea22a1986070db4325.setContent(html_82ae552bc6ea5b1eddd26c31c6cebd78);
+            
+        
+
+        circle_marker_342f93ec8e9301732e59c78ec300b97f.bindPopup(popup_f8f1e5c64881b2ea22a1986070db4325)
+        ;
+
+        
+    
+    
+            circle_marker_342f93ec8e9301732e59c78ec300b97f.bindTooltip(
+                `<div>
+                     SIMPLY JO'S
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ccf19151adf4b9b7eb8f8df83b00b66e = L.circleMarker(
+                [26.928561, -82.064262],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_9f5373985258af6ab43cc5d3ba35bffb = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_d372eeb8eb759fbf13ddc6a9ebd463c9 = $(`<div id="html_d372eeb8eb759fbf13ddc6a9ebd463c9" style="width: 100.0%; height: 100.0%;"><b>NICHOLE'S COLLECTIONS</b><br>Punta Gorda, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_9f5373985258af6ab43cc5d3ba35bffb.setContent(html_d372eeb8eb759fbf13ddc6a9ebd463c9);
+            
+        
+
+        circle_marker_ccf19151adf4b9b7eb8f8df83b00b66e.bindPopup(popup_9f5373985258af6ab43cc5d3ba35bffb)
+        ;
+
+        
+    
+    
+            circle_marker_ccf19151adf4b9b7eb8f8df83b00b66e.bindTooltip(
+                `<div>
+                     NICHOLE'S COLLECTIONS
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d070565b19bb6b14238ae8fd4b2a3df3 = L.circleMarker(
+                [27.528029, -82.736192],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c290fcfcf2f03df5a978123ba092bdb1 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_aadd4ce43bbd6d628ed646a0f53dcbdc = $(`<div id="html_aadd4ce43bbd6d628ed646a0f53dcbdc" style="width: 100.0%; height: 100.0%;"><b>PINK & NAVY BOUTIQUE</b><br>Anna Maria, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_c290fcfcf2f03df5a978123ba092bdb1.setContent(html_aadd4ce43bbd6d628ed646a0f53dcbdc);
+            
+        
+
+        circle_marker_d070565b19bb6b14238ae8fd4b2a3df3.bindPopup(popup_c290fcfcf2f03df5a978123ba092bdb1)
+        ;
+
+        
+    
+    
+            circle_marker_d070565b19bb6b14238ae8fd4b2a3df3.bindTooltip(
+                `<div>
+                     PINK & NAVY BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c68037d5ceb64ac1c9a28cd7e5059035 = L.circleMarker(
+                [26.962041, -82.361988],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_769954f69e8b585b08378cba0f77ef33 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_a1b4a1e1f2d1c0abf9a803f1630de2d6 = $(`<div id="html_a1b4a1e1f2d1c0abf9a803f1630de2d6" style="width: 100.0%; height: 100.0%;"><b>GULF SOLES</b><br>Englewood, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_769954f69e8b585b08378cba0f77ef33.setContent(html_a1b4a1e1f2d1c0abf9a803f1630de2d6);
+            
+        
+
+        circle_marker_c68037d5ceb64ac1c9a28cd7e5059035.bindPopup(popup_769954f69e8b585b08378cba0f77ef33)
+        ;
+
+        
+    
+    
+            circle_marker_c68037d5ceb64ac1c9a28cd7e5059035.bindTooltip(
+                `<div>
+                     GULF SOLES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a3d971fa735af47808d94ac894cd8fb4 = L.circleMarker(
+                [30.241809, -85.903487],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_d94735852f3c323607b5f4f7fb90dd72 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4744724ae586d14cc7dbe2b90971fea1 = $(`<div id="html_4744724ae586d14cc7dbe2b90971fea1" style="width: 100.0%; height: 100.0%;"><b>30A GENERAL STORE</b><br>Panama City Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_d94735852f3c323607b5f4f7fb90dd72.setContent(html_4744724ae586d14cc7dbe2b90971fea1);
+            
+        
+
+        circle_marker_a3d971fa735af47808d94ac894cd8fb4.bindPopup(popup_d94735852f3c323607b5f4f7fb90dd72)
+        ;
+
+        
+    
+    
+            circle_marker_a3d971fa735af47808d94ac894cd8fb4.bindTooltip(
+                `<div>
+                     30A GENERAL STORE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9834f2cc85eec239447c6f635daff0bd = L.circleMarker(
+                [33.981937, -84.214924],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_95a1ed106e010fbc97be5b47d7d5082a = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_1a38d22278ae40ab8455d85b9d183d0c = $(`<div id="html_1a38d22278ae40ab8455d85b9d183d0c" style="width: 100.0%; height: 100.0%;"><b>CMJ A NOSE FOR CLOTHES</b><br>Nocross, GA<br><span style='color:#666'>NC - Need Confirmation</span></div>`)[0];
+                popup_95a1ed106e010fbc97be5b47d7d5082a.setContent(html_1a38d22278ae40ab8455d85b9d183d0c);
+            
+        
+
+        circle_marker_9834f2cc85eec239447c6f635daff0bd.bindPopup(popup_95a1ed106e010fbc97be5b47d7d5082a)
+        ;
+
+        
+    
+    
+            circle_marker_9834f2cc85eec239447c6f635daff0bd.bindTooltip(
+                `<div>
+                     CMJ A NOSE FOR CLOTHES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_447281689d1acf286e451b1f17671978 = L.circleMarker(
+                [30.301243, -86.063999],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_7594470aa2a74477f3100d1770f954e0 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_8ec5f9bf861d52cf90eb070b23fa7bf5 = $(`<div id="html_8ec5f9bf861d52cf90eb070b23fa7bf5" style="width: 100.0%; height: 100.0%;"><b>PALMS</b><br>Watersound, FL<br><span style='color:#666'>X - Conflict</span></div>`)[0];
+                popup_7594470aa2a74477f3100d1770f954e0.setContent(html_8ec5f9bf861d52cf90eb070b23fa7bf5);
+            
+        
+
+        circle_marker_447281689d1acf286e451b1f17671978.bindPopup(popup_7594470aa2a74477f3100d1770f954e0)
+        ;
+
+        
+    
+    
+            circle_marker_447281689d1acf286e451b1f17671978.bindTooltip(
+                `<div>
+                     PALMS
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_493447b18a5e0a9f40193840c04e73c0 = L.circleMarker(
+                [26.196862, -81.811191],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_6c6cceca75aa64f00472ff34fe155c5e = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_6268054a01253fa1ed8b15fe114d4cc0 = $(`<div id="html_6268054a01253fa1ed8b15fe114d4cc0" style="width: 100.0%; height: 100.0%;"><b>SIMPLY NATURAL</b><br>Naples, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_6c6cceca75aa64f00472ff34fe155c5e.setContent(html_6268054a01253fa1ed8b15fe114d4cc0);
+            
+        
+
+        circle_marker_493447b18a5e0a9f40193840c04e73c0.bindPopup(popup_6c6cceca75aa64f00472ff34fe155c5e)
+        ;
+
+        
+    
+    
+            circle_marker_493447b18a5e0a9f40193840c04e73c0.bindTooltip(
+                `<div>
+                     SIMPLY NATURAL
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_235e1dafb754e39f91032342401fac87 = L.circleMarker(
+                [30.2677, -81.388883],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_73fc1e60c041ecff209f848be94c7a59 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_8be899c26774d08da5c3b5b336e3958e = $(`<div id="html_8be899c26774d08da5c3b5b336e3958e" style="width: 100.0%; height: 100.0%;"><b>ROSIE TRUE (BEACH)</b><br>Jacksonville Beach, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_73fc1e60c041ecff209f848be94c7a59.setContent(html_8be899c26774d08da5c3b5b336e3958e);
+            
+        
+
+        circle_marker_235e1dafb754e39f91032342401fac87.bindPopup(popup_73fc1e60c041ecff209f848be94c7a59)
+        ;
+
+        
+    
+    
+            circle_marker_235e1dafb754e39f91032342401fac87.bindTooltip(
+                `<div>
+                     ROSIE TRUE (BEACH)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8b260b4d8014aa8a02d7a2082ed0e5bc = L.circleMarker(
+                [26.438713, -82.065954],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_3bdf5cd8b74b98ea2b601c5e2d8da0b2 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_fe5da02c554d3341278310716f7d2a62 = $(`<div id="html_fe5da02c554d3341278310716f7d2a62" style="width: 100.0%; height: 100.0%;"><b>C TURTLES</b><br>Sanibel, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_3bdf5cd8b74b98ea2b601c5e2d8da0b2.setContent(html_fe5da02c554d3341278310716f7d2a62);
+            
+        
+
+        circle_marker_8b260b4d8014aa8a02d7a2082ed0e5bc.bindPopup(popup_3bdf5cd8b74b98ea2b601c5e2d8da0b2)
+        ;
+
+        
+    
+    
+            circle_marker_8b260b4d8014aa8a02d7a2082ed0e5bc.bindTooltip(
+                `<div>
+                     C TURTLES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c7b5c2c2bd5c9d9f78d05e093707c04f = L.circleMarker(
+                [29.81295, -85.302657],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_f312fc1b692192787b5955dca26b3677 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_84312d9f4f350a37873f51db0d5265e5 = $(`<div id="html_84312d9f4f350a37873f51db0d5265e5" style="width: 100.0%; height: 100.0%;"><b>JOSEPH'S COTTAGE</b><br>Port Saint Joe, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_f312fc1b692192787b5955dca26b3677.setContent(html_84312d9f4f350a37873f51db0d5265e5);
+            
+        
+
+        circle_marker_c7b5c2c2bd5c9d9f78d05e093707c04f.bindPopup(popup_f312fc1b692192787b5955dca26b3677)
+        ;
+
+        
+    
+    
+            circle_marker_c7b5c2c2bd5c9d9f78d05e093707c04f.bindTooltip(
+                `<div>
+                     JOSEPH'S COTTAGE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0ba0bcf7259f9d3b0d4442713e303dbe = L.circleMarker(
+                [24.920637, -80.63186],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_dbf6c6529044686b4c4d43c73c524148 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_7dab4d238ba1e915b22a150d677e49bb = $(`<div id="html_7dab4d238ba1e915b22a150d677e49bb" style="width: 100.0%; height: 100.0%;"><b>WILD LILY BOUTIQUE</b><br>Islamorada, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_dbf6c6529044686b4c4d43c73c524148.setContent(html_7dab4d238ba1e915b22a150d677e49bb);
+            
+        
+
+        circle_marker_0ba0bcf7259f9d3b0d4442713e303dbe.bindPopup(popup_dbf6c6529044686b4c4d43c73c524148)
+        ;
+
+        
+    
+    
+            circle_marker_0ba0bcf7259f9d3b0d4442713e303dbe.bindTooltip(
+                `<div>
+                     WILD LILY BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bf16969b7e1b5a48b7ca8f0142cafebd = L.circleMarker(
+                [26.663759, -80.267245],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_2e805414c3d3f1b6b85881ce7a87da8d = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_ed989ed29602b9b1ec4bf514932d2ec0 = $(`<div id="html_ed989ed29602b9b1ec4bf514932d2ec0" style="width: 100.0%; height: 100.0%;"><b>ZEST, LLC.</b><br>Wellington, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_2e805414c3d3f1b6b85881ce7a87da8d.setContent(html_ed989ed29602b9b1ec4bf514932d2ec0);
+            
+        
+
+        circle_marker_bf16969b7e1b5a48b7ca8f0142cafebd.bindPopup(popup_2e805414c3d3f1b6b85881ce7a87da8d)
+        ;
+
+        
+    
+    
+            circle_marker_bf16969b7e1b5a48b7ca8f0142cafebd.bindTooltip(
+                `<div>
+                     ZEST, LLC.
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4bcdcd4cef6b307ecb8eab55e489bef5 = L.circleMarker(
+                [27.273068, -82.563727],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_533bb33ad8d77c153651cf7cedf2cc26 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4ab07a075930c48b2f7ab8d365213ac2 = $(`<div id="html_4ab07a075930c48b2f7ab8d365213ac2" style="width: 100.0%; height: 100.0%;"><b>FOXY LADY</b><br>Sarasota, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_533bb33ad8d77c153651cf7cedf2cc26.setContent(html_4ab07a075930c48b2f7ab8d365213ac2);
+            
+        
+
+        circle_marker_4bcdcd4cef6b307ecb8eab55e489bef5.bindPopup(popup_533bb33ad8d77c153651cf7cedf2cc26)
+        ;
+
+        
+    
+    
+            circle_marker_4bcdcd4cef6b307ecb8eab55e489bef5.bindTooltip(
+                `<div>
+                     FOXY LADY
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ab1181d8926e7f245caafba6f88af21d = L.circleMarker(
+                [26.750869, -82.262262],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_b46810e2102783f9e49a2557901a2572 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_1f4fecaaa3f51def963ab0520e974d3c = $(`<div id="html_1f4fecaaa3f51def963ab0520e974d3c" style="width: 100.0%; height: 100.0%;"><b>AQUA BOUTIQUE FL</b><br>Boca Grande, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_b46810e2102783f9e49a2557901a2572.setContent(html_1f4fecaaa3f51def963ab0520e974d3c);
+            
+        
+
+        circle_marker_ab1181d8926e7f245caafba6f88af21d.bindPopup(popup_b46810e2102783f9e49a2557901a2572)
+        ;
+
+        
+    
+    
+            circle_marker_ab1181d8926e7f245caafba6f88af21d.bindTooltip(
+                `<div>
+                     AQUA BOUTIQUE FL
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4e1d20eae8aa82286af65118a74bcfc7 = L.circleMarker(
+                [25.645544, -80.40524],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c8e022a335e0c0384711a47b5b12656d = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_ad586525a237a9f06697e2e47cd781b1 = $(`<div id="html_ad586525a237a9f06697e2e47cd781b1" style="width: 100.0%; height: 100.0%;"><b>CMJ DBA A NOSE FOR CLOTHES</b><br>Miami, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_c8e022a335e0c0384711a47b5b12656d.setContent(html_ad586525a237a9f06697e2e47cd781b1);
+            
+        
+
+        circle_marker_4e1d20eae8aa82286af65118a74bcfc7.bindPopup(popup_c8e022a335e0c0384711a47b5b12656d)
+        ;
+
+        
+    
+    
+            circle_marker_4e1d20eae8aa82286af65118a74bcfc7.bindTooltip(
+                `<div>
+                     CMJ DBA A NOSE FOR CLOTHES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a37dcc8b917f3ada0fb4f54774c1c9d3 = L.circleMarker(
+                [30.671382, -81.463256],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_5aaaf2d783ccb36dbe9f339b3d47690e = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_9887e090ec5105ba0738e561482e8f25 = $(`<div id="html_9887e090ec5105ba0738e561482e8f25" style="width: 100.0%; height: 100.0%;"><b>LEMONGRASS</b><br>Fernandina Beach, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_5aaaf2d783ccb36dbe9f339b3d47690e.setContent(html_9887e090ec5105ba0738e561482e8f25);
+            
+        
+
+        circle_marker_a37dcc8b917f3ada0fb4f54774c1c9d3.bindPopup(popup_5aaaf2d783ccb36dbe9f339b3d47690e)
+        ;
+
+        
+    
+    
+            circle_marker_a37dcc8b917f3ada0fb4f54774c1c9d3.bindTooltip(
+                `<div>
+                     LEMONGRASS
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8aa463ce1e84327c9b4e469e56e42f32 = L.circleMarker(
+                [27.920933, -82.815166],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_fbbd49ec2e36a6ae8d94bd9b2d68f97f = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_a7e60339f42b89b74030b4bc291aed0c = $(`<div id="html_a7e60339f42b89b74030b4bc291aed0c" style="width: 100.0%; height: 100.0%;"><b>FOR THE LOVE OF</b><br>Belleair Bluffs, FL<br><span style='color:#666'>OOB - Out of Business</span></div>`)[0];
+                popup_fbbd49ec2e36a6ae8d94bd9b2d68f97f.setContent(html_a7e60339f42b89b74030b4bc291aed0c);
+            
+        
+
+        circle_marker_8aa463ce1e84327c9b4e469e56e42f32.bindPopup(popup_fbbd49ec2e36a6ae8d94bd9b2d68f97f)
+        ;
+
+        
+    
+    
+            circle_marker_8aa463ce1e84327c9b4e469e56e42f32.bindTooltip(
+                `<div>
+                     FOR THE LOVE OF
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0753f687e34f412bf1df0683bbd460ab = L.circleMarker(
+                [26.426918, -80.145955],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_2a6bdc01bd5e884d6679b891408a771e = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_5eca28d2b1347bc92be5f090c31beb50 = $(`<div id="html_5eca28d2b1347bc92be5f090c31beb50" style="width: 100.0%; height: 100.0%;"><b>TRILOGY</b><br>Delray Beach, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_2a6bdc01bd5e884d6679b891408a771e.setContent(html_5eca28d2b1347bc92be5f090c31beb50);
+            
+        
+
+        circle_marker_0753f687e34f412bf1df0683bbd460ab.bindPopup(popup_2a6bdc01bd5e884d6679b891408a771e)
+        ;
+
+        
+    
+    
+            circle_marker_0753f687e34f412bf1df0683bbd460ab.bindTooltip(
+                `<div>
+                     TRILOGY
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_80a5f8efe1f1ad90ac4ef6f686dd5717 = L.circleMarker(
+                [29.656291, -82.480541],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_724fa1fe735c63926926865b596683ca = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_f5f5eb404c7e48fdb9ad9ec4cf541024 = $(`<div id="html_f5f5eb404c7e48fdb9ad9ec4cf541024" style="width: 100.0%; height: 100.0%;"><b>DOWN TO EARTH</b><br>Tioga, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_724fa1fe735c63926926865b596683ca.setContent(html_f5f5eb404c7e48fdb9ad9ec4cf541024);
+            
+        
+
+        circle_marker_80a5f8efe1f1ad90ac4ef6f686dd5717.bindPopup(popup_724fa1fe735c63926926865b596683ca)
+        ;
+
+        
+    
+    
+            circle_marker_80a5f8efe1f1ad90ac4ef6f686dd5717.bindTooltip(
+                `<div>
+                     DOWN TO EARTH
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c718887c0672621b912c2770a96ebdf5 = L.circleMarker(
+                [30.386177, -86.225815],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_4e3edf38415468a93eb556f7edd8ccce = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_329be2c027c013f5cb8e644a8eaf2e25 = $(`<div id="html_329be2c027c013f5cb8e644a8eaf2e25" style="width: 100.0%; height: 100.0%;"><b>SEASIDE ASSOCIATED STORES</b><br>Santa Rosa Beach, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_4e3edf38415468a93eb556f7edd8ccce.setContent(html_329be2c027c013f5cb8e644a8eaf2e25);
+            
+        
+
+        circle_marker_c718887c0672621b912c2770a96ebdf5.bindPopup(popup_4e3edf38415468a93eb556f7edd8ccce)
+        ;
+
+        
+    
+    
+            circle_marker_c718887c0672621b912c2770a96ebdf5.bindTooltip(
+                `<div>
+                     SEASIDE ASSOCIATED STORES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b0b1582ebea8c13becfbc51390956103 = L.circleMarker(
+                [27.198263, -80.252802],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_2bbe75370940912f994cd3e4a166bdf5 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_3c7880c29e5d373ce4276e21c52b06e6 = $(`<div id="html_3c7880c29e5d373ce4276e21c52b06e6" style="width: 100.0%; height: 100.0%;"><b>APRIL DAZE BOUTIQUE</b><br>Stuart, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_2bbe75370940912f994cd3e4a166bdf5.setContent(html_3c7880c29e5d373ce4276e21c52b06e6);
+            
+        
+
+        circle_marker_b0b1582ebea8c13becfbc51390956103.bindPopup(popup_2bbe75370940912f994cd3e4a166bdf5)
+        ;
+
+        
+    
+    
+            circle_marker_b0b1582ebea8c13becfbc51390956103.bindTooltip(
+                `<div>
+                     APRIL DAZE BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_efdaaaaf65b7f6a08ca38507db2b88df = L.circleMarker(
+                [28.4566, -81.4681],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_98efc2f6bea3f82d13a690ec17366494 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_83a66fd9c6b73fa7ff6ce8b47f111bc3 = $(`<div id="html_83a66fd9c6b73fa7ff6ce8b47f111bc3" style="width: 100.0%; height: 100.0%;"><b>ZOU ZOU</b><br>Orlando, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_98efc2f6bea3f82d13a690ec17366494.setContent(html_83a66fd9c6b73fa7ff6ce8b47f111bc3);
+            
+        
+
+        circle_marker_efdaaaaf65b7f6a08ca38507db2b88df.bindPopup(popup_98efc2f6bea3f82d13a690ec17366494)
+        ;
+
+        
+    
+    
+            circle_marker_efdaaaaf65b7f6a08ca38507db2b88df.bindTooltip(
+                `<div>
+                     ZOU ZOU
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_96981d262a4746781f5c19cc6e131af6 = L.circleMarker(
+                [30.67017, -81.456677],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_657abcb275761645b4747932175834c7 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_138670dd5e99af8836bc2bf0973efe17 = $(`<div id="html_138670dd5e99af8836bc2bf0973efe17" style="width: 100.0%; height: 100.0%;"><b>RED OTTER</b><br>Fernandina Beach, FL<br><span style='color:#666'>X - Conflict</span></div>`)[0];
+                popup_657abcb275761645b4747932175834c7.setContent(html_138670dd5e99af8836bc2bf0973efe17);
+            
+        
+
+        circle_marker_96981d262a4746781f5c19cc6e131af6.bindPopup(popup_657abcb275761645b4747932175834c7)
+        ;
+
+        
+    
+    
+            circle_marker_96981d262a4746781f5c19cc6e131af6.bindTooltip(
+                `<div>
+                     RED OTTER
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4b4c82a8ffd90b3cc6c1d597356e6b88 = L.circleMarker(
+                [27.274661, -82.564535],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_bb88b82b0c92fbebbf98f3fbcbb2f9e7 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_296c5de5b6c3dc2d2bdc895d236fe84a = $(`<div id="html_296c5de5b6c3dc2d2bdc895d236fe84a" style="width: 100.0%; height: 100.0%;"><b>GIDGET'S</b><br>Siesta Key, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_bb88b82b0c92fbebbf98f3fbcbb2f9e7.setContent(html_296c5de5b6c3dc2d2bdc895d236fe84a);
+            
+        
+
+        circle_marker_4b4c82a8ffd90b3cc6c1d597356e6b88.bindPopup(popup_bb88b82b0c92fbebbf98f3fbcbb2f9e7)
+        ;
+
+        
+    
+    
+            circle_marker_4b4c82a8ffd90b3cc6c1d597356e6b88.bindTooltip(
+                `<div>
+                     GIDGET'S
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_134311d832b6204608525e27463983a6 = L.circleMarker(
+                [30.304766, -81.655349],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_0ef6ffee23be3d97c53fd254bfdb75c8 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_da863a68b4c93e15d2dee7ee8a752744 = $(`<div id="html_da863a68b4c93e15d2dee7ee8a752744" style="width: 100.0%; height: 100.0%;"><b>ROSIE TRUE (TOWN)</b><br>Jacksonville, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_0ef6ffee23be3d97c53fd254bfdb75c8.setContent(html_da863a68b4c93e15d2dee7ee8a752744);
+            
+        
+
+        circle_marker_134311d832b6204608525e27463983a6.bindPopup(popup_0ef6ffee23be3d97c53fd254bfdb75c8)
+        ;
+
+        
+    
+    
+            circle_marker_134311d832b6204608525e27463983a6.bindTooltip(
+                `<div>
+                     ROSIE TRUE (TOWN)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_46dc4395fa285bf996ade392e3e91b69 = L.circleMarker(
+                [30.279926, -81.7166],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_071673364d55561284aff34b4520c859 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_fabc0856a6224d7809aef12ff268dc43 = $(`<div id="html_fabc0856a6224d7809aef12ff268dc43" style="width: 100.0%; height: 100.0%;"><b>CRAVE</b><br>Jacksonville, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_071673364d55561284aff34b4520c859.setContent(html_fabc0856a6224d7809aef12ff268dc43);
+            
+        
+
+        circle_marker_46dc4395fa285bf996ade392e3e91b69.bindPopup(popup_071673364d55561284aff34b4520c859)
+        ;
+
+        
+    
+    
+            circle_marker_46dc4395fa285bf996ade392e3e91b69.bindTooltip(
+                `<div>
+                     CRAVE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ef64a8fe7aaddc143589c206d765ed11 = L.circleMarker(
+                [30.505535, -84.253472],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_a659e8a433c04ac151306b29f57007ef = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_ae5cd031e6998c9615293b714c2864e9 = $(`<div id="html_ae5cd031e6998c9615293b714c2864e9" style="width: 100.0%; height: 100.0%;"><b>COTTON ETC.</b><br>Tallahassee, FL<br><span style='color:#666'>OOB - Out of Business</span></div>`)[0];
+                popup_a659e8a433c04ac151306b29f57007ef.setContent(html_ae5cd031e6998c9615293b714c2864e9);
+            
+        
+
+        circle_marker_ef64a8fe7aaddc143589c206d765ed11.bindPopup(popup_a659e8a433c04ac151306b29f57007ef)
+        ;
+
+        
+    
+    
+            circle_marker_ef64a8fe7aaddc143589c206d765ed11.bindTooltip(
+                `<div>
+                     COTTON ETC.
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a50652c836d6102d8a97cfcc3ec1f854 = L.circleMarker(
+                [26.461931, -80.069327],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_7c8584b4fc013226e5685a1b3641cd75 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_fc436af0a41c97ca2c73e9c033519932 = $(`<div id="html_fc436af0a41c97ca2c73e9c033519932" style="width: 100.0%; height: 100.0%;"><b>PERIWINKLE</b><br>Delray Beach, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_7c8584b4fc013226e5685a1b3641cd75.setContent(html_fc436af0a41c97ca2c73e9c033519932);
+            
+        
+
+        circle_marker_a50652c836d6102d8a97cfcc3ec1f854.bindPopup(popup_7c8584b4fc013226e5685a1b3641cd75)
+        ;
+
+        
+    
+    
+            circle_marker_a50652c836d6102d8a97cfcc3ec1f854.bindTooltip(
+                `<div>
+                     PERIWINKLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ea633ac1d9f54e9a600122b7b5bd67c8 = L.circleMarker(
+                [30.3475, -86.231124],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_7d010cb4ba798135ef58a785ca80fcf3 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_c5fa9b83da6f99c462308c946f00c7c2 = $(`<div id="html_c5fa9b83da6f99c462308c946f00c7c2" style="width: 100.0%; height: 100.0%;"><b>SOHO (FL)</b><br>Santa Rosa Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_7d010cb4ba798135ef58a785ca80fcf3.setContent(html_c5fa9b83da6f99c462308c946f00c7c2);
+            
+        
+
+        circle_marker_ea633ac1d9f54e9a600122b7b5bd67c8.bindPopup(popup_7d010cb4ba798135ef58a785ca80fcf3)
+        ;
+
+        
+    
+    
+            circle_marker_ea633ac1d9f54e9a600122b7b5bd67c8.bindTooltip(
+                `<div>
+                     SOHO (FL)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_170abd1cd34b1e73ae0a473d7c7db195 = L.circleMarker(
+                [26.703822, -80.036901],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_e597f656b6c6b1aad633fcd0fc2a371c = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_2144e726a0d85037c838ff34b9806bd1 = $(`<div id="html_2144e726a0d85037c838ff34b9806bd1" style="width: 100.0%; height: 100.0%;"><b>C. ORRICO</b><br>Palm Beach, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_e597f656b6c6b1aad633fcd0fc2a371c.setContent(html_2144e726a0d85037c838ff34b9806bd1);
+            
+        
+
+        circle_marker_170abd1cd34b1e73ae0a473d7c7db195.bindPopup(popup_e597f656b6c6b1aad633fcd0fc2a371c)
+        ;
+
+        
+    
+    
+            circle_marker_170abd1cd34b1e73ae0a473d7c7db195.bindTooltip(
+                `<div>
+                     C. ORRICO
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_04c34531540d8417cb454d35ffce27d5 = L.circleMarker(
+                [27.64906, -80.355011],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_5fbe70a59fe0222a2f1e46bbb8283deb = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_45848b653d2de557ab8ec3321d7145d4 = $(`<div id="html_45848b653d2de557ab8ec3321d7145d4" style="width: 100.0%; height: 100.0%;"><b>LOGGIA</b><br>Vero Beach, FL<br><span style='color:#666'>E - No Marketing</span></div>`)[0];
+                popup_5fbe70a59fe0222a2f1e46bbb8283deb.setContent(html_45848b653d2de557ab8ec3321d7145d4);
+            
+        
+
+        circle_marker_04c34531540d8417cb454d35ffce27d5.bindPopup(popup_5fbe70a59fe0222a2f1e46bbb8283deb)
+        ;
+
+        
+    
+    
+            circle_marker_04c34531540d8417cb454d35ffce27d5.bindTooltip(
+                `<div>
+                     LOGGIA
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bbd30c2a5987472755a98a621fef82f0 = L.circleMarker(
+                [29.038393, -80.897294],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_2b1efaf6fa6d8d0386a072afc38bf1b0 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_956967cdcf1db87c60c1fce91f79222b = $(`<div id="html_956967cdcf1db87c60c1fce91f79222b" style="width: 100.0%; height: 100.0%;"><b>MORHAIN 417, LLC (LA BOUTIQUE ON FLAGLER)</b><br>New Smyrna Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_2b1efaf6fa6d8d0386a072afc38bf1b0.setContent(html_956967cdcf1db87c60c1fce91f79222b);
+            
+        
+
+        circle_marker_bbd30c2a5987472755a98a621fef82f0.bindPopup(popup_2b1efaf6fa6d8d0386a072afc38bf1b0)
+        ;
+
+        
+    
+    
+            circle_marker_bbd30c2a5987472755a98a621fef82f0.bindTooltip(
+                `<div>
+                     MORHAIN 417, LLC (LA BOUTIQUE ON FLAGLER)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_e171dfececb7bf11d7f8e8569bb22347 = L.circleMarker(
+                [25.966818, -80.125286],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_46f2c5ce6081f3216e41471c5a51b126 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_b0dbaabe7d637dd5100971c9455d920e = $(`<div id="html_b0dbaabe7d637dd5100971c9455d920e" style="width: 100.0%; height: 100.0%;"><b>B DAZZLED</b><br>Aventura, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_46f2c5ce6081f3216e41471c5a51b126.setContent(html_b0dbaabe7d637dd5100971c9455d920e);
+            
+        
+
+        circle_marker_e171dfececb7bf11d7f8e8569bb22347.bindPopup(popup_46f2c5ce6081f3216e41471c5a51b126)
+        ;
+
+        
+    
+    
+            circle_marker_e171dfececb7bf11d7f8e8569bb22347.bindTooltip(
+                `<div>
+                     B DAZZLED
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_75ee817f3c9dd32301d54a5eaa47cb66 = L.circleMarker(
+                [26.133133, -80.284472],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_99208a0e7723883c64fd699d0442caa8 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_94533c67a39e860ebc5fb63f1a2ecd67 = $(`<div id="html_94533c67a39e860ebc5fb63f1a2ecd67" style="width: 100.0%; height: 100.0%;"><b>ELI + PEARL</b><br>Plantation, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_99208a0e7723883c64fd699d0442caa8.setContent(html_94533c67a39e860ebc5fb63f1a2ecd67);
+            
+        
+
+        circle_marker_75ee817f3c9dd32301d54a5eaa47cb66.bindPopup(popup_99208a0e7723883c64fd699d0442caa8)
+        ;
+
+        
+    
+    
+            circle_marker_75ee817f3c9dd32301d54a5eaa47cb66.bindTooltip(
+                `<div>
+                     ELI + PEARL
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2abfaf070e446352159889e18930a7ec = L.circleMarker(
+                [27.688261, -82.736903],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_787179962fb968865847429502fd7122 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_a41a499f0a662b5852ec860947a7cfdb = $(`<div id="html_a41a499f0a662b5852ec860947a7cfdb" style="width: 100.0%; height: 100.0%;"><b>DODY BOUTIQUE</b><br>St. Pete Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_787179962fb968865847429502fd7122.setContent(html_a41a499f0a662b5852ec860947a7cfdb);
+            
+        
+
+        circle_marker_2abfaf070e446352159889e18930a7ec.bindPopup(popup_787179962fb968865847429502fd7122)
+        ;
+
+        
+    
+    
+            circle_marker_2abfaf070e446352159889e18930a7ec.bindTooltip(
+                `<div>
+                     DODY BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_6c4aed9183a9ac12a0aacfc9f400bfd1 = L.circleMarker(
+                [30.301232, -86.064004],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_8c8662f10d55434b0c27c496910470dd = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_59b9908a7395a6dbbcb03a3eb405b522 = $(`<div id="html_59b9908a7395a6dbbcb03a3eb405b522" style="width: 100.0%; height: 100.0%;"><b>YELLOW FLY TRADING CO (CLOSED)</b><br>Watersound, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_8c8662f10d55434b0c27c496910470dd.setContent(html_59b9908a7395a6dbbcb03a3eb405b522);
+            
+        
+
+        circle_marker_6c4aed9183a9ac12a0aacfc9f400bfd1.bindPopup(popup_8c8662f10d55434b0c27c496910470dd)
+        ;
+
+        
+    
+    
+            circle_marker_6c4aed9183a9ac12a0aacfc9f400bfd1.bindTooltip(
+                `<div>
+                     YELLOW FLY TRADING CO (CLOSED)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a20cb978694d7f7f7423748c4b5d9b51 = L.circleMarker(
+                [30.303578, -81.653698],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_fe9e5f82fc80da5b8face21d25f69cfa = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_97f15acf448297e95273e101a14e1b5f = $(`<div id="html_97f15acf448297e95273e101a14e1b5f" style="width: 100.0%; height: 100.0%;"><b>KRISTA EBERLE</b><br>Jacksonville, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_fe9e5f82fc80da5b8face21d25f69cfa.setContent(html_97f15acf448297e95273e101a14e1b5f);
+            
+        
+
+        circle_marker_a20cb978694d7f7f7423748c4b5d9b51.bindPopup(popup_fe9e5f82fc80da5b8face21d25f69cfa)
+        ;
+
+        
+    
+    
+            circle_marker_a20cb978694d7f7f7423748c4b5d9b51.bindTooltip(
+                `<div>
+                     KRISTA EBERLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_1c4d2d6d3e31a7d648db5ee5af84d61b = L.circleMarker(
+                [25.795412, -80.142247],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c54e077787daaf029b146e8c4bf33f53 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_dea976e833b624374bef2748ef591d12 = $(`<div id="html_dea976e833b624374bef2748ef591d12" style="width: 100.0%; height: 100.0%;"><b>THE BACKROOM</b><br>Miami Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_c54e077787daaf029b146e8c4bf33f53.setContent(html_dea976e833b624374bef2748ef591d12);
+            
+        
+
+        circle_marker_1c4d2d6d3e31a7d648db5ee5af84d61b.bindPopup(popup_c54e077787daaf029b146e8c4bf33f53)
+        ;
+
+        
+    
+    
+            circle_marker_1c4d2d6d3e31a7d648db5ee5af84d61b.bindTooltip(
+                `<div>
+                     THE BACKROOM
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_32b65cf99a337ece1b00e4d7da2beb13 = L.circleMarker(
+                [26.252203, -81.805327],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_603c5e90579e0872d25c6b4ff5d2dc85 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_09d5233dffeea5333eb7ae80fceb87b0 = $(`<div id="html_09d5233dffeea5333eb7ae80fceb87b0" style="width: 100.0%; height: 100.0%;"><b>CYPRESS AND PALM</b><br>Naples, FL<br><span style='color:#666'>E - No Marketing</span></div>`)[0];
+                popup_603c5e90579e0872d25c6b4ff5d2dc85.setContent(html_09d5233dffeea5333eb7ae80fceb87b0);
+            
+        
+
+        circle_marker_32b65cf99a337ece1b00e4d7da2beb13.bindPopup(popup_603c5e90579e0872d25c6b4ff5d2dc85)
+        ;
+
+        
+    
+    
+            circle_marker_32b65cf99a337ece1b00e4d7da2beb13.bindTooltip(
+                `<div>
+                     CYPRESS AND PALM
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4e4bf90674e336f8271e31e6e1e210eb = L.circleMarker(
+                [30.278971, -86.008981],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_a21eda64d16c626e691bec648211d21c = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_5028aac660499406cee0901f87772b9a = $(`<div id="html_5028aac660499406cee0901f87772b9a" style="width: 100.0%; height: 100.0%;"><b>OKO LIFESTYLE</b><br>Inlet Beach, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_a21eda64d16c626e691bec648211d21c.setContent(html_5028aac660499406cee0901f87772b9a);
+            
+        
+
+        circle_marker_4e4bf90674e336f8271e31e6e1e210eb.bindPopup(popup_a21eda64d16c626e691bec648211d21c)
+        ;
+
+        
+    
+    
+            circle_marker_4e4bf90674e336f8271e31e6e1e210eb.bindTooltip(
+                `<div>
+                     OKO LIFESTYLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_19692e14ac4844f336605c45fce4ca6e = L.circleMarker(
+                [30.378846, -86.31453],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_b28011bf68574c58ad60b99ecd0bd48e = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_50fb707a36bbf5d81c92bcd88899e3b2 = $(`<div id="html_50fb707a36bbf5d81c92bcd88899e3b2" style="width: 100.0%; height: 100.0%;"><b>HEMLINE (SANDESTIN)</b><br>Miramar Beach, FL<br><span style='color:#666'>NGF - Not Going Forward</span></div>`)[0];
+                popup_b28011bf68574c58ad60b99ecd0bd48e.setContent(html_50fb707a36bbf5d81c92bcd88899e3b2);
+            
+        
+
+        circle_marker_19692e14ac4844f336605c45fce4ca6e.bindPopup(popup_b28011bf68574c58ad60b99ecd0bd48e)
+        ;
+
+        
+    
+    
+            circle_marker_19692e14ac4844f336605c45fce4ca6e.bindTooltip(
+                `<div>
+                     HEMLINE (SANDESTIN)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_63885b6a289fcf3ccaab9326e47ea79c = L.circleMarker(
+                [28.091029, -80.567318],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_ad572de4d1d47a3c0909027e9d271f85 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_12a38f1e1049fb385b7974c164c42b43 = $(`<div id="html_12a38f1e1049fb385b7974c164c42b43" style="width: 100.0%; height: 100.0%;"><b>SANDY SOUL (CLOSED)</b><br>Indialantic, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_ad572de4d1d47a3c0909027e9d271f85.setContent(html_12a38f1e1049fb385b7974c164c42b43);
+            
+        
+
+        circle_marker_63885b6a289fcf3ccaab9326e47ea79c.bindPopup(popup_ad572de4d1d47a3c0909027e9d271f85)
+        ;
+
+        
+    
+    
+            circle_marker_63885b6a289fcf3ccaab9326e47ea79c.bindTooltip(
+                `<div>
+                     SANDY SOUL (CLOSED)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_1ed6d0a010544acf98b809f0da3ea3ed = L.circleMarker(
+                [29.880015, -81.286143],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_e1e7bf38a9d19feb27ba54be92631d72 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_c6616f2c4941a93fc5c1df3ce89ad4cb = $(`<div id="html_c6616f2c4941a93fc5c1df3ce89ad4cb" style="width: 100.0%; height: 100.0%;"><b>LINEN AND WAVES</b><br>St Augustine, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_e1e7bf38a9d19feb27ba54be92631d72.setContent(html_c6616f2c4941a93fc5c1df3ce89ad4cb);
+            
+        
+
+        circle_marker_1ed6d0a010544acf98b809f0da3ea3ed.bindPopup(popup_e1e7bf38a9d19feb27ba54be92631d72)
+        ;
+
+        
+    
+    
+            circle_marker_1ed6d0a010544acf98b809f0da3ea3ed.bindTooltip(
+                `<div>
+                     LINEN AND WAVES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a6156175eaba20050b5cee9776b4bea6 = L.circleMarker(
+                [27.331508, -82.53911],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_ae67d84713a63fb7d07f7c7bcb29b06d = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4ef02f9a5b7640580f361a0e127bdbd4 = $(`<div id="html_4ef02f9a5b7640580f361a0e127bdbd4" style="width: 100.0%; height: 100.0%;"><b>L BOUTIQUE</b><br>Sarasota, FL<br><span style='color:#666'>E - No Marketing</span></div>`)[0];
+                popup_ae67d84713a63fb7d07f7c7bcb29b06d.setContent(html_4ef02f9a5b7640580f361a0e127bdbd4);
+            
+        
+
+        circle_marker_a6156175eaba20050b5cee9776b4bea6.bindPopup(popup_ae67d84713a63fb7d07f7c7bcb29b06d)
+        ;
+
+        
+    
+    
+            circle_marker_a6156175eaba20050b5cee9776b4bea6.bindTooltip(
+                `<div>
+                     L BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d0a0adcbc274d4ec7d78f4a90c95c436 = L.circleMarker(
+                [30.505743, -84.254539],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_fd5b18ac641b6e5d38c85793dc05fda6 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_d1e068bbb50b04bee3a4388139d7f86a = $(`<div id="html_d1e068bbb50b04bee3a4388139d7f86a" style="width: 100.0%; height: 100.0%;"><b>ELLE MARKET (CLOSED)</b><br>Tallahassee, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_fd5b18ac641b6e5d38c85793dc05fda6.setContent(html_d1e068bbb50b04bee3a4388139d7f86a);
+            
+        
+
+        circle_marker_d0a0adcbc274d4ec7d78f4a90c95c436.bindPopup(popup_fd5b18ac641b6e5d38c85793dc05fda6)
+        ;
+
+        
+    
+    
+            circle_marker_d0a0adcbc274d4ec7d78f4a90c95c436.bindTooltip(
+                `<div>
+                     ELLE MARKET (CLOSED)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b24db7c6fcd6f097de27ddfbcb0861d9 = L.circleMarker(
+                [30.239922, -81.387607],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_64ef21afdd1ae4fc5a848d1915fc914f = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_9de3e3560274a9bb8351dcf9e77b9342 = $(`<div id="html_9de3e3560274a9bb8351dcf9e77b9342" style="width: 100.0%; height: 100.0%;"><b>GWEN BERLIN</b><br>Ponte Vedra Beach, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_64ef21afdd1ae4fc5a848d1915fc914f.setContent(html_9de3e3560274a9bb8351dcf9e77b9342);
+            
+        
+
+        circle_marker_b24db7c6fcd6f097de27ddfbcb0861d9.bindPopup(popup_64ef21afdd1ae4fc5a848d1915fc914f)
+        ;
+
+        
+    
+    
+            circle_marker_b24db7c6fcd6f097de27ddfbcb0861d9.bindTooltip(
+                `<div>
+                     GWEN BERLIN
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b26b5709a18e09cbf188095925ede4aa = L.circleMarker(
+                [26.454989, -80.189287],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_4a4399ac033087dff68fb02f54eeb2a6 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_2889d46072d71abf2ed5f26a464a81c8 = $(`<div id="html_2889d46072d71abf2ed5f26a464a81c8" style="width: 100.0%; height: 100.0%;"><b>REVIVAL BOUTIQUE (DELRAY MARKETPLACE)</b><br>Delray Beach, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_4a4399ac033087dff68fb02f54eeb2a6.setContent(html_2889d46072d71abf2ed5f26a464a81c8);
+            
+        
+
+        circle_marker_b26b5709a18e09cbf188095925ede4aa.bindPopup(popup_4a4399ac033087dff68fb02f54eeb2a6)
+        ;
+
+        
+    
+    
+            circle_marker_b26b5709a18e09cbf188095925ede4aa.bindTooltip(
+                `<div>
+                     REVIVAL BOUTIQUE (DELRAY MARKETPLACE)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b6a4feff72e1f0962454a8a9e89be6a6 = L.circleMarker(
+                [26.548978, -81.912451],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_d692a5cc22d657c5748081a74da825d5 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e6ee6ca03b52a0f199d5cad373ae03b1 = $(`<div id="html_e6ee6ca03b52a0f199d5cad373ae03b1" style="width: 100.0%; height: 100.0%;"><b>JENNIFER'S INC</b><br>Fort Myers, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_d692a5cc22d657c5748081a74da825d5.setContent(html_e6ee6ca03b52a0f199d5cad373ae03b1);
+            
+        
+
+        circle_marker_b6a4feff72e1f0962454a8a9e89be6a6.bindPopup(popup_d692a5cc22d657c5748081a74da825d5)
+        ;
+
+        
+    
+    
+            circle_marker_b6a4feff72e1f0962454a8a9e89be6a6.bindTooltip(
+                `<div>
+                     JENNIFER'S INC
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_97812e5858d865d5321f9f21d860d26f = L.circleMarker(
+                [27.317631, -82.57713],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_08d923b1f9c23b45be9b3ea41be678c4 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_ef07a41bbe27872197834988955b68e1 = $(`<div id="html_ef07a41bbe27872197834988955b68e1" style="width: 100.0%; height: 100.0%;"><b>SEA GLASS LANE</b><br>Sarasota, FL<br><span style='color:#666'>A - $10,000+ / Weekly Contact / All Mktg</span></div>`)[0];
+                popup_08d923b1f9c23b45be9b3ea41be678c4.setContent(html_ef07a41bbe27872197834988955b68e1);
+            
+        
+
+        circle_marker_97812e5858d865d5321f9f21d860d26f.bindPopup(popup_08d923b1f9c23b45be9b3ea41be678c4)
+        ;
+
+        
+    
+    
+            circle_marker_97812e5858d865d5321f9f21d860d26f.bindTooltip(
+                `<div>
+                     SEA GLASS LANE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_124d8a63f43faa4c6063c3a690cef686 = L.circleMarker(
+                [26.845754, -80.061363],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_88d5f7853f6501705e73417b9d754803 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_c32db08124e7040cc7d0dfffb97cb7bb = $(`<div id="html_c32db08124e7040cc7d0dfffb97cb7bb" style="width: 100.0%; height: 100.0%;"><b>STYLES BY NICOLE</b><br>North Palm Beach, FL<br><span style='color:#666'>E - No Marketing</span></div>`)[0];
+                popup_88d5f7853f6501705e73417b9d754803.setContent(html_c32db08124e7040cc7d0dfffb97cb7bb);
+            
+        
+
+        circle_marker_124d8a63f43faa4c6063c3a690cef686.bindPopup(popup_88d5f7853f6501705e73417b9d754803)
+        ;
+
+        
+    
+    
+            circle_marker_124d8a63f43faa4c6063c3a690cef686.bindTooltip(
+                `<div>
+                     STYLES BY NICOLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d2b4ac2e6615e9fab73cca0ddad10c32 = L.circleMarker(
+                [27.920748, -82.815273],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_6bfdcbb39f100378ca5c93768051ef9a = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_dd1593deaf88c6f3cea48639e3ea185e = $(`<div id="html_dd1593deaf88c6f3cea48639e3ea185e" style="width: 100.0%; height: 100.0%;"><b>SUZETTE'S TOO</b><br>Belleair Bluffs, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_6bfdcbb39f100378ca5c93768051ef9a.setContent(html_dd1593deaf88c6f3cea48639e3ea185e);
+            
+        
+
+        circle_marker_d2b4ac2e6615e9fab73cca0ddad10c32.bindPopup(popup_6bfdcbb39f100378ca5c93768051ef9a)
+        ;
+
+        
+    
+    
+            circle_marker_d2b4ac2e6615e9fab73cca0ddad10c32.bindTooltip(
+                `<div>
+                     SUZETTE'S TOO
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bfb45d5bb5a90727ff471fa24fb7809b = L.circleMarker(
+                [26.426918, -80.145955],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_e4ee59f29c311525f0710307f4fdf378 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4da25c259475ff0415b4d7e9a4343197 = $(`<div id="html_4da25c259475ff0415b4d7e9a4343197" style="width: 100.0%; height: 100.0%;"><b>WISH & SHOES</b><br>Delray Beach, FL<br><span style='color:#666'>OOB - Out of Business</span></div>`)[0];
+                popup_e4ee59f29c311525f0710307f4fdf378.setContent(html_4da25c259475ff0415b4d7e9a4343197);
+            
+        
+
+        circle_marker_bfb45d5bb5a90727ff471fa24fb7809b.bindPopup(popup_e4ee59f29c311525f0710307f4fdf378)
+        ;
+
+        
+    
+    
+            circle_marker_bfb45d5bb5a90727ff471fa24fb7809b.bindTooltip(
+                `<div>
+                     WISH & SHOES
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_eb36cf388d684e5fa4e2491e8fb06b9c = L.circleMarker(
+                [25.933235, -81.700986],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_23aaa28c6dc5a05d007bb6399cf59bea = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_fd3b538036f95488482b79e33ab6d629 = $(`<div id="html_fd3b538036f95488482b79e33ab6d629" style="width: 100.0%; height: 100.0%;"><b>SANDPIPER CLOTHIERS</b><br>Marco Island, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_23aaa28c6dc5a05d007bb6399cf59bea.setContent(html_fd3b538036f95488482b79e33ab6d629);
+            
+        
+
+        circle_marker_eb36cf388d684e5fa4e2491e8fb06b9c.bindPopup(popup_23aaa28c6dc5a05d007bb6399cf59bea)
+        ;
+
+        
+    
+    
+            circle_marker_eb36cf388d684e5fa4e2491e8fb06b9c.bindTooltip(
+                `<div>
+                     SANDPIPER CLOTHIERS
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_fc1d183700bf667357be6cc90c62d3b4 = L.circleMarker(
+                [29.187542, -82.133086],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_6fdc46f550aadca9bbf6555d95ce7e98 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_a03ff3c10e17706737bd1c9d567b6f61 = $(`<div id="html_a03ff3c10e17706737bd1c9d567b6f61" style="width: 100.0%; height: 100.0%;"><b>HER KLOSET AT GREINER'S</b><br>Ocala, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_6fdc46f550aadca9bbf6555d95ce7e98.setContent(html_a03ff3c10e17706737bd1c9d567b6f61);
+            
+        
+
+        circle_marker_fc1d183700bf667357be6cc90c62d3b4.bindPopup(popup_6fdc46f550aadca9bbf6555d95ce7e98)
+        ;
+
+        
+    
+    
+            circle_marker_fc1d183700bf667357be6cc90c62d3b4.bindTooltip(
+                `<div>
+                     HER KLOSET AT GREINER'S
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ec5c813b0f88329a6fea666b64917582 = L.circleMarker(
+                [26.855293, -80.05691],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_d39c35f6f72b7452db04c5d0eb38da3d = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_94df60c9981d99221e6e68bcc5b64ea9 = $(`<div id="html_94df60c9981d99221e6e68bcc5b64ea9" style="width: 100.0%; height: 100.0%;"><b>CURATE CLOTHES (CLOSED)</b><br>North Palm Beach, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_d39c35f6f72b7452db04c5d0eb38da3d.setContent(html_94df60c9981d99221e6e68bcc5b64ea9);
+            
+        
+
+        circle_marker_ec5c813b0f88329a6fea666b64917582.bindPopup(popup_d39c35f6f72b7452db04c5d0eb38da3d)
+        ;
+
+        
+    
+    
+            circle_marker_ec5c813b0f88329a6fea666b64917582.bindTooltip(
+                `<div>
+                     CURATE CLOTHES (CLOSED)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_34fc63167059ba7cdf8baddb3579aea3 = L.circleMarker(
+                [25.962345, -81.727211],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_ac710a5b39541b50a758b795e43acbcb = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_550d93a83e3d66e81c699ec699b12aab = $(`<div id="html_550d93a83e3d66e81c699ec699b12aab" style="width: 100.0%; height: 100.0%;"><b>ISLAND COASTAL OUTFITTERS</b><br>Marco Island, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_ac710a5b39541b50a758b795e43acbcb.setContent(html_550d93a83e3d66e81c699ec699b12aab);
+            
+        
+
+        circle_marker_34fc63167059ba7cdf8baddb3579aea3.bindPopup(popup_ac710a5b39541b50a758b795e43acbcb)
+        ;
+
+        
+    
+    
+            circle_marker_34fc63167059ba7cdf8baddb3579aea3.bindTooltip(
+                `<div>
+                     ISLAND COASTAL OUTFITTERS
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3c397bbcd3427b44d22bdb5b23bf58d2 = L.circleMarker(
+                [27.318773, -82.575994],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_dd4acf8b68d427658b6373d582914829 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4f214b094ddd51c647f8f4f9a2a35f23 = $(`<div id="html_4f214b094ddd51c647f8f4f9a2a35f23" style="width: 100.0%; height: 100.0%;"><b>MOLLY & ZOEI</b><br>Sarasota, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_dd4acf8b68d427658b6373d582914829.setContent(html_4f214b094ddd51c647f8f4f9a2a35f23);
+            
+        
+
+        circle_marker_3c397bbcd3427b44d22bdb5b23bf58d2.bindPopup(popup_dd4acf8b68d427658b6373d582914829)
+        ;
+
+        
+    
+    
+            circle_marker_3c397bbcd3427b44d22bdb5b23bf58d2.bindTooltip(
+                `<div>
+                     MOLLY & ZOEI
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_fbeac1d1e259158a5db5cd183a2f223c = L.circleMarker(
+                [26.884077, -80.106646],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_f7b67b055e6c36943933f9fa27f270ca = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_159781ee57d7d57038d84b82d91eb7f0 = $(`<div id="html_159781ee57d7d57038d84b82d91eb7f0" style="width: 100.0%; height: 100.0%;"><b>CHIC BOUTIQUE (CLOSED)</b><br>Jupiter, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_f7b67b055e6c36943933f9fa27f270ca.setContent(html_159781ee57d7d57038d84b82d91eb7f0);
+            
+        
+
+        circle_marker_fbeac1d1e259158a5db5cd183a2f223c.bindPopup(popup_f7b67b055e6c36943933f9fa27f270ca)
+        ;
+
+        
+    
+    
+            circle_marker_fbeac1d1e259158a5db5cd183a2f223c.bindTooltip(
+                `<div>
+                     CHIC BOUTIQUE (CLOSED)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d1d1825f933fb48d478c29012d8478eb = L.circleMarker(
+                [26.437957, -82.069288],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_4642bfd22689dcc01ff82a842fae1232 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_34532d20a59ba7f595f636bf320d59d6 = $(`<div id="html_34532d20a59ba7f595f636bf320d59d6" style="width: 100.0%; height: 100.0%;"><b>ISLAND PURSUIT (SANIBEL)</b><br>Sanibel, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_4642bfd22689dcc01ff82a842fae1232.setContent(html_34532d20a59ba7f595f636bf320d59d6);
+            
+        
+
+        circle_marker_d1d1825f933fb48d478c29012d8478eb.bindPopup(popup_4642bfd22689dcc01ff82a842fae1232)
+        ;
+
+        
+    
+    
+            circle_marker_d1d1825f933fb48d478c29012d8478eb.bindTooltip(
+                `<div>
+                     ISLAND PURSUIT (SANIBEL)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c09ca56456803386795f3190a018ced4 = L.circleMarker(
+                [28.600189, -81.351396],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_2e1330eebe78c2cc2aeb1fd679e23fdb = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_3ec143e0dab4e11f111c336209b97cec = $(`<div id="html_3ec143e0dab4e11f111c336209b97cec" style="width: 100.0%; height: 100.0%;"><b>DEAR JANE</b><br>Winter Park, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_2e1330eebe78c2cc2aeb1fd679e23fdb.setContent(html_3ec143e0dab4e11f111c336209b97cec);
+            
+        
+
+        circle_marker_c09ca56456803386795f3190a018ced4.bindPopup(popup_2e1330eebe78c2cc2aeb1fd679e23fdb)
+        ;
+
+        
+    
+    
+            circle_marker_c09ca56456803386795f3190a018ced4.bindTooltip(
+                `<div>
+                     DEAR JANE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_fc4a050741a17a3580e00bca1f1c3159 = L.circleMarker(
+                [27.595953, -81.501842],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_6ff7eb076544995381a250d648d639de = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_f00f4b8d78584e7a27ea964f005ef95b = $(`<div id="html_f00f4b8d78584e7a27ea964f005ef95b" style="width: 100.0%; height: 100.0%;"><b>TASSEL & THREAD</b><br>Avon Park, FL<br><span style='color:#666'>B - $5,000 + / Bi-Weekly / All Mktg</span></div>`)[0];
+                popup_6ff7eb076544995381a250d648d639de.setContent(html_f00f4b8d78584e7a27ea964f005ef95b);
+            
+        
+
+        circle_marker_fc4a050741a17a3580e00bca1f1c3159.bindPopup(popup_6ff7eb076544995381a250d648d639de)
+        ;
+
+        
+    
+    
+            circle_marker_fc4a050741a17a3580e00bca1f1c3159.bindTooltip(
+                `<div>
+                     TASSEL & THREAD
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f6b4cd15b307c9b54ede3536deb51937 = L.circleMarker(
+                [29.038409, -80.896533],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_5b2d4b817564eedc7911a9c6540da25c = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_71788f8edcbab59c1b31ca98b2dfcdca = $(`<div id="html_71788f8edcbab59c1b31ca98b2dfcdca" style="width: 100.0%; height: 100.0%;"><b>SEA FOX</b><br>New Smyrna Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_5b2d4b817564eedc7911a9c6540da25c.setContent(html_71788f8edcbab59c1b31ca98b2dfcdca);
+            
+        
+
+        circle_marker_f6b4cd15b307c9b54ede3536deb51937.bindPopup(popup_5b2d4b817564eedc7911a9c6540da25c)
+        ;
+
+        
+    
+    
+            circle_marker_f6b4cd15b307c9b54ede3536deb51937.bindTooltip(
+                `<div>
+                     SEA FOX
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ceeda818b86ced9d3711a5f0935b7c20 = L.circleMarker(
+                [27.100133, -82.448635],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_7ba904738d0e5d295126f2b0e74e5003 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e2cfa3c33ca6b07c7cb6b9f1b653af15 = $(`<div id="html_e2cfa3c33ca6b07c7cb6b9f1b653af15" style="width: 100.0%; height: 100.0%;"><b>SEASIDE CHIC</b><br>Venice, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_7ba904738d0e5d295126f2b0e74e5003.setContent(html_e2cfa3c33ca6b07c7cb6b9f1b653af15);
+            
+        
+
+        circle_marker_ceeda818b86ced9d3711a5f0935b7c20.bindPopup(popup_7ba904738d0e5d295126f2b0e74e5003)
+        ;
+
+        
+    
+    
+            circle_marker_ceeda818b86ced9d3711a5f0935b7c20.bindTooltip(
+                `<div>
+                     SEASIDE CHIC
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c17033e8ec4810fe84d0489207b79473 = L.circleMarker(
+                [27.269635, -82.514466],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c1fbcbaa51ea0a0806add0c069f0f892 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_7149bd8c28e3ca9b29fcde83a7c9057a = $(`<div id="html_7149bd8c28e3ca9b29fcde83a7c9057a" style="width: 100.0%; height: 100.0%;"><b>SPA HOLLYWOOD</b><br>Sarasota, FL<br><span style='color:#666'>D - $1,000+ / Seasonal Postcards / Email Only</span></div>`)[0];
+                popup_c1fbcbaa51ea0a0806add0c069f0f892.setContent(html_7149bd8c28e3ca9b29fcde83a7c9057a);
+            
+        
+
+        circle_marker_c17033e8ec4810fe84d0489207b79473.bindPopup(popup_c1fbcbaa51ea0a0806add0c069f0f892)
+        ;
+
+        
+    
+    
+            circle_marker_c17033e8ec4810fe84d0489207b79473.bindTooltip(
+                `<div>
+                     SPA HOLLYWOOD
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9155ba03fa798d524a0d2984c907624f = L.circleMarker(
+                [26.288379, -80.250184],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_01b0c2d78645dcc68babfc33a20927ec = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_bdf8c53682ea5976b6a1b618156180ff = $(`<div id="html_bdf8c53682ea5976b6a1b618156180ff" style="width: 100.0%; height: 100.0%;"><b>JEANERATION BOUTIQUE</b><br>Coral Springs, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_01b0c2d78645dcc68babfc33a20927ec.setContent(html_bdf8c53682ea5976b6a1b618156180ff);
+            
+        
+
+        circle_marker_9155ba03fa798d524a0d2984c907624f.bindPopup(popup_01b0c2d78645dcc68babfc33a20927ec)
+        ;
+
+        
+    
+    
+            circle_marker_9155ba03fa798d524a0d2984c907624f.bindTooltip(
+                `<div>
+                     JEANERATION BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_12d3b06bf37719cd1414459b2183f953 = L.circleMarker(
+                [26.872687, -80.070126],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_94e6e3e6ab88c5d1697c1a8ff94b5ed4 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_21274ff5fd4b551e8ba2180369ffca33 = $(`<div id="html_21274ff5fd4b551e8ba2180369ffca33" style="width: 100.0%; height: 100.0%;"><b>LADY LANELL'S</b><br>Palm Beach Gardens, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_94e6e3e6ab88c5d1697c1a8ff94b5ed4.setContent(html_21274ff5fd4b551e8ba2180369ffca33);
+            
+        
+
+        circle_marker_12d3b06bf37719cd1414459b2183f953.bindPopup(popup_94e6e3e6ab88c5d1697c1a8ff94b5ed4)
+        ;
+
+        
+    
+    
+            circle_marker_12d3b06bf37719cd1414459b2183f953.bindTooltip(
+                `<div>
+                     LADY LANELL'S
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_74afe85f636a3b2d87fbbeefef4950b7 = L.circleMarker(
+                [28.597959, -81.350685],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_201033fd45f4dd4d920ac64d921795b3 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e1e94de2cd03e951c537adb35b85221a = $(`<div id="html_e1e94de2cd03e951c537adb35b85221a" style="width: 100.0%; height: 100.0%;"><b>ARABELLA</b><br>Winter Park, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_201033fd45f4dd4d920ac64d921795b3.setContent(html_e1e94de2cd03e951c537adb35b85221a);
+            
+        
+
+        circle_marker_74afe85f636a3b2d87fbbeefef4950b7.bindPopup(popup_201033fd45f4dd4d920ac64d921795b3)
+        ;
+
+        
+    
+    
+            circle_marker_74afe85f636a3b2d87fbbeefef4950b7.bindTooltip(
+                `<div>
+                     ARABELLA
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c49a78b3f8a62df261c0e094ee39cbd7 = L.circleMarker(
+                [27.929175, -82.505535],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_cdd1308e0b6ba76d37d863e9c56f1ceb = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_939e9bc698a0fefa23a50747730156f1 = $(`<div id="html_939e9bc698a0fefa23a50747730156f1" style="width: 100.0%; height: 100.0%;"><b>THE PINK PALM</b><br>Tampa, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_cdd1308e0b6ba76d37d863e9c56f1ceb.setContent(html_939e9bc698a0fefa23a50747730156f1);
+            
+        
+
+        circle_marker_c49a78b3f8a62df261c0e094ee39cbd7.bindPopup(popup_cdd1308e0b6ba76d37d863e9c56f1ceb)
+        ;
+
+        
+    
+    
+            circle_marker_c49a78b3f8a62df261c0e094ee39cbd7.bindTooltip(
+                `<div>
+                     THE PINK PALM
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5e0a6dd7e68534eacdae85f5d39fed84 = L.circleMarker(
+                [26.122975, -80.104738],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_a611cc6499805c0ebd67dd5a889bf45d = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_38a53fb4f4524b48fd667a832c04ccec = $(`<div id="html_38a53fb4f4524b48fd667a832c04ccec" style="width: 100.0%; height: 100.0%;"><b>ISLAND STYLE</b><br>Fort Lauderdale, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_a611cc6499805c0ebd67dd5a889bf45d.setContent(html_38a53fb4f4524b48fd667a832c04ccec);
+            
+        
+
+        circle_marker_5e0a6dd7e68534eacdae85f5d39fed84.bindPopup(popup_a611cc6499805c0ebd67dd5a889bf45d)
+        ;
+
+        
+    
+    
+            circle_marker_5e0a6dd7e68534eacdae85f5d39fed84.bindTooltip(
+                `<div>
+                     ISLAND STYLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c176100689a9efe56a447d5ab672ca74 = L.circleMarker(
+                [26.461751, -80.06158],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_cb8ea806e6206cd7e6397dae4d10d0f7 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_628c9ed89aa7400ee1d5ea72029c503e = $(`<div id="html_628c9ed89aa7400ee1d5ea72029c503e" style="width: 100.0%; height: 100.0%;"><b>DUNES SURF SHOP</b><br>Delray Beach, FL<br><span style='color:#666'>NGF - Not Going Forward</span></div>`)[0];
+                popup_cb8ea806e6206cd7e6397dae4d10d0f7.setContent(html_628c9ed89aa7400ee1d5ea72029c503e);
+            
+        
+
+        circle_marker_c176100689a9efe56a447d5ab672ca74.bindPopup(popup_cb8ea806e6206cd7e6397dae4d10d0f7)
+        ;
+
+        
+    
+    
+            circle_marker_c176100689a9efe56a447d5ab672ca74.bindTooltip(
+                `<div>
+                     DUNES SURF SHOP
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5b83a18b12654d47c1f0baff765f2bc3 = L.circleMarker(
+                [26.698785, -80.063597],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_33e71b2a83ee163e0ae36b7040fa6220 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_83a65641a92c1ef09f2b4b52d94744be = $(`<div id="html_83a65641a92c1ef09f2b4b52d94744be" style="width: 100.0%; height: 100.0%;"><b>GYPSY LIFE SURF SHOP</b><br>West Palm Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_33e71b2a83ee163e0ae36b7040fa6220.setContent(html_83a65641a92c1ef09f2b4b52d94744be);
+            
+        
+
+        circle_marker_5b83a18b12654d47c1f0baff765f2bc3.bindPopup(popup_33e71b2a83ee163e0ae36b7040fa6220)
+        ;
+
+        
+    
+    
+            circle_marker_5b83a18b12654d47c1f0baff765f2bc3.bindTooltip(
+                `<div>
+                     GYPSY LIFE SURF SHOP
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_15f2d85db3c16de897c6218fcff82b88 = L.circleMarker(
+                [27.469764, -82.699553],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_c9a8463980f1d26d48539eda6b38010b = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_bba4ccfd738740e4eb62316e677a4fc4 = $(`<div id="html_bba4ccfd738740e4eb62316e677a4fc4" style="width: 100.0%; height: 100.0%;"><b>BEACH LIFE AMI</b><br>Bradenton Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_c9a8463980f1d26d48539eda6b38010b.setContent(html_bba4ccfd738740e4eb62316e677a4fc4);
+            
+        
+
+        circle_marker_15f2d85db3c16de897c6218fcff82b88.bindPopup(popup_c9a8463980f1d26d48539eda6b38010b)
+        ;
+
+        
+    
+    
+            circle_marker_15f2d85db3c16de897c6218fcff82b88.bindTooltip(
+                `<div>
+                     BEACH LIFE AMI
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_66af8d671dddc70b6dd44198e3db96de = L.circleMarker(
+                [24.553328, -81.802822],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_d29f9698c21cea0749ef40dcbeff60e7 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4c1e988415a3571b3ba957cedcc96d69 = $(`<div id="html_4c1e988415a3571b3ba957cedcc96d69" style="width: 100.0%; height: 100.0%;"><b>FLOAT KEY WEST</b><br>Key West, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_d29f9698c21cea0749ef40dcbeff60e7.setContent(html_4c1e988415a3571b3ba957cedcc96d69);
+            
+        
+
+        circle_marker_66af8d671dddc70b6dd44198e3db96de.bindPopup(popup_d29f9698c21cea0749ef40dcbeff60e7)
+        ;
+
+        
+    
+    
+            circle_marker_66af8d671dddc70b6dd44198e3db96de.bindTooltip(
+                `<div>
+                     FLOAT KEY WEST
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_56a19c254330703898192c2efa28be14 = L.circleMarker(
+                [27.920933, -82.815166],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_6cc0b4ec198d6108a972f342cf6347f5 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_91c680102a2be5666e726a4ebe9b0678 = $(`<div id="html_91c680102a2be5666e726a4ebe9b0678" style="width: 100.0%; height: 100.0%;"><b>THE EDIT BOUTIQUE</b><br>Belleair Bluffs, FL<br><span style='color:#666'>NGF - Not Going Forward</span></div>`)[0];
+                popup_6cc0b4ec198d6108a972f342cf6347f5.setContent(html_91c680102a2be5666e726a4ebe9b0678);
+            
+        
+
+        circle_marker_56a19c254330703898192c2efa28be14.bindPopup(popup_6cc0b4ec198d6108a972f342cf6347f5)
+        ;
+
+        
+    
+    
+            circle_marker_56a19c254330703898192c2efa28be14.bindTooltip(
+                `<div>
+                     THE EDIT BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f4bd2f2f41558c6eae12593519ed6935 = L.circleMarker(
+                [27.862886, -82.837637],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_41ae4a72f5b35b860f931544472c281a = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_2ce49eee34c93ad2d01d4ac712730f48 = $(`<div id="html_2ce49eee34c93ad2d01d4ac712730f48" style="width: 100.0%; height: 100.0%;"><b>BLACKTOP SURF SHOP</b><br>Seminole, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_41ae4a72f5b35b860f931544472c281a.setContent(html_2ce49eee34c93ad2d01d4ac712730f48);
+            
+        
+
+        circle_marker_f4bd2f2f41558c6eae12593519ed6935.bindPopup(popup_41ae4a72f5b35b860f931544472c281a)
+        ;
+
+        
+    
+    
+            circle_marker_f4bd2f2f41558c6eae12593519ed6935.bindTooltip(
+                `<div>
+                     BLACKTOP SURF SHOP
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9b1d2678a24662dc2795185107bb41bf = L.circleMarker(
+                [27.786422, -82.782738],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_a63a703e2f8f1342f6d649ba04088cb5 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_0193eb2e39c87099416955a5d45d3dcb = $(`<div id="html_0193eb2e39c87099416955a5d45d3dcb" style="width: 100.0%; height: 100.0%;"><b>COOL STYLE</b><br>Madeira Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_a63a703e2f8f1342f6d649ba04088cb5.setContent(html_0193eb2e39c87099416955a5d45d3dcb);
+            
+        
+
+        circle_marker_9b1d2678a24662dc2795185107bb41bf.bindPopup(popup_a63a703e2f8f1342f6d649ba04088cb5)
+        ;
+
+        
+    
+    
+            circle_marker_9b1d2678a24662dc2795185107bb41bf.bindTooltip(
+                `<div>
+                     COOL STYLE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ec012af123b8fc83898c65f1aa4ac48d = L.circleMarker(
+                [26.592462, -81.895848],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_ad70ebce5c3e89ed5a2fac8e4afc5663 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_218f29a1ff18f8eaab15f6d8ea0f0f50 = $(`<div id="html_218f29a1ff18f8eaab15f6d8ea0f0f50" style="width: 100.0%; height: 100.0%;"><b>CABBAGE KEY OUTFITTERS</b><br>Fort Myers, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_ad70ebce5c3e89ed5a2fac8e4afc5663.setContent(html_218f29a1ff18f8eaab15f6d8ea0f0f50);
+            
+        
+
+        circle_marker_ec012af123b8fc83898c65f1aa4ac48d.bindPopup(popup_ad70ebce5c3e89ed5a2fac8e4afc5663)
+        ;
+
+        
+    
+    
+            circle_marker_ec012af123b8fc83898c65f1aa4ac48d.bindTooltip(
+                `<div>
+                     CABBAGE KEY OUTFITTERS
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_fd0a059c687258e01394c71e9af8a001 = L.circleMarker(
+                [26.196862, -81.811191],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_97d0387d6af7106d4ded372a06d786a5 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_dd5ce236fb9fca78af2f452f3e228c75 = $(`<div id="html_dd5ce236fb9fca78af2f452f3e228c75" style="width: 100.0%; height: 100.0%;"><b>MY FRIENDS PLACE</b><br>Naples, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_97d0387d6af7106d4ded372a06d786a5.setContent(html_dd5ce236fb9fca78af2f452f3e228c75);
+            
+        
+
+        circle_marker_fd0a059c687258e01394c71e9af8a001.bindPopup(popup_97d0387d6af7106d4ded372a06d786a5)
+        ;
+
+        
+    
+    
+            circle_marker_fd0a059c687258e01394c71e9af8a001.bindTooltip(
+                `<div>
+                     MY FRIENDS PLACE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_550b1d5b5a5b437c3f3ccf27174198a8 = L.circleMarker(
+                [27.384672, -82.428326],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_5e647fd3015549e15de5133e8be46b8a = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e56a504b92c8e59b0fbed2483ce4fc9b = $(`<div id="html_e56a504b92c8e59b0fbed2483ce4fc9b" style="width: 100.0%; height: 100.0%;"><b>GLITZ NAILS & BOUTIQUE</b><br>Sarasota, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_5e647fd3015549e15de5133e8be46b8a.setContent(html_e56a504b92c8e59b0fbed2483ce4fc9b);
+            
+        
+
+        circle_marker_550b1d5b5a5b437c3f3ccf27174198a8.bindPopup(popup_5e647fd3015549e15de5133e8be46b8a)
+        ;
+
+        
+    
+    
+            circle_marker_550b1d5b5a5b437c3f3ccf27174198a8.bindTooltip(
+                `<div>
+                     GLITZ NAILS & BOUTIQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bdab05d9f977e72f9fb971de32539b8c = L.circleMarker(
+                [26.261456, -80.099264],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_e7edb4566625f4522ead881df9e1a83f = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_1bc182f39b4d26f617629791f56ae8e7 = $(`<div id="html_1bc182f39b4d26f617629791f56ae8e7" style="width: 100.0%; height: 100.0%;"><b>BODY + SOUL</b><br>Pompano Beach, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_e7edb4566625f4522ead881df9e1a83f.setContent(html_1bc182f39b4d26f617629791f56ae8e7);
+            
+        
+
+        circle_marker_bdab05d9f977e72f9fb971de32539b8c.bindPopup(popup_e7edb4566625f4522ead881df9e1a83f)
+        ;
+
+        
+    
+    
+            circle_marker_bdab05d9f977e72f9fb971de32539b8c.bindTooltip(
+                `<div>
+                     BODY + SOUL
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_15a676691930d2bd27ae9d6a70f83087 = L.circleMarker(
+                [24.560239, -81.80069],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_f8673ce258f388ebe26f2fae2b6135e4 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e0504e048315423b73565de57b5a94e1 = $(`<div id="html_e0504e048315423b73565de57b5a94e1" style="width: 100.0%; height: 100.0%;"><b>THE ISLAND MERCANTILE</b><br>Key West, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_f8673ce258f388ebe26f2fae2b6135e4.setContent(html_e0504e048315423b73565de57b5a94e1);
+            
+        
+
+        circle_marker_15a676691930d2bd27ae9d6a70f83087.bindPopup(popup_f8673ce258f388ebe26f2fae2b6135e4)
+        ;
+
+        
+    
+    
+            circle_marker_15a676691930d2bd27ae9d6a70f83087.bindTooltip(
+                `<div>
+                     THE ISLAND MERCANTILE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9eee8e077e9030ed39391e9f0fd0741a = L.circleMarker(
+                [30.505743, -84.254539],
+                {"bubblingMouseEvents": true, "color": "#9aa0a6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9aa0a6", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_3a7a0c9e6262c7422e64f1fc6105ff13 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_32a82edca39880cebb99d09c701c9b04 = $(`<div id="html_32a82edca39880cebb99d09c701c9b04" style="width: 100.0%; height: 100.0%;"><b>MODE + MERCANTILE</b><br>Tallahassee, FL<br><span style='color:#666'>Z - Inactive</span></div>`)[0];
+                popup_3a7a0c9e6262c7422e64f1fc6105ff13.setContent(html_32a82edca39880cebb99d09c701c9b04);
+            
+        
+
+        circle_marker_9eee8e077e9030ed39391e9f0fd0741a.bindPopup(popup_3a7a0c9e6262c7422e64f1fc6105ff13)
+        ;
+
+        
+    
+    
+            circle_marker_9eee8e077e9030ed39391e9f0fd0741a.bindTooltip(
+                `<div>
+                     MODE + MERCANTILE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c855b6bfda60a68bb50fc919e74f104e = L.circleMarker(
+                [27.365158, -82.416336],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_5749ce0d6479854aa9ece7af301610de = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_4c7150a4350804b8f697441b2a9ef1a6 = $(`<div id="html_4c7150a4350804b8f697441b2a9ef1a6" style="width: 100.0%; height: 100.0%;"><b>MONKEES OF LAKEWOOD RANCH</b><br>Sarasota, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_5749ce0d6479854aa9ece7af301610de.setContent(html_4c7150a4350804b8f697441b2a9ef1a6);
+            
+        
+
+        circle_marker_c855b6bfda60a68bb50fc919e74f104e.bindPopup(popup_5749ce0d6479854aa9ece7af301610de)
+        ;
+
+        
+    
+    
+            circle_marker_c855b6bfda60a68bb50fc919e74f104e.bindTooltip(
+                `<div>
+                     MONKEES OF LAKEWOOD RANCH
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f565984d31a5f36d581327f89ff0484a = L.circleMarker(
+                [24.553925, -81.797074],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_59b3686809c91fdd862b7dc6e8779b2b = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_50e4e64c97439d31b9dbea3fa6e8e797 = $(`<div id="html_50e4e64c97439d31b9dbea3fa6e8e797" style="width: 100.0%; height: 100.0%;"><b>FRANGIPANI</b><br>Key West, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_59b3686809c91fdd862b7dc6e8779b2b.setContent(html_50e4e64c97439d31b9dbea3fa6e8e797);
+            
+        
+
+        circle_marker_f565984d31a5f36d581327f89ff0484a.bindPopup(popup_59b3686809c91fdd862b7dc6e8779b2b)
+        ;
+
+        
+    
+    
+            circle_marker_f565984d31a5f36d581327f89ff0484a.bindTooltip(
+                `<div>
+                     FRANGIPANI
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c7e1664b25e29e03ee2b75362d55de28 = L.circleMarker(
+                [26.124696, -80.284584],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_cffb9e733cd680c63474db63801984c7 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_b676c34eedee6d6884cf1eac01791fb7 = $(`<div id="html_b676c34eedee6d6884cf1eac01791fb7" style="width: 100.0%; height: 100.0%;"><b>COCO SUN</b><br>Plantation, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_cffb9e733cd680c63474db63801984c7.setContent(html_b676c34eedee6d6884cf1eac01791fb7);
+            
+        
+
+        circle_marker_c7e1664b25e29e03ee2b75362d55de28.bindPopup(popup_cffb9e733cd680c63474db63801984c7)
+        ;
+
+        
+    
+    
+            circle_marker_c7e1664b25e29e03ee2b75362d55de28.bindTooltip(
+                `<div>
+                     COCO SUN
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_89737c8f32c8ccded2092de14528dd16 = L.circleMarker(
+                [24.904343, -80.65019],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_396d5671667c79b3f9bb95ea0d6c6800 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_61de0703776565c4a5efa95895031c94 = $(`<div id="html_61de0703776565c4a5efa95895031c94" style="width: 100.0%; height: 100.0%;"><b>SEA LA VIE</b><br>Islamorada, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_396d5671667c79b3f9bb95ea0d6c6800.setContent(html_61de0703776565c4a5efa95895031c94);
+            
+        
+
+        circle_marker_89737c8f32c8ccded2092de14528dd16.bindPopup(popup_396d5671667c79b3f9bb95ea0d6c6800)
+        ;
+
+        
+    
+    
+            circle_marker_89737c8f32c8ccded2092de14528dd16.bindTooltip(
+                `<div>
+                     SEA LA VIE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5a4ea4a20295c43749229ac8fedcc862 = L.circleMarker(
+                [28.084815, -82.740614],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_227eaf8c2c524be7071072e805595e38 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_e02be0fd10a766bdc950a631471b811c = $(`<div id="html_e02be0fd10a766bdc950a631471b811c" style="width: 100.0%; height: 100.0%;"><b>LE MARCHE</b><br>Palm Harbor, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_227eaf8c2c524be7071072e805595e38.setContent(html_e02be0fd10a766bdc950a631471b811c);
+            
+        
+
+        circle_marker_5a4ea4a20295c43749229ac8fedcc862.bindPopup(popup_227eaf8c2c524be7071072e805595e38)
+        ;
+
+        
+    
+    
+            circle_marker_5a4ea4a20295c43749229ac8fedcc862.bindTooltip(
+                `<div>
+                     LE MARCHE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_1c317ac1a05bd3e7ad3e51ec19ef1340 = L.circleMarker(
+                [27.770727, -82.662971],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_0f1c6aa353afb1c9fb8422ff8906ba86 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_9190a04eb240b6485fe3790b0b88f30e = $(`<div id="html_9190a04eb240b6485fe3790b0b88f30e" style="width: 100.0%; height: 100.0%;"><b>HARBOUR THREAD</b><br>St. Petersburg, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_0f1c6aa353afb1c9fb8422ff8906ba86.setContent(html_9190a04eb240b6485fe3790b0b88f30e);
+            
+        
+
+        circle_marker_1c317ac1a05bd3e7ad3e51ec19ef1340.bindPopup(popup_0f1c6aa353afb1c9fb8422ff8906ba86)
+        ;
+
+        
+    
+    
+            circle_marker_1c317ac1a05bd3e7ad3e51ec19ef1340.bindTooltip(
+                `<div>
+                     HARBOUR THREAD
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3144bce983dbf8e60394c223c039d41a = L.circleMarker(
+                [25.95389, -81.723026],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_781e6079403cab134f60bed6b442f7d3 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_7e2be99283d14df2b87f6ede96f68d0e = $(`<div id="html_7e2be99283d14df2b87f6ede96f68d0e" style="width: 100.0%; height: 100.0%;"><b>HOME SWEET HOME</b><br>Marco Island, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_781e6079403cab134f60bed6b442f7d3.setContent(html_7e2be99283d14df2b87f6ede96f68d0e);
+            
+        
+
+        circle_marker_3144bce983dbf8e60394c223c039d41a.bindPopup(popup_781e6079403cab134f60bed6b442f7d3)
+        ;
+
+        
+    
+    
+            circle_marker_3144bce983dbf8e60394c223c039d41a.bindTooltip(
+                `<div>
+                     HOME SWEET HOME
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_1a9d0c3bc8db68d5d1c84450d10a5df9 = L.circleMarker(
+                [27.047043, -82.328161],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_ad241f70e529a0bc4fa31a51f7d0d2c7 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_a607e38764c1cfe5bba22c6ae8f76467 = $(`<div id="html_a607e38764c1cfe5bba22c6ae8f76467" style="width: 100.0%; height: 100.0%;"><b>SEASIDE AND COMPANY</b><br>Venice, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_ad241f70e529a0bc4fa31a51f7d0d2c7.setContent(html_a607e38764c1cfe5bba22c6ae8f76467);
+            
+        
+
+        circle_marker_1a9d0c3bc8db68d5d1c84450d10a5df9.bindPopup(popup_ad241f70e529a0bc4fa31a51f7d0d2c7)
+        ;
+
+        
+    
+    
+            circle_marker_1a9d0c3bc8db68d5d1c84450d10a5df9.bindTooltip(
+                `<div>
+                     SEASIDE AND COMPANY
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5afde4eb31a1321db5faf72694b62aba = L.circleMarker(
+                [24.723948, -81.051255],
+                {"bubblingMouseEvents": true, "color": "#7a281f", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#7a281f", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e);
+        
+    
+        var popup_900004462926079906ac830adfb08449 = L.popup({
+  "maxWidth": 260,
+});
+
+        
+            
+                var html_ade785c7b576a86a9be207d7480ee96c = $(`<div id="html_ade785c7b576a86a9be207d7480ee96c" style="width: 100.0%; height: 100.0%;"><b>GOLDEN ROAD</b><br>Marathon, FL<br><span style='color:#666'>C - $2,000+ / Monthly / All Mktg</span></div>`)[0];
+                popup_900004462926079906ac830adfb08449.setContent(html_ade785c7b576a86a9be207d7480ee96c);
+            
+        
+
+        circle_marker_5afde4eb31a1321db5faf72694b62aba.bindPopup(popup_900004462926079906ac830adfb08449)
+        ;
+
+        
+    
+    
+            circle_marker_5afde4eb31a1321db5faf72694b62aba.bindTooltip(
+                `<div>
+                     GOLDEN ROAD
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            marker_cluster_caf0307b46cc019f638b53ebdc0b3e6e.addTo(map_8473eb76af626d0bc29085db1355176e);
+        
+</script>
+</html>
