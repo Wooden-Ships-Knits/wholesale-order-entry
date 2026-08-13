@@ -144,12 +144,17 @@ class Settings(BaseSettings):
     imap_user: str = ""
     imap_pass: str = ""
     imap_mailbox: str = "INBOX"
-    # How often the backend reads the mailbox by itself, in minutes (0 = only
-    # when someone presses "Check replies"). This is what turns a bounced
-    # signature request into a red row without anyone watching Gmail.
-    # Automatically disabled on a development instance, which shares the same
-    # mailbox — see app/main.py::_mailbox_polling_enabled.
-    poll_replies_minutes: int = 5
+    # How often the backend reads the mailbox by itself, in minutes.
+    # 0 (the default) = ONLY when someone presses "Check replies".
+    #
+    # Off by default since 2026-08-12. wholesale@ is a mailbox people work in,
+    # and reading a message marks it \Seen — an unattended login every few
+    # minutes from a datacentre IP, quietly marking the team's mail as read,
+    # looked like a compromised account and the password was reset. Turn this
+    # on only for a mailbox nobody watches.
+    # Also disabled automatically on a development instance, which shares the
+    # same mailbox — see app/main.py::_mailbox_polling_enabled.
+    poll_replies_minutes: int = 0
 
     # Conflict-reply classifier (OpenAI). Blank key = disabled: run_classify()
     # no-ops. The model only ever *suggests* a resolution; a human confirms it.

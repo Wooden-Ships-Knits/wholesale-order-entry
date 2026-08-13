@@ -152,27 +152,57 @@ def test_parse_replies_skips_untokened_messages():
 
 
 def test_fetch_unseen_raw_returns_message_bytes():
+    """Union of the per-marker searches, each message fetched exactly once."""
     class FakeIMAP:
-        def search(self, charset, criterion):
-            assert criterion == "UNSEEN"
-            return ("OK", [b"1 2"])
+        def __init__(self):
+            self.searches = []
+
+        def search(self, charset, *criteria):
+            self.searches.append(criteria)
+            # Two searches match, and they overlap on message 2.
+            if "FROM" in criteria:
+                return ("OK", [b"2 3"])
+            if criteria[1] == "HEADER":
+                return ("OK", [b"1 2"])
+            return ("OK", [b""])
 
         def fetch(self, num, spec):
             return ("OK", [(num + b" (RFC822 {n}", b"RAW-" + num), b")"])
 
-    raws = inbound.fetch_unseen_raw(FakeIMAP())
-    assert raws == [b"RAW-1", b"RAW-2"]
+    imap = FakeIMAP()
+    raws = inbound.fetch_unseen_raw(imap)
+    # 2 appears in two searches but is fetched once — fetching marks it \Seen.
+    assert raws == [b"RAW-1", b"RAW-2", b"RAW-3"]
+    # Never a bare UNSEEN: that would read the team's own mail.
+    assert all(c != ("UNSEEN",) for c in imap.searches)
+    assert all(c[0] == "UNSEEN" for c in imap.searches)
 
 
 def test_fetch_unseen_raw_handles_empty_mailbox():
     class EmptyIMAP:
-        def search(self, charset, criterion):
+        def search(self, charset, *criteria):
             return ("OK", [b""])
 
         def fetch(self, num, spec):  # pragma: no cover - must not be called
             raise AssertionError("fetch should not run on an empty mailbox")
 
     assert inbound.fetch_unseen_raw(EmptyIMAP()) == []
+
+
+def test_fetch_unseen_raw_survives_one_unsupported_search():
+    """A server that rejects HEADER TO must still yield the bounces."""
+    class PickyIMAP:
+        def search(self, charset, *criteria):
+            if criteria[1] == "HEADER":
+                raise RuntimeError("BAD search")
+            if "FROM" in criteria:
+                return ("OK", [b"7"])
+            return ("OK", [b""])
+
+        def fetch(self, num, spec):
+            return ("OK", [(num + b" (RFC822 {n}", b"RAW-" + num), b")"])
+
+    assert inbound.fetch_unseen_raw(PickyIMAP()) == [b"RAW-7"]
 
 
 def test_run_poll_is_noop_when_imap_unconfigured(monkeypatch):
