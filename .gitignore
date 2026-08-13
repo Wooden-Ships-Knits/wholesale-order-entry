@@ -27,3 +27,6 @@ memory/
 .vscode/
 .env.dev
 output-dev/
+*.ipynb
+*.csv
+maps/

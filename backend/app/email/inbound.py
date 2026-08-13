@@ -321,14 +321,56 @@ def select_new(
     return [r for r in replies if r.message_id not in existing_message_ids]
 
 
+def _search_criteria() -> list[tuple[str, ...]]:
+    """The searches that identify OUR mail, run server-side.
+
+    Deliberately NOT a bare "UNSEEN". wholesale@ is a mailbox people work in,
+    and fetching a message marks it \\Seen — so searching for everything unread
+    meant the app silently read the team's post. In August 2026 that looked
+    exactly like a compromised account and the password was reset, which is the
+    correct reaction to what it looked like.
+
+    Each search is ANDed with UNSEEN and ORed with the others by unioning the
+    results. Anything that is not a reply to one of our tagged emails, or a
+    delivery failure, is never fetched and never touched.
+    """
+    local = (settings.mail_sender or "").partition("@")[0] or "wholesale"
+    return [
+        # Replies to a plus-addressed Reply-To: wholesale+conflict-<id>@…
+        ("UNSEEN", "HEADER", "TO", f'"{local}+"'),
+        # …and the subject-token fallback, for a reply to the bare address.
+        ("UNSEEN", "SUBJECT", '"[#"'),
+        # Delivery failures carry none of our tokens — they are recognised by
+        # sender instead, and correlated later on the failed recipient address.
+        ("UNSEEN", "FROM", '"mailer-daemon"'),
+        ("UNSEEN", "FROM", '"postmaster"'),
+    ]
+
+
 def fetch_unseen_raw(conn) -> list[bytes]:
-    """Raw bytes of every UNSEEN message. Fetching RFC822 marks them \\Seen, so
-    the next poll skips them. `conn` is an imaplib IMAP4 connection (or a stand-
-    in with the same search/fetch shape)."""
-    typ, data = conn.search(None, "UNSEEN")
-    if typ != "OK":
-        return []
-    ids = (data[0] or b"").split()
+    """Raw bytes of the messages that belong to this app.
+
+    Fetching RFC822 marks a message \\Seen, so the narrower the search, the
+    less of the team's inbox this disturbs — see _search_criteria.
+
+    `conn` is an imaplib IMAP4 connection (or a stand-in with the same
+    search/fetch shape).
+    """
+    ids: list[bytes] = []
+    for criteria in _search_criteria():
+        try:
+            typ, data = conn.search(None, *criteria)
+        except Exception:
+            # One unsupported search must not lose the others: a server that
+            # dislikes HEADER TO should still yield the bounces.
+            logger.warning("IMAP search %s failed", " ".join(criteria), exc_info=True)
+            continue
+        if typ != "OK":
+            continue
+        for num in (data[0] or b"").split():
+            if num not in ids:  # a message can match more than one search
+                ids.append(num)
+
     raws: list[bytes] = []
     for num in ids:
         ftyp, fdata = conn.fetch(num, "(RFC822)")

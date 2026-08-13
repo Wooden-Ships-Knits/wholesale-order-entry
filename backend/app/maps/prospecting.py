@@ -22,7 +22,19 @@ import time
 import urllib.parse
 import urllib.request
 from difflib import SequenceMatcher
+import os, sys, certifi
+from pathlib import Path
 
+ROOT = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / "backend").is_dir())
+sys.path.insert(0, str(ROOT / "backend"))     # makes `app...` importable
+os.chdir(ROOT)                                # pydantic-settings reads ./.env
+    
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+os.environ.setdefault(
+    "GOOGLE_CREDENTIALS_PATH",
+    str(ROOT / "backend" / "credentials" / "dialy-report-automation-e20c53e67542.json"),
+)
 import pandas as pd
 
 from app.config import settings
@@ -132,12 +144,19 @@ def discover(origins, radius_m: int = 6000, verbose: bool = True) -> pd.DataFram
                         continue
                     loc = r["geometry"]["location"]
                     seen.setdefault(r["place_id"], {
-                        "place_id": r["place_id"],
-                        "store_name": r["name"],
-                        "latitude": loc["lat"],
-                        "longitude": loc["lng"],
-                        "types": ",".join(sorted(types)),
-                        "found_near": city,
+                        # "place_id": r["place_id"],
+                        # "store_name": r["name"],
+                        # "latitude": loc["lat"],
+                        # "longitude": loc["lng"],
+                        # "types": ",".join(sorted(types)),
+                        # "found_near": city,
+                        # # from the same response, no extra cost
+                        # "rating": r.get("rating"),
+                        # "reviews": r.get("user_ratings_total"),
+                        # "business_status": r.get("business_status"),
+                        # "vicinity": r.get("vicinity"),
+                        # "phone": r.get("international_phone_number"),
+                        "_raw": r,
                     })
                     found += 1
                 token = data.get("next_page_token")
@@ -264,7 +283,7 @@ def add_conflict(cands: pd.DataFrame, k: int = 5, verbose: bool = True) -> pd.Da
 COLUMNS = [
     "store_name", "latitude", "longitude", "website", "potential_conflict",
     "nearest_stockist", "drive_minutes", "distance_miles", "address", "found_near",
-    "types", "place_id",
+    "types", "place_id","rating", "reviews", "business_status", "vicinity", "phone",
 ]
 
 
