@@ -37,13 +37,43 @@ export const EMPTY_FILTERS = {
 /** Decision / status options, shared by the toolbar chips and the Decision
  *  column dropdown so the two lists can't drift. '' (All) first, unlike
  *  /admin's "Awaiting review": the office triages a pending queue, a rep wants
- *  their whole recent book. */
+ *  their whole recent book. A link can still open on any one of these — see
+ *  STATUS_PARAM — which is how a rep gets sent straight to what needs them
+ *  without narrowing the page for everyone who just opens /reps. */
 export const STATUS_FILTERS = [
   { value: '', label: 'All' },
   { value: 'submitted', label: 'Awaiting review' },
   { value: 'accepted', label: 'Accepted' },
   { value: 'declined', label: 'Declined' },
 ]
+
+/** Query-string parameter that pre-selects a Decision chip, so a link can open
+ *  the dashboard already narrowed — /reps?status=submitted is the "here is what
+ *  is waiting on you" link. Values are the canonical STATUS_FILTERS ones, the
+ *  same vocabulary the API's status_filter takes, so there is no second
+ *  spelling of "awaiting review" to keep in sync. */
+export const STATUS_PARAM = 'status'
+
+/** The chip to start on, read out of a query string ('?status=submitted', or
+ *  location.search). Anything unrecognised — a typo, a stale link, a status we
+ *  later drop — falls back to '' (All): a rep seeing their whole book is a
+ *  harmless outcome, an empty table they cannot explain is not. */
+export function statusFromSearch(search) {
+  const value = new URLSearchParams(search).get(STATUS_PARAM) || ''
+  return STATUS_FILTERS.some((f) => f.value === value) ? value : ''
+}
+
+/** `search` with the status parameter set to `status`, for keeping the address
+ *  bar in step with the chips so whatever a rep is looking at can be copied and
+ *  sent on. All drops the parameter rather than writing an empty status=,
+ *  leaving a plain /reps. Other parameters are preserved. */
+export function searchWithStatus(search, status) {
+  const params = new URLSearchParams(search)
+  if (status) params.set(STATUS_PARAM, status)
+  else params.delete(STATUS_PARAM)
+  const query = params.toString()
+  return query ? `?${query}` : ''
+}
 
 const contains = (value, query) => String(value ?? '').toLowerCase().includes(query)
 

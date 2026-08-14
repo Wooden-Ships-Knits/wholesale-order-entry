@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getOrders, getSession, logout } from './api'
-import { EMPTY_FILTERS, filterOrders, hasActiveFilters, STATUS_FILTERS } from './filterOrders'
+import {
+  EMPTY_FILTERS,
+  filterOrders,
+  hasActiveFilters,
+  searchWithStatus,
+  statusFromSearch,
+  STATUS_FILTERS,
+} from './filterOrders'
 import RepLogin from './RepLogin'
 import RepMetrics from './RepMetrics'
 import RepOrderTable from './RepOrderTable'
@@ -9,7 +16,12 @@ export default function RepsApp() {
   const [rep, setRep] = useState(null) // null = still checking, '' = signed out
   const [orders, setOrders] = useState([])
   const [counts, setCounts] = useState(null)
-  const [filter, setFilter] = useState('')
+  // Seeded from the URL so a link can drop a rep straight onto one queue
+  // (/reps?status=submitted). Lazy initialiser: the query string is read once,
+  // on mount, so from then on the chips drive the URL and not the other way
+  // round. It survives sign-in because RepLogin renders in place — no
+  // navigation, so the address bar is untouched while the rep types.
+  const [filter, setFilter] = useState(() => statusFromSearch(window.location.search))
   // Per-column filters, one object rather than one useState per column so that
   // "Clear" is a single assignment and the whole set is easy to hand around.
   const [filters, setFilters] = useState(EMPTY_FILTERS)
@@ -39,6 +51,18 @@ export default function RepsApp() {
     } finally {
       setLoading(false)
     }
+  }, [filter])
+
+  // Keep the address bar in step with the chips, so whatever a rep is looking
+  // at can be copied and passed on, and so a link carrying a status we don't
+  // recognise stops advertising it once we've fallen back to All. replaceState,
+  // not pushState: filtering is not navigation, and Back should leave the
+  // dashboard rather than unwind a trail of chip clicks.
+  useEffect(() => {
+    const search = searchWithStatus(window.location.search, filter)
+    if (search === window.location.search) return
+    const { pathname, hash } = window.location
+    window.history.replaceState(null, '', `${pathname}${search}${hash}`)
   }, [filter])
 
   useEffect(() => {
