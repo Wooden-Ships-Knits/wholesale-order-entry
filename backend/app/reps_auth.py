@@ -1,10 +1,12 @@
 """Rep sign-in: the roster, and one password hash per rep.
 
 One password per rep, not one shared by all (revised 2026-08-10). The shared
-password it replaced gave no identity at all: the login is a name dropdown, so
-any rep could pick a colleague's name, type the one password everybody had, and
-read that colleague's whole book. Per-rep hashes make the name meaningful — a
-right password against the wrong name is simply a failed login.
+password it replaced gave no identity at all: sign-in names the rep, so anyone
+could give a colleague's name, type the one password everybody had, and read
+that colleague's whole book. Per-rep hashes make the name meaningful — a right
+password against the wrong name is simply a failed login. That matters more,
+not less, now the name is typed rather than picked from a list (see
+`resolve_name`).
 
 Hashes live in REPS_PASSWORD_HASHES as a JSON object keyed by the rep's
 normalized name:
@@ -51,6 +53,34 @@ REP_NAMES = (
 def normalize_name(value: str | None) -> str:
     """Lookup key for a rep name: spacing and case need not agree."""
     return re.sub(r"\s+", "", value or "").lower()
+
+
+def resolve_name(typed: str | None) -> str | None:
+    """The roster name for whatever a rep typed into the sign-in box.
+
+    The name is a text field rather than a dropdown (revised 2026-08-11) and
+    reps type their first name, so "aviva", " AVIVA " and the old habit of
+    "Aviva Landin" all have to arrive at the same roster entry. Resolving here
+    rather than in the browser is the point: the session stores the roster
+    name, and that is what the contact-sheet lookup matches on to decide whose
+    orders these are. A typed string never becomes an identity by itself.
+
+    None means "no such rep", which the caller turns into the same failure as a
+    wrong password.
+    """
+    key = normalize_name(typed)
+    if not key:
+        # A blank box must not fall through to a first-name match on "".
+        return None
+    by_full = {normalize_name(n): n for n in REP_NAMES}
+    if key in by_full:
+        return by_full[key]
+    matches = [n for n in REP_NAMES if normalize_name(n.split()[0]) == key]
+    # Exactly one, never the first of several: two Michaels have to type a full
+    # name, because guessing between them would drop a rep into the other's
+    # book and the password check cannot catch it — it is checked against
+    # whichever name we guessed.
+    return matches[0] if len(matches) == 1 else None
 
 
 def load_hashes(raw: str) -> dict[str, str]:

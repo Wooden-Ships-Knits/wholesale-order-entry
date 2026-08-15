@@ -93,8 +93,9 @@ class Settings(BaseSettings):
     # Empty hash disables sign-in entirely (no admin access).
     admin_password_hash: str = ""
     # Rep monitoring page (/reps) — ONE PASSWORD PER REP, as a JSON object of
-    # normalized-name -> pbkdf2 hash. Not one shared password: the login is a
-    # name dropdown, so a shared one would let any rep read a colleague's book.
+    # normalized-name -> pbkdf2 hash. Not one shared password: sign-in is a rep
+    # name plus a password, so a shared one would let any rep type a
+    # colleague's name and read that colleague's book.
     # Build the value with:
     #   docker compose exec backend python -m app.reps_auth "Aviva Landin=..."
     # Empty (or malformed) disables rep sign-in entirely. Kept as a str and

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getOrders, getSession, logout } from './api'
 import ProspectsPanel from './ProspectsPanel'
 import RepLogin from './RepLogin'
@@ -25,10 +25,25 @@ export default function RepsApp() {
   const [tab, setTab] = useState('orders')
   const [orders, setOrders] = useState([])
   const [counts, setCounts] = useState(null)
-  const [filter, setFilter] = useState('')
+  // Seeded from the URL so a link can drop a rep straight onto one queue
+  // (/reps?status=submitted). Lazy initialiser: the query string is read once,
+  // on mount, so from then on the chips drive the URL and not the other way
+  // round. It survives sign-in because RepLogin renders in place — no
+  // navigation, so the address bar is untouched while the rep types.
+  const [filter, setFilter] = useState(() => statusFromSearch(window.location.search))
+  // Per-column filters, one object rather than one useState per column so that
+  // "Clear" is a single assignment and the whole set is easy to hand around.
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [notice, setNotice] = useState('') // server-side explanation, e.g. name not in the sheet
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const setField = (key, value) => setFilters((f) => ({ ...f, [key]: value }))
+
+  // Derived, not state: the visible rows are always a function of (orders,
+  // filters), so there is nothing to keep in sync.
+  const visibleOrders = useMemo(() => filterOrders(orders, filters), [orders, filters])
+  const filtered = hasActiveFilters(filters)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -45,6 +60,18 @@ export default function RepsApp() {
     } finally {
       setLoading(false)
     }
+  }, [filter])
+
+  // Keep the address bar in step with the chips, so whatever a rep is looking
+  // at can be copied and passed on, and so a link carrying a status we don't
+  // recognise stops advertising it once we've fallen back to All. replaceState,
+  // not pushState: filtering is not navigation, and Back should leave the
+  // dashboard rather than unwind a trail of chip clicks.
+  useEffect(() => {
+    const search = searchWithStatus(window.location.search, filter)
+    if (search === window.location.search) return
+    const { pathname, hash } = window.location
+    window.history.replaceState(null, '', `${pathname}${search}${hash}`)
   }, [filter])
 
   useEffect(() => {
@@ -103,7 +130,7 @@ export default function RepsApp() {
       <RepMetrics counts={counts} />
 
       <div className="admin-toolbar">
-        {FILTERS.map((f) => (
+        {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}
             type="button"
@@ -113,8 +140,20 @@ export default function RepsApp() {
             {f.label}
           </button>
         ))}
-        {/* No row count here: the Total orders card above already carries the
-            book size, and the active chip is what says the table is narrowed. */}
+        {/* No row count while only the chips are narrowing the table: the Total
+            orders card above already carries the book size, and the active chip
+            is what says the table is narrowed. A column filter has no such
+            marker, so once one is on, say how many rows it left. */}
+        {filtered && (
+          <>
+            <span className="filter-count">
+              {visibleOrders.length} of {orders.length} orders
+            </span>
+            <button type="button" className="chip" onClick={() => setFilters(EMPTY_FILTERS)}>
+              Clear filters
+            </button>
+          </>
+        )}
         <button type="button" className="link-btn" onClick={load} disabled={loading}>
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>
@@ -126,9 +165,14 @@ export default function RepsApp() {
           indistinguishable from "you have no orders". */}
       {notice && <p className="admin-error">{notice}</p>}
 
-      <RepOrderTable orders={orders} />
-        </>
-      )}
+      <RepOrderTable
+        orders={visibleOrders}
+        allOrders={orders}
+        filters={filters}
+        onFilterChange={setField}
+        statusFilter={filter}
+        onStatusFilterChange={setFilter}
+      />
     </main>
   )
 }

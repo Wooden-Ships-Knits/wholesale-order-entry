@@ -25,7 +25,7 @@ from app.db.models import Order
 from app.db.session import get_db
 from app.login_guard import LoginGuard, client_ip
 from app.pdf import render as pdf_render
-from app.reps_auth import REP_NAMES, verify_rep
+from app.reps_auth import REP_NAMES, normalize_name, resolve_name, verify_rep
 from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,8 @@ REP_SESSION_KEY = "rep"
 _BAD_CREDENTIALS = "Incorrect name or password"
 
 # Failed-attempt throttle. Keyed on the rep's name as well as the caller's
-# address, because the login dropdown publishes exactly which names are worth
-# attacking.
+# address, because the sign-in name is a rep's first name — anyone who has met
+# the sales team already knows which accounts are worth attacking.
 guard = LoginGuard("rep")
 
 # Enough rows for a rep's whole season without letting one request read the
@@ -74,8 +74,12 @@ RepRequired = Depends(require_rep)
 
 @router.get("/names")
 def list_rep_names() -> dict:
-    """The login dropdown. Unauthenticated — a login page has to show its own
-    options — and it is only the roster, never an address."""
+    """The roster, and only the roster — never an address.
+
+    The sign-in page stopped calling this on 2026-08-11, when the name became a
+    text box; it is kept for the office (checking who is set up) and stays
+    unauthenticated because it says nothing a sign-in attempt would not.
+    """
     return {"names": list(REP_NAMES)}
 
 
@@ -87,23 +91,31 @@ def login(payload: RepLoginRequest, request: Request) -> dict:
     # Checked before the password, so a locked-out caller cannot tell a correct
     # guess from a wrong one.
     ip = client_ip(request)
-    guard.check(ip, payload.name)
+    # Reps type their first name, so the typed text is resolved to the roster
+    # name before anything else uses it. That name — not what was typed — is
+    # what the throttle counts, what the password is checked against and what
+    # goes in the session, so "aviva", "AVIVA" and "Aviva Landin" are one
+    # identity throughout. An unknown name resolves to None and is failed
+    # below, after the throttle check, like any other bad credential.
+    name = resolve_name(payload.name)
+    identity = name or normalize_name(payload.name)
+    guard.check(ip, identity)
     # Password is checked AGAINST THE NAMED REP, not against a shared secret:
     # the name is the identity the whole dashboard is filtered by, so a right
     # password under someone else's name has to fail. verify_rep also re-checks
     # the roster, so a string the browser invents never becomes a session.
-    if not verify_rep(payload.name, payload.password, settings.reps_password_hashes):
+    if not name or not verify_rep(name, payload.password, settings.reps_password_hashes):
         # Never log the attempted password. The name is safe to log and is the
         # only thing that makes repeated failures diagnosable.
-        guard.record_failure(ip, payload.name)
+        guard.record_failure(ip, identity)
         logger.warning("Failed rep login attempt for %r", payload.name)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=_BAD_CREDENTIALS
         )
-    guard.record_success(ip, payload.name)
-    request.session[REP_SESSION_KEY] = payload.name
-    logger.info("Rep signed in: %s", payload.name)
-    return {"ok": True, "name": payload.name}
+    guard.record_success(ip, identity)
+    request.session[REP_SESSION_KEY] = name
+    logger.info("Rep signed in: %s", name)
+    return {"ok": True, "name": name}
 
 
 @router.post("/logout")

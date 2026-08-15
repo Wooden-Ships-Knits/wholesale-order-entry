@@ -1,31 +1,24 @@
 import { useEffect, useState } from 'react'
 import PasswordField from '../components/PasswordField'
-import { getRepNames, login } from './api'
+import { login } from './api'
 
 export default function RepLogin({ onSignedIn }) {
-  const [names, setNames] = useState([])
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-
-  // The roster comes from the server, so adding a rep never means editing two
-  // places. A failure here leaves the dropdown empty and Sign in disabled,
-  // which is the honest state — the login would be rejected anyway.
-  useEffect(() => {
-    getRepNames()
-      .then((d) => setNames(d.names))
-      .catch(() => setError('Could not load the rep list. Refresh to try again.'))
-  }, [])
 
   async function submit(e) {
     e.preventDefault()
     setBusy(true)
     setError('')
     try {
-      await login(name, password)
+      // The server matches what was typed against the roster and hands back
+      // the full name. Use that, not the typing: the dashboard header and
+      // every ownership check are about the rep, not about the box.
+      const d = await login(name.trim(), password)
       setPassword('')
-      onSignedIn(name)
+      onSignedIn(d.name || name.trim())
     } catch (err) {
       setError(err.message)
     } finally {
@@ -36,20 +29,25 @@ export default function RepLogin({ onSignedIn }) {
   return (
     <form className="admin-login" onSubmit={submit}>
       <h1>Rep sign-in</h1>
+      {/* Typed, not picked (revised 2026-08-11): a rep types their first name.
+          Case and stray spaces are the server's problem, and a full name still
+          works for anyone who has the old dropdown in their muscle memory. */}
       <label>
-        Your name
-        <select value={name} onChange={(e) => setName(e.target.value)} autoFocus>
-          <option value="">Select your name…</option>
-          {names.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+        Your first name
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+          autoComplete="username"
+          autoCapitalize="words"
+          autoCorrect="off"
+          spellCheck={false}
+        />
       </label>
       <PasswordField value={password} onChange={setPassword} />
       {error && <p className="admin-error">{error}</p>}
-      <button type="submit" disabled={busy || !name || !password}>
+      <button type="submit" disabled={busy || !name.trim() || !password}>
         {busy ? 'Signing in…' : 'Sign in'}
       </button>
     </form>
