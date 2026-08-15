@@ -2,12 +2,19 @@
 
 Design and reasoning: notebooks/PROSPECTING.md · flowchart: prospecting-flow.drawio
 
-    import prospecting as p
+    from app.maps import prospecting as p
     from app.salesforce import client
     sf = client._client()
 
     df = p.run(sf, "FL - Jason Hilsenrad", origins=p.FL_CITIES[:3])
     df.to_csv("fl-prospects.csv", index=False)
+
+This module imports cleanly anywhere the `app` package is importable — it does
+NOT set sys.path, chdir, or touch os.environ. That bootstrap belongs in the
+notebook that calls it: doing it at import time made the module unimportable
+in the container (no ../backend to find), changed the whole process's working
+directory as a side effect, and broke %autoreload, because a reloaded module
+re-ran it.
 
 Order of operations is a cost decision, not a style one. Places Details and the
 conflict check are both billed PER CANDIDATE; dedupe against Salesforce is free
@@ -22,19 +29,7 @@ import time
 import urllib.parse
 import urllib.request
 from difflib import SequenceMatcher
-import os, sys, certifi
-from pathlib import Path
 
-ROOT = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / "backend").is_dir())
-sys.path.insert(0, str(ROOT / "backend"))     # makes `app...` importable
-os.chdir(ROOT)                                # pydantic-settings reads ./.env
-    
-os.environ["SSL_CERT_FILE"] = certifi.where()
-os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
-os.environ.setdefault(
-    "GOOGLE_CREDENTIALS_PATH",
-    str(ROOT / "backend" / "credentials" / "dialy-report-automation-e20c53e67542.json"),
-)
 import pandas as pd
 
 from app.config import settings
@@ -80,6 +75,15 @@ NAME_SIMILARITY = 0.82
 # Words that carry no identity — every other boutique has them.
 _NOISE = re.compile(r"\b(the|boutique|shop|store|co|inc|llc|ltd|and)\b")
 
+# Hosts that identify a platform, not a shop. Half the boutiques in the state
+# list the same Facebook or Linktree page, so matching on these would collapse
+# unrelated stores onto each other.
+_NOT_IDENTITY = {
+    "facebook.com", "m.facebook.com", "instagram.com", "linktr.ee",
+    "twitter.com", "x.com", "tiktok.com", "yelp.com", "google.com",
+    "sites.google.com", "wixsite.com", "square.site", "shopify.com",
+}
+
 _details_cache: dict[str, dict] = {}
 
 
@@ -93,6 +97,63 @@ def _norm(name: str) -> str:
     n = re.sub(r"[^a-z0-9\s]", " ", n)
     n = _NOISE.sub(" ", n)
     return " ".join(n.split())
+
+
+def _phone_key(value) -> str | None:
+    """'(561) 555-0100' / '+1 561-555-0100' -> '5615550100'.
+
+    Ten digits or nothing: a partial number is not an identifier, and a short
+    string would match far too eagerly.
+    """
+    digits = re.sub(r"\D", "", str(value or ""))
+    if len(digits) == 11 and digits.startswith("1"):
+        digits = digits[1:]
+    return digits if len(digits) == 10 else None
+
+
+def _domain_key(value) -> str | None:
+    """'https://www.Shop.com/about' -> 'shop.com'. None for platform pages."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if "//" not in raw:
+        raw = "//" + raw               # bare 'shop.com' has no scheme to split on
+    host = urllib.parse.urlsplit(raw).netloc.lower().split(":")[0]
+    if host.startswith("www."):
+        host = host[4:]
+    return host if host and host not in _NOT_IDENTITY else None
+
+
+def _first(row, *names):
+    """First present, non-null attribute of a namedtuple row.
+
+    The candidate frame changes shape along the pipeline — OSM gives `phone`,
+    Place Details gives `phone_local` — so identity lookups read whichever
+    exists rather than assuming one stage has already run.
+    """
+    for n in names:
+        v = getattr(row, n, None)
+        if v is not None and not (isinstance(v, float) and math.isnan(v)):
+            return v
+    return None
+
+
+def _unique_index(pairs) -> dict:
+    """key -> account name, keeping only keys that identify ONE account.
+
+    A small chain sharing a head-office number, or several stores behind one
+    website, would otherwise let a single key delete every one of them. An
+    ambiguous key identifies nothing, so it is dropped.
+    """
+    seen: dict = {}
+    for key, name in pairs:
+        if key is None:
+            continue
+        if key in seen and seen[key] != name:
+            seen[key] = None           # ambiguous: burn it
+        else:
+            seen.setdefault(key, name)
+    return {k: v for k, v in seen.items() if v is not None}
 
 
 def _metres(lat1, lng1, lat2, lng2) -> float:
@@ -134,7 +195,7 @@ def discover(origins, radius_m: int = 6000, verbose: bool = True) -> pd.DataFram
                 # A next_page_token is not valid immediately; Google returns
                 # INVALID_REQUEST for a second or two after issuing it.
                 if token:
-                    time.sleep(2)
+                    time.sleep(5)
                 data = _get("nearbysearch", params)
                 if data.get("status") not in ("OK", "ZERO_RESULTS"):
                     raise RuntimeError(f"Places: {data.get('status')} {data.get('error_message','')}")
@@ -144,19 +205,21 @@ def discover(origins, radius_m: int = 6000, verbose: bool = True) -> pd.DataFram
                         continue
                     loc = r["geometry"]["location"]
                     seen.setdefault(r["place_id"], {
-                        # "place_id": r["place_id"],
-                        # "store_name": r["name"],
-                        # "latitude": loc["lat"],
-                        # "longitude": loc["lng"],
-                        # "types": ",".join(sorted(types)),
-                        # "found_near": city,
-                        # # from the same response, no extra cost
-                        # "rating": r.get("rating"),
-                        # "reviews": r.get("user_ratings_total"),
-                        # "business_status": r.get("business_status"),
-                        # "vicinity": r.get("vicinity"),
-                        # "phone": r.get("international_phone_number"),
-                        "_raw": r,
+                        "place_id": r["place_id"],
+                        "store_name": r["name"],
+                        "latitude": loc["lat"],
+                        "longitude": loc["lng"],
+                        "url": f"https://www.google.com/maps/search/?api=1&query={loc['lat']},{loc['lng']}&query_place_id={r['place_id']}",
+                        "types": ",".join(sorted(types)),
+                        "found_near": city,
+                        # from the same response, no extra cost
+                        "rating": r.get("rating"),
+                        # a COUNT, not the review text — that needs Place Details
+                        "review_count": r.get("user_ratings_total"),
+                        "business_status": r.get("business_status"),
+                        "vicinity": r.get("vicinity"),
+                        "phone": r.get("international_phone_number"),
+                        # "_raw": r,
                     })
                     found += 1
                 token = data.get("next_page_token")
@@ -178,7 +241,8 @@ def existing_accounts(sf, territory: str) -> pd.DataFrame:
     excluded = "','".join(mapping.EXCLUDED_RANKS)
     safe = territory.replace("\\", "\\\\").replace("'", r"\'")
     q = (
-        "SELECT Id, Name, ShippingLatitude, ShippingLongitude, Rank__c FROM Account "
+        "SELECT Id, Name, Phone, Website, ShippingLatitude, ShippingLongitude, "
+        "Rank__c FROM Account "
         f"WHERE SalesTerritory__c = '{safe}' "
         f"AND (Rank__c = null OR Rank__c NOT IN ('{excluded}'))"
     )
@@ -187,70 +251,176 @@ def existing_accounts(sf, territory: str) -> pd.DataFrame:
     return df
 
 
-def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
+def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = True,
+                  *, with_dropped: bool = False):
     """Remove candidates that are already customers.
 
-    Name OR proximity alone is not enough: 'MORLEY(DELRAY BEACH)' vs 'Morley'
-    defeats exact matching, and two different boutiques can share a mall. A
-    match is a close name AND close coordinates, or an unmistakable name at
-    the same spot.
+    Three independent rules, any one of which is a match:
+
+      phone   ten digits equal — the strongest signal there is. Two shops never
+              share a landline, and it survives a rename, a move and a bad
+              geocode, all of which defeat the rule below.
+      domain  same website host, platform pages excluded. Catches the shop
+              trading under one name and filed in Salesforce under another.
+      name    close name AND close coordinates. Neither half is sufficient
+              alone: 'MORLEY(DELRAY BEACH)' vs 'Morley' defeats exact matching,
+              and two different boutiques can share a mall.
+
+    Phone and domain need no distance check — they identify on their own, which
+    is exactly why they catch what coordinates miss. Both are indexed through
+    _unique_index, so a value shared by several accounts identifies none of
+    them rather than deleting all of them.
+
+    A MISSING phone is not a DIFFERENT phone: when either side has no value the
+    rule simply cannot fire, so these rules only ever remove rows. Candidates
+    with thin data still fall through to the name rule, as before.
+
+    with_dropped=True returns (kept, dropped) where dropped carries `matched_by`
+    and `matched_account`, so a run can be audited instead of trusted.
     """
     known = accounts.dropna(subset=["ShippingLatitude", "ShippingLongitude"])
     pairs = [(_norm(r.Name), r.ShippingLatitude, r.ShippingLongitude, r.Name)
              for r in known.itertuples()]
+    # Indexed off `accounts`, not `known`: an account with no coordinates is
+    # still perfectly identifiable by its phone or website.
+    by_phone = _unique_index(
+        (_phone_key(getattr(r, "Phone", None)), r.Name) for r in accounts.itertuples())
+    by_domain = _unique_index(
+        (_domain_key(getattr(r, "Website", None)), r.Name) for r in accounts.itertuples())
 
     keep, dropped = [], []
     for c in cands.itertuples():
-        cn = _norm(c.store_name)
-        hit = None
-        for kn, klat, klng, raw in pairs:
-            if _metres(c.latitude, c.longitude, klat, klng) > SAME_PLACE_METRES:
-                continue
-            if kn == cn or SequenceMatcher(None, kn, cn).ratio() >= NAME_SIMILARITY:
-                hit = raw
-                break
-        (dropped if hit else keep).append((c.Index, hit))
+        rule = hit = None
+
+        key = _phone_key(_first(c, "phone", "phone_local"))
+        if key and key in by_phone:
+            rule, hit = "phone", by_phone[key]
+
+        if hit is None:
+            key = _domain_key(_first(c, "website"))
+            if key and key in by_domain:
+                rule, hit = "domain", by_domain[key]
+
+        if hit is None:
+            cn = _norm(c.store_name)
+            for kn, klat, klng, raw in pairs:
+                if _metres(c.latitude, c.longitude, klat, klng) > SAME_PLACE_METRES:
+                    continue
+                if kn == cn or SequenceMatcher(None, kn, cn).ratio() >= NAME_SIMILARITY:
+                    rule, hit = "name+distance", raw
+                    break
+
+        (dropped if hit else keep).append((c.Index, rule, hit))
 
     if verbose:
         print(f"  already customers: {len(dropped)}   new candidates: {len(keep)}")
-        for idx, hit in dropped[:10]:
-            print(f"     {cands.loc[idx, 'store_name'][:34]:36} = {hit}")
-    return cands.loc[[i for i, _ in keep]].reset_index(drop=True)
+        for rule in ("phone", "domain", "name+distance"):
+            rows = [(i, h) for i, r, h in dropped if r == rule]
+            if not rows:
+                continue
+            print(f"    by {rule}: {len(rows)}")
+            for idx, h in rows[:5]:
+                print(f"       {str(cands.loc[idx, 'store_name'])[:34]:36} = {h}")
+
+    kept = cands.loc[[i for i, _, _ in keep]].reset_index(drop=True)
+    if not with_dropped:
+        return kept
+    out = cands.loc[[i for i, _, _ in dropped]].copy()
+    out["matched_by"] = [r for _, r, _ in dropped]
+    out["matched_account"] = [h for _, _, h in dropped]
+    return kept, out.reset_index(drop=True)
+
+
+# Place Details fields, by billing tier. website/address/phone are Basic+Contact;
+# `reviews` is ATMOSPHERE, which is the most expensive tier — it is here because
+# five customers describing a shop in their own words is the cheapest
+# qualifying signal available, and may answer step 2 without fetching any
+# websites at all. Drop it from this string to fall back to the cheaper tier.
+#
+# rating/user_ratings_total are the SAME Atmosphere tier as `reviews`, so while
+# reviews is requested they are free — asking for them separately would be the
+# expensive way round. An OSM row has no rating at all, so without these the
+# column is None for every store no matter how much enrichment is run.
+DETAIL_FIELDS = (
+    "website,formatted_address,formatted_phone_number,address_components,"
+    "reviews,rating,user_ratings_total"
+)
+
+
+def _review_text(result: dict, limit: int = 5) -> str | None:
+    """Google's reviews as one readable cell: "5* text ¦ 4* text ...".
+
+    Flattened rather than kept as a list so it survives a CSV round-trip — a
+    list of dicts in a cell comes back as an unusable string. Author names and
+    photo URLs are dropped: the text is the signal, the rest is personal data
+    we have no reason to carry.
+    """
+    reviews = (result.get("reviews") or [])[:limit]
+    parts = [
+        f"{r.get('rating')}* {' '.join((r.get('text') or '').split())}"
+        for r in reviews
+        if (r.get("text") or "").strip()
+    ]
+    return " ¦ ".join(parts) or None
+
+
+def _state_of(result: dict) -> str | None:
+    """Two-letter state from address_components — a territory can straddle one
+    (FL - Jason Hilsenrad holds a Georgia account), so this is how you filter."""
+    for c in result.get("address_components") or []:
+        if "administrative_area_level_1" in c.get("types", []):
+            return c.get("short_name")
+    return None
 
 
 def add_details(cands: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
-    """Place Details for the website + address. One billed call per candidate,
-    so this runs AFTER dedupe. Cached by place_id for the session."""
-    sites, addrs = [], []
-    for pid in cands["place_id"]:
-        if pid not in _details_cache:
-            d = _get("details", {"place_id": pid,
-                                 "fields": "website,formatted_address,formatted_phone_number"})
-            _details_cache[pid] = d.get("result", {})
-        r = _details_cache[pid]
-        sites.append(r.get("website"))
-        addrs.append(r.get("formatted_address"))
+    """Place Details: website, address, phone, state and review text.
+
+    One billed call per candidate, so this runs AFTER dedupe. Cached by
+    place_id for the session — candidates repeat between nearby origins.
+    """
+    sites, addrs, phones, states, reviews = [], [], [], [], []
+    ratings, counts = [], []
+    for row in cands.itertuples():
+        pid = getattr(row, "place_id", None)
+        # An OSM row that resolve_place_ids could not match has no place_id.
+        # Skipped rather than sent to Google, which would 400 on every one.
+        r = {}
+        if pid:
+            if pid not in _details_cache:
+                d = _get("details", {"place_id": pid, "fields": DETAIL_FIELDS})
+                _details_cache[pid] = d.get("result", {})
+            r = _details_cache[pid]
+        # Google FIRST, OSM as the fallback: Google is the fresher source, but
+        # an unresolved row must keep the contact details OSM already gave it
+        # rather than have them overwritten with None.
+        sites.append(r.get("website") or _first(row, "website"))
+        # vicinity is OSM's housenumber/street/city, the only address an
+        # unresolved row has. Without it here, `address` is blank on exactly
+        # the rows that most need one.
+        addrs.append(r.get("formatted_address") or _first(row, "address", "vicinity"))
+        phones.append(r.get("formatted_phone_number") or _first(row, "phone"))
+        states.append(_state_of(r) or _first(row, "state"))
+        reviews.append(_review_text(r))
+        ratings.append(r.get("rating") or _first(row, "rating"))
+        counts.append(r.get("user_ratings_total") or _first(row, "review_count"))
     out = cands.copy()
     out["website"] = sites
     out["address"] = addrs
+    out["phone_local"] = phones
+    out["state"] = states
+    out["review_text"] = reviews
+    out["rating"] = ratings
+    out["review_count"] = counts
     if verbose:
-        print(f"  with a website: {out['website'].notna().sum()} of {len(out)}")
+        print(f"  with a website: {out['website'].notna().sum()} of {len(out)}"
+              f"   ·  with a rating: {out['rating'].notna().sum()}"
+              f"   ·  with review text: {out['review_text'].notna().sum()}")
     return out
 
 
-def add_conflict(cands: pd.DataFrame, k: int = 5, verbose: bool = True) -> pd.DataFrame:
-    """potential_conflict via the app's own rule (app/geo/conflict.py).
 
-    Reused rather than reimplemented so this list and the live order form can
-    never disagree about what counts as a conflict. Billed per candidate
-    (Distance Matrix), which is why it is last.
 
-    NOTHING IS DROPPED on a conflict. The flag is information for the rep, who
-    may well permit the store anyway — that judgement is theirs, and a list
-    that silently removed the close ones would hide the decision instead of
-    presenting it. Hence nearest_stockist / drive_minutes / distance_miles
-    travel with the flag: "True" alone is not actionable.
-    """
     flags, nearest, minutes, miles, modes = [], [], [], [], []
     for c in cands.itertuples():
         try:
@@ -283,7 +453,8 @@ def add_conflict(cands: pd.DataFrame, k: int = 5, verbose: bool = True) -> pd.Da
 COLUMNS = [
     "store_name", "latitude", "longitude", "website", "potential_conflict",
     "nearest_stockist", "drive_minutes", "distance_miles", "address", "found_near",
-    "types", "place_id","rating", "reviews", "business_status", "vicinity", "phone",
+    "types", "place_id", "rating", "review_count", "business_status", "vicinity",
+    "phone", "phone_local", "state", "review_text",
 ]
 
 
@@ -373,3 +544,322 @@ def run(sf, territory: str, origins=None, radius_m: int = 6000) -> pd.DataFrame:
     print("4. conflict check")
     cands = add_conflict(cands)
     return cands[COLUMNS].sort_values(["potential_conflict", "store_name"]).reset_index(drop=True)
+
+
+# ===================================================================== OSM
+# Google Places cannot enumerate a state: every search is anchored to a point
+# and capped at 60 results, so a 120-hit city run is a CEILING, not a count —
+# Naples saturated at exactly 120 while OSM knows 2,400+ shops state-wide.
+# Overpass answers "everything inside this boundary" in one free request, so it
+# is the right tool for the sweep. Google is then used only to ENRICH the
+# survivors, which is the expensive part and should touch as few rows as
+# possible.
+# Free public service, shared by everyone — 504s and rate limits are normal,
+# not a bug. Mirrors are tried in turn rather than failing the whole sweep.
+OVERPASS_MIRRORS = (
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+)
+
+# shop=boutique is the strongest signal OSM has; shop=clothes is the broad net.
+# Kept deliberately short: a longer alternation makes the state-wide query
+# heavy enough for the free mirrors to time it out.
+OSM_SHOP_TAGS = "clothes|boutique"
+
+# National/regional chains. They satisfy every structural filter — clothing
+# store, real address, often a website — and none of them will ever stock a
+# small US knitwear label, so they are removed by name before anything is paid
+# for. Matched on a normalised substring, so "Nike Factory Store" goes too.
+CHAINS = {
+    "old navy", "gap", "banana republic", "h m", "zara", "uniqlo", "forever 21",
+    "nike", "adidas", "under armour", "lululemon", "athleta", "champs",
+    "ross dress for less", "tj maxx", "marshalls", "burlington", "citi trends",
+    "rue21", "dots", "cato", "bealls", "belk", "macy s", "dillard s", "kohl s",
+    "nordstrom", "jcpenney", "target", "walmart", "sears", "century 21",
+    "american eagle", "hollister", "abercrombie", "aeropostale", "pacsun",
+    "urban outfitters", "anthropologie", "free people", "j crew", "loft",
+    "ann taylor", "talbots", "chico s", "white house black market", "soma",
+    "victoria s secret", "torrid", "lane bryant", "express", "charlotte russe",
+    "windsor", "francesca s", "altar d state", "brandy melville", "akira",
+    "loveshackfancy", "ba sh", "anne fontaine", "tommy bahama", "lilly pulitzer",
+    "vineyard vines", "patagonia", "columbia", "north face", "levi s",
+    "calvin klein", "tommy hilfiger", "polo ralph lauren", "michael kors",
+    "coach", "kate spade", "guess", "bcbg", "bebe", "zumiez", "tillys",
+    "buckle", "maurices", "dress barn", "justice", "children s place",
+    "carter s", "gymboree", "disney store", "pele soccer", "sunglass hut",
+}
+
+
+def _is_chain(name: str, tags: dict | None = None) -> bool:
+    """A chain, by OSM's own judgement first and our name list second.
+
+    `brand:wikidata` means a mapper linked this shop to a known brand entity —
+    authoritative, maintained by someone else, and true of 53% of Florida's
+    clothing shops. The CHAINS list stays as a backstop for brands nobody has
+    tagged yet, but it is the weaker signal: it caught 786 where the tags catch
+    1,284, and it missed JoS. A. Bank and David's Bridal entirely.
+    """
+    if tags and ({"brand", "brand:wikidata"} & set(tags)):
+        return True
+    n = _norm(name)
+    return any(c in n for c in CHAINS)
+
+
+def _clothes_tokens(tags: dict) -> set[str]:
+    """OSM packs several audiences into one value: 'men;women' -> {men, women}."""
+    return {t for t in re.split(r"[;,]", (tags.get("clothes") or "").lower()) if t.strip()}
+
+
+def _wrong_clothes(tags: dict) -> bool:
+    """True when the shop states what it sells and it is not womenswear.
+
+    ONLY fires when `clothes` is present — 65% of shops do not set it, and an
+    absent tag is not evidence of anything. Silence keeps the shop; a positive
+    statement of "men" or "wedding" or "hats" is what removes it.
+    """
+    t = _clothes_tokens(tags)
+    return bool(t) and "women" not in t
+
+
+def discover_osm(state: str = "FL", *, drop_chains: bool = True,
+                 drop_wrong_clothes: bool = True, drop_second_hand: bool = True,
+                 min_repeats: int = 3, verbose: bool = True) -> pd.DataFrame:
+    """Every clothing shop OSM knows inside a US state, as prospect rows.
+
+    Same column shape as discover(), so drop_existing / add_details /
+    add_conflict / plot all work unchanged. place_id is left EMPTY — OSM has no
+    Google id, and resolving one costs a Find Place call per row, so that is a
+    separate opt-in step (resolve_place_ids).
+
+    OSM coverage is volunteer-made: excellent for mapped high streets, thin for
+    shops nobody has added. It is a wider net than Places, not a better one —
+    which is why the two are used for different jobs.
+    """
+    query = f"""
+    [out:json][timeout:180];
+    area["ISO3166-2"="US-{state}"][admin_level=4]->.a;
+    (
+      node["shop"~"{OSM_SHOP_TAGS}"](area.a);
+      way["shop"~"{OSM_SHOP_TAGS}"](area.a);
+    );
+    out center tags;
+    """
+    elements, last_error = None, None
+    for mirror in OVERPASS_MIRRORS:
+        try:
+            req = urllib.request.Request(
+                mirror,
+                data=urllib.parse.urlencode({"data": query}).encode(),
+                headers={"User-Agent": "wooden-ships-prospecting/1.0"},
+            )
+            with urllib.request.urlopen(req, timeout=300) as fh:
+                elements = json.load(fh).get("elements", [])
+            break
+        except Exception as exc:
+            last_error = exc
+            if verbose:
+                print(f"  {mirror.split('/')[2]} unavailable ({type(exc).__name__}) — trying the next mirror")
+            time.sleep(5)
+    if elements is None:
+        raise RuntimeError(f"every Overpass mirror failed; last error: {last_error}")
+    if not elements:
+        raise RuntimeError(
+            f"Overpass returned nothing for US-{state}. A regional mirror that "
+            "does not hold North America will do this — check OVERPASS_MIRRORS."
+        )
+
+    rows, unnamed, chains, wrong, used = [], 0, 0, 0, 0
+    for e in elements:
+        tags = e.get("tags", {})
+        name = (tags.get("name") or "").strip()
+        if not name:
+            unnamed += 1              # a shop with no name cannot be researched
+            continue
+        if drop_chains and _is_chain(name, tags):
+            chains += 1
+            continue
+        if drop_second_hand and tags.get("second_hand") in ("only", "yes"):
+            used += 1                 # thrift and consignment do not buy wholesale
+            continue
+        if drop_wrong_clothes and _wrong_clothes(tags):
+            wrong += 1
+            continue
+        lat = e.get("lat") or (e.get("center") or {}).get("lat")
+        lng = e.get("lon") or (e.get("center") or {}).get("lon")
+        if lat is None or lng is None:
+            continue
+        city = tags.get("addr:city") or ""
+        rows.append({
+            "place_id": None,                       # filled by resolve_place_ids
+            "osm_id": f"{e.get('type')}/{e.get('id')}",
+            "store_name": name,
+            "latitude": float(lat),
+            "longitude": float(lng),
+            "url": f"https://www.openstreetmap.org/{e.get('type')}/{e.get('id')}",
+            "types": tags.get("shop", ""),
+            "found_near": city,
+            "rating": None,
+            "review_count": None,
+            "business_status": "OPERATIONAL",
+            "vicinity": ", ".join(
+                v for v in (tags.get("addr:housenumber", "") + " " + tags.get("addr:street", ""), city)
+                if v.strip()
+            ).strip(", "),
+            "phone": tags.get("phone") or tags.get("contact:phone"),
+            "website": tags.get("website") or tags.get("contact:website"),
+            # Free qualifying signal, straight off the tags. `womenswear` is the
+            # one to sort by before spending on enrichment: a shop that STATES
+            # it sells womenswear is a better bet than one that says nothing.
+            "clothes": tags.get("clothes"),
+            "womenswear": "women" in _clothes_tokens(tags),
+            "second_hand": tags.get("second_hand"),
+            "instagram": tags.get("contact:instagram") or tags.get("instagram"),
+            "email": tags.get("email") or tags.get("contact:email"),
+            "opening_hours": tags.get("opening_hours"),
+            "postcode": tags.get("addr:postcode"),
+        })
+    # A name occurring this often in ONE state is a chain nobody has brand-tagged
+    # — Surf Style x13, Sunelli x7, Versona x4, none of them in CHAINS. Catching
+    # them by repetition needs no list to maintain and no call to Google.
+    # Matched on the normalised name so "Surf Style" and "SURF STYLE #4" collapse.
+    repeats = {}
+    if min_repeats:
+        counts: dict[str, int] = {}
+        for r in rows:
+            # A name made ENTIRELY of noise words ("The Boutique", "The Shop")
+            # normalises to "", which would count every one of them as the same
+            # chain and delete them all. Those keep their identity by being
+            # excluded from the count, not by being matched.
+            key = _norm(r["store_name"])
+            if key:
+                counts[key] = counts.get(key, 0) + 1
+        repeats = {k: v for k, v in counts.items() if v >= min_repeats}
+        rows = [r for r in rows if _norm(r["store_name"]) not in repeats]
+
+    if verbose:
+        print(f"  OSM returned {len(elements)} shops in {state}")
+        print(f"    dropped {unnamed} unnamed, {chains} chains, {used} second-hand,"
+              f" {wrong} not womenswear")
+        if repeats:
+            print(f"    dropped {sum(repeats.values())} more as repeated names"
+                  f" ({min_repeats}+ locations): {', '.join(sorted(repeats)[:6])}...")
+        print(f"    ->  {len(rows)} candidates")
+        stated = sum(1 for r in rows if r["womenswear"])
+        print(f"    of those, {stated} state clothes=...women... — enrich these first")
+    return pd.DataFrame(rows)
+
+
+def resolve_place_ids(cands: pd.DataFrame, *, max_metres: float = 300,
+                      verbose: bool = True) -> pd.DataFrame:
+    """Give OSM rows a Google place_id, so add_details can enrich them.
+
+        short = df[~df.potential_conflict]
+        short = p.add_details(p.resolve_place_ids(short))   # both BILLED
+
+    OSM knows a shop exists; Google knows its website, phone, rating and
+    reviews. Nothing joins the two but name and position, so this is a Find
+    Place text search biased to the OSM coordinates — one billed call per row.
+    Run it on a SHORTLIST, never on a whole-state sweep.
+
+    THE MATCH IS VERIFIED BY DISTANCE. Find Place always answers with its best
+    guess, so an unmapped shop happily returns the cafe next door and, left
+    unchecked, that cafe's website would be presented as the prospect's. A hit
+    more than `max_metres` from where OSM put the shop is discarded: an
+    unresolved row costs nothing but a blank, while a wrong one is a bad
+    address in a rep's hands.
+    """
+    if "place_id" not in cands.columns:
+        cands = cands.assign(place_id=None)
+
+    ids, hit, miss, far = [], 0, 0, 0
+    for c in cands.itertuples():
+        if getattr(c, "place_id", None):
+            ids.append(c.place_id)             # already resolved; do not re-bill
+            continue
+        query = " ".join(str(v) for v in (c.store_name, _first(c, "vicinity")) if v)
+        try:
+            d = _get("findplacefromtext", {
+                "input": query,
+                "inputtype": "textquery",
+                "fields": "place_id,geometry/location",
+                "locationbias": f"circle:2000@{c.latitude},{c.longitude}",
+            })
+            best = (d.get("candidates") or [None])[0]
+        except Exception as exc:              # never let one lookup kill the run
+            print(f"    find place failed for {c.store_name}: {exc}")
+            best = None
+        if not best:
+            ids.append(None); miss += 1; continue
+        loc = (best.get("geometry") or {}).get("location") or {}
+        if loc and _metres(c.latitude, c.longitude, loc["lat"], loc["lng"]) > max_metres:
+            ids.append(None); far += 1; continue
+        ids.append(best.get("place_id")); hit += 1
+
+    out = cands.copy()
+    out["place_id"] = ids
+    if verbose:
+        print(f"  resolved {hit} of {len(out)}   ·  no match {miss}"
+              f"   ·  rejected as too far {far}")
+    return out
+
+
+def add_conflict_fast(cands: pd.DataFrame, accounts: pd.DataFrame,
+                      max_miles: float = 10.0, verbose: bool = True) -> pd.DataFrame:
+    """Straight-line nearest-stockist distance. NO API calls, so it scales.
+
+    add_conflict() is the authority — it uses the app's own rule and real drive
+    times — but it costs a Distance Matrix lookup per candidate, which is not
+    affordable across a whole state. Use this to shortlist, then run the real
+    check on what survives.
+
+    10 miles is the straight-line stand-in the app itself documents for a
+    20-minute drive (app/geo/conflict.py: 20 min ~ 10 mi at 30 mph).
+    """
+    known = accounts.dropna(subset=["ShippingLatitude", "ShippingLongitude"])
+    pts = [(r.Name, r.ShippingLatitude, r.ShippingLongitude) for r in known.itertuples()]
+
+    nearest, miles = [], []
+    for c in cands.itertuples():
+        best_name, best_m = None, float("inf")
+        for name, klat, klng in pts:
+            d = _metres(c.latitude, c.longitude, klat, klng)
+            if d < best_m:
+                best_name, best_m = name, d
+        nearest.append(best_name)
+        miles.append(round(best_m / 1609.34, 1) if best_m < float("inf") else None)
+
+    out = cands.copy()
+    out["nearest_stockist"] = nearest
+    out["distance_miles"] = miles
+    out["potential_conflict"] = [m is not None and m < max_miles for m in miles]
+    out["drive_minutes"] = None          # straight-line pass; no drive time yet
+    if verbose:
+        flagged = sum(1 for m in miles if m is not None and m < max_miles)
+        print(f"  within {max_miles} mi of a stockist: {flagged} of {len(out)}"
+              f"   (straight-line — run add_conflict on the shortlist for drive time)")
+    return out
+
+
+def run_state(sf, territory: str, state: str = "FL") -> pd.DataFrame:
+    """Whole-state sweep: OSM -> dedupe -> straight-line conflict. No Google.
+
+    Deliberately free of billed calls so it can be run over and over while the
+    filters are tuned. Enrich afterwards, on a shortlist:
+
+        df = p.run_state(sf, "FL - Jason Hilsenrad")
+        short = df[~df.potential_conflict].head(50)
+        short = p.add_details(p.resolve_place_ids(short))   # billed
+    """
+    print(f"1. OSM sweep of {state}")
+    cands = discover_osm(state)
+    print(f"2. dedupe against active accounts in {territory!r}")
+    accounts = existing_accounts(sf, territory)
+    cands = drop_existing(cands, accounts)
+    if cands.empty:
+        print("   nothing left after dedupe")
+        return cands
+    print("3. nearest stockist (straight-line)")
+    return add_conflict_fast(cands, accounts).sort_values(
+        ["potential_conflict", "store_name"]
+    ).reset_index(drop=True)

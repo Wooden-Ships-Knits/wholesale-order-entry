@@ -42,3 +42,31 @@ export const getOrders = (statusFilter) =>
       statusFilter ? `?status_filter=${encodeURIComponent(statusFilter)}` : ''
     }`,
   )
+export const searchStore = (query) =>
+  request(`/api/reps-portal/stores${query ? `?q=${encodeURIComponent(query)}` : ''}`)
+
+// --- Prospects -------------------------------------------------------------
+// The endpoint does not exist yet. Rather than block the UI on it, a 404 falls
+// back to sample data and flags itself with `mocked` so the page can say so —
+// nothing here silently pretends to be real. Delete the fallback (and
+// prospectsMock.js) once the route lands; the success path is already correct.
+export async function getProspects() {
+  try {
+    return await request('/api/reps-portal/prospects')
+  } catch (err) {
+    if (err.status !== 404) throw err
+    const build = (await import('./prospectsMock')).default
+    return { ...build(), mocked: true }
+  }
+}
+
+// The rep's own shortlist flag. Kept per rep server-side, so one rep starring a
+// store never changes what another sees.
+export async function markProspect(id, marked) {
+  try {
+    return await post(`/api/reps-portal/prospects/${encodeURIComponent(id)}/mark`, { marked })
+  } catch (err) {
+    if (err.status !== 404) throw err
+    return { marked } // mock mode: the star is local until the route exists
+  }
+}
