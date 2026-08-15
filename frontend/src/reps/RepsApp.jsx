@@ -1,19 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getOrders, getSession, logout } from './api'
-import {
-  EMPTY_FILTERS,
-  filterOrders,
-  hasActiveFilters,
-  searchWithStatus,
-  statusFromSearch,
-  STATUS_FILTERS,
-} from './filterOrders'
+import ProspectsPanel from './ProspectsPanel'
 import RepLogin from './RepLogin'
 import RepMetrics from './RepMetrics'
 import RepOrderTable from './RepOrderTable'
 
+const TABS = [
+  { value: 'orders', label: 'Orders' },
+  { value: 'prospects', label: 'Prospects' },
+]
+
+// All first, unlike /admin's "Awaiting review": the office triages a pending
+// queue, a rep wants their whole recent book.
+
+const FILTERS = [
+  { value: '', label: 'All' },
+  { value: 'submitted', label: 'Awaiting review' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'declined', label: 'Declined' },
+]
+
 export default function RepsApp() {
   const [rep, setRep] = useState(null) // null = still checking, '' = signed out
+  const [tab, setTab] = useState('orders')
   const [orders, setOrders] = useState([])
   const [counts, setCounts] = useState(null)
   // Seeded from the URL so a link can drop a rep straight onto one queue
@@ -82,7 +91,7 @@ export default function RepsApp() {
     <main className="admin">
       <header className="admin-head">
         <div>
-          <h1>My orders</h1>
+          <h1>Reps Portal</h1>
           <div className="subtitle">Wooden Ships — {rep}</div>
         </div>
         <button
@@ -99,6 +108,25 @@ export default function RepsApp() {
         </button>
       </header>
 
+      {/* Same markup as /admin's tabs so the two internal pages stay one
+          product — see AdminApp. */}
+      <div className="admin-tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            className={tab === t.value ? 'admin-tab active' : 'admin-tab'}
+            onClick={() => setTab(t.value)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'prospects' ? (
+        <ProspectsPanel />
+      ) : (
+        <>
       <RepMetrics counts={counts} />
 
       <div className="admin-toolbar">

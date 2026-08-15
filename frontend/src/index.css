@@ -1815,3 +1815,92 @@ button:hover {
       'ship   po';
   }
 }
+
+/* ---- Prospects tab (/reps) -------------------------------------------- */
+/* The map card. Height is fixed rather than aspect-ratio'd: Leaflet needs a
+   resolved pixel height on its container or it renders a zero-height map. */
+.prospect-map-card {
+  position: relative;
+  height: 280px;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  background: #eee;
+  /* Only the box changes when expanding — the map element itself never moves
+     in the DOM, so Leaflet keeps its state. */
+  transition: height 0.2s ease;
+}
+.prospect-map-card.expanded {
+  position: fixed;
+  inset: 3vh 3vw;
+  height: auto;
+  z-index: 1001; /* above .conflict-modal-overlay */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+.prospect-map {
+  width: 100%;
+  height: 100%;
+}
+.prospect-map-expand,
+.prospect-map-card .prospect-map-expand {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 500; /* over the tiles, under Leaflet's own popups (700) */
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px solid #bbb;
+  cursor: pointer;
+}
+.prospect-map-legend {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 500;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+}
+.prospect-map-legend .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 0.25rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.dot-prospect { background: #f2c14e; border: 1px solid #8a6d1f; }
+.dot-conflict { background: #f2c14e; border: 2px solid #b9451d; }
+.dot-account  { background: #9aa0a6; border: 1px solid #6b7280; }
+
+.prospect-search {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid #bbb;
+  min-width: 14rem;
+}
+.prospect-summary {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #555;
+}
+/* The row is a map control, so say so on hover. */
+.prospect-table tbody tr { cursor: pointer; }
+.prospect-table tbody tr:hover { background: #f6f4ef; }
+.mark-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.mark-btn.marked { color: #d9a520; }
+.mark-btn:hover { background: none; color: #d9a520; }
+.badge-women { color: #2f6f4e; }
+.map-popup { font-size: 0.82rem; line-height: 1.5; }
