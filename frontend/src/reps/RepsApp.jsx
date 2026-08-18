@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getOrders, getSession, logout } from './api'
+import {
+  EMPTY_FILTERS,
+  filterOrders,
+  hasActiveFilters,
+  searchWithStatus,
+  STATUS_FILTERS,
+  statusFromSearch,
+} from './filterOrders'
 import ProspectsPanel from './ProspectsPanel'
 import RepLogin from './RepLogin'
 import RepMetrics from './RepMetrics'
@@ -165,14 +173,16 @@ export default function RepsApp() {
           indistinguishable from "you have no orders". */}
       {notice && <p className="admin-error">{notice}</p>}
 
-      <RepOrderTable
-        orders={visibleOrders}
-        allOrders={orders}
-        filters={filters}
-        onFilterChange={setField}
-        statusFilter={filter}
-        onStatusFilterChange={setFilter}
-      />
+          <RepOrderTable
+            orders={visibleOrders}
+            allOrders={orders}
+            filters={filters}
+            onFilterChange={setField}
+            statusFilter={filter}
+            onStatusFilterChange={setFilter}
+          />
+        </>
+      )}
     </main>
   )
 }
