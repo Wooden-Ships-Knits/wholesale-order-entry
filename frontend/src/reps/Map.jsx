@@ -14,11 +14,28 @@ const FL_CENTER = [27.8, -81.7]
 const FL_ZOOM = 6
 
 const ACCOUNT = { color: '#6b7280', fillColor: '#9aa0a6', fillOpacity: 0.85, weight: 1, radius: 5 }
-const PROSPECT = { color: '#8a6d1f', fillColor: '#f2c14e', fillOpacity: 0.9, weight: 1, radius: 6 }
+// Midway between the folium map's acid '#f2ff01' and the softer '#f2c14e'
+// this page started with: bright enough to carry against Positron's pale grey,
+// not so bright it reads as a warning.
+const PROSPECT = { color: '#ae8207', fillColor: '#f2e027', fillOpacity: 0.9, weight: 1, radius: 6 }
 // A prospect inside a stockist's catchment. Same yellow — it is still a
 // prospect — but ringed, because "there is already a store nearby" is the one
 // thing a rep must see before picking up the phone.
 const CONFLICT = { ...PROSPECT, color: '#b9451d', weight: 2 }
+
+// When a city is selected, its stores grow and everything else fades rather
+// than disappearing. Removing the others would lose the context that makes the
+// answer useful — how this town compares with what surrounds it.
+const HIGHLIGHT = 1.7 // radius multiplier for a store in the chosen city
+const DIMMED = 0.18 // opacity for everything outside it
+
+/** Circle style for one row, given whether a city filter is on and matched. */
+const styleFor = (base, state) =>
+  state === 'hit'
+    ? { ...base, radius: base.radius * HIGHLIGHT }
+    : state === 'dim'
+      ? { ...base, fillOpacity: DIMMED, opacity: DIMMED, weight: 1 }
+      : base
 
 const esc = (s) =>
   String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
@@ -42,10 +59,20 @@ function popupHtml(p) {
   return `<div class="map-popup">${bits.join('<br/>')}</div>`
 }
 
-export default function Map({ prospects = [], accounts = [], expanded = false, focus = null }) {
+export default function Map({
+  prospects = [],
+  accounts = [],
+  expanded = false,
+  focus = null,
+  highlightCity = null, // { name, bounds } — stores in this city stand out
+}) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
   const layersRef = useRef({ accounts: null, prospects: null })
+  // id -> marker, so a search result can open the right popup. A plain object,
+  // NOT a `new Map()`: this component is itself named Map, which shadows the
+  // built-in inside this module.
+  const markersRef = useRef({})
 
   // Create the map once. A second L.map() on the same element throws
   // "Map container is already initialized", which is what a naive effect
@@ -61,10 +88,18 @@ export default function Map({ prospects = [], accounts = [], expanded = false, f
       zoom: FL_ZOOM,
       scrollWheelZoom: false, // enabled only when expanded — see below
     })
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // CartoDB Positron — the SAME basemap as the Python map
+    // (prospecting.py::plot uses tiles="cartodbpositron"), so the folium HTML
+    // and this page look like one tool. Chosen over greying OSM's standard
+    // tiles with a CSS filter: Positron removes road and label clutter by
+    // design rather than just desaturating it, which is what lets the markers
+    // carry the page.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      // Required by the OSM tile usage policy. Do not remove.
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      // Both attributions are required — OSM for the data, CARTO for the tiles.
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+        '&copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(map)
     layersRef.current.accounts = L.layerGroup().addTo(map)
     layersRef.current.prospects = L.layerGroup().addTo(map)
@@ -81,21 +116,45 @@ export default function Map({ prospects = [], accounts = [], expanded = false, f
     if (!aLayer || !pLayer) return
     aLayer.clearLayers()
     pLayer.clearLayers()
+    markersRef.current = {}
 
-    accounts.forEach((a) => {
+    const city = highlightCity?.name?.trim().toLowerCase() || null
+    // No city chosen -> everything normal. Otherwise a row is either in it or
+    // faded. Matched on the row's own `city` field; see the note in
+    // ProspectsPanel about why that is a text match.
+    const stateOf = (row) =>
+      !city ? 'normal' : (row.city || '').trim().toLowerCase() === city ? 'hit' : 'dim'
+
+    accounts.forEach((a, i) => {
       if (a.latitude == null || a.longitude == null) return
-      L.circleMarker([a.latitude, a.longitude], ACCOUNT)
+      const m = L.circleMarker([a.latitude, a.longitude], styleFor(ACCOUNT, stateOf(a)))
         .bindPopup(`<div class="map-popup"><strong>${esc(a.name)}</strong><br/>current stockist</div>`)
         .addTo(aLayer)
+      markersRef.current[`account:${i}`] = m
     })
 
     prospects.forEach((p) => {
       if (p.latitude == null || p.longitude == null) return
-      L.circleMarker([p.latitude, p.longitude], p.potentialConflict ? CONFLICT : PROSPECT)
+      const base = p.potentialConflict ? CONFLICT : PROSPECT
+      const m = L.circleMarker([p.latitude, p.longitude], styleFor(base, stateOf(p)))
         .bindPopup(popupHtml(p))
         .addTo(pLayer)
+      // Highlighted pins should sit above the faded ones.
+      if (stateOf(p) === 'hit') m.bringToFront()
+      markersRef.current[p.id] = m
     })
-  }, [prospects, accounts])
+  }, [prospects, accounts, highlightCity])
+
+  // Frame the chosen city on the bounds of the stores actually in it. No
+  // boundary polygon is drawn: we do not have one, and a rectangle or a
+  // convex hull would assert a city limit that does not exist. Real outlines
+  // need admin_level=8 relations from Overpass — see the note in
+  // ProspectsPanel.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !highlightCity?.bounds?.length) return
+    map.fitBounds(L.latLngBounds(highlightCity.bounds), { padding: [28, 28], maxZoom: 13 })
+  }, [highlightCity])
 
   // Leaflet caches the container's pixel size, so a container that changes size
   // without being told renders grey tiles and a wrong centre. This is THE bug
@@ -113,11 +172,17 @@ export default function Map({ prospects = [], accounts = [], expanded = false, f
     return () => clearTimeout(t)
   }, [expanded])
 
-  // Clicking a table row flies the map to that store.
+  // Selecting a row or a search result flies the map there and opens its popup,
+  // so the answer is legible without hunting for which dot just moved. The
+  // popup opens after the flight so Leaflet positions it at the final centre.
   useEffect(() => {
     if (!focus || !mapRef.current) return
     if (focus.latitude == null || focus.longitude == null) return
     mapRef.current.flyTo([focus.latitude, focus.longitude], 13, { duration: 0.6 })
+    const marker = markersRef.current[focus.id]
+    if (!marker) return
+    const t = setTimeout(() => marker.openPopup(), 700)
+    return () => clearTimeout(t)
   }, [focus])
 
   return <div ref={elRef} className="prospect-map" />

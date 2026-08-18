@@ -156,6 +156,27 @@ def _unique_index(pairs) -> dict:
     return {k: v for k, v in seen.items() if v is not None}
 
 
+def _name_forms(name: str) -> list[str]:
+    """Every string an account might reasonably be known by.
+
+    Salesforce brackets usually hold a BRANCH — 'MORLEY(DELRAY BEACH)' — and
+    _norm is right to drop them. But occasionally they hold the trading name
+    behind a legal one:
+
+        MORHAIN 417, LLC (LA BOUTIQUE ON FLAGLER)
+
+    where the only matchable part is exactly what _norm throws away. Comparing
+    against both forms costs nothing and cannot cause a false match: a branch
+    suffix like 'delray beach' will not resemble a shop name.
+    """
+    forms = [_norm(name)]
+    for inner in re.findall(r"\((.+?)\)", name or ""):
+        n = _norm(inner)
+        if n and n not in forms:
+            forms.append(n)
+    return [f for f in forms if f]
+
+
 def _metres(lat1, lng1, lat2, lng2) -> float:
     """Haversine. Good to a few metres at these distances."""
     r = 6371000.0
@@ -251,9 +272,19 @@ def existing_accounts(sf, territory: str) -> pd.DataFrame:
     return df
 
 
-def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = True,
-                  *, with_dropped: bool = False):
-    """Remove candidates that are already customers.
+def classify_existing(cands: pd.DataFrame, accounts: pd.DataFrame,
+                      verbose: bool = True) -> pd.DataFrame:
+    """Label every candidate `existing` or `prospect`. Drops nothing.
+
+    Returns the frame with three columns added:
+        status           'existing' | 'prospect'
+        matched_account  the Salesforce Name it matched, or None
+        matched_by       'phone' | 'domain' | 'name+distance' | None
+
+    LABELLING RATHER THAN DELETING is the point. "This OSM shop is already our
+    customer" is expensive to work out and useful to keep: it lets a re-sweep
+    skip re-deciding, it lets a human audit the matcher, and it means the map
+    can draw both kinds from one table.
 
     Three independent rules, any one of which is a match:
 
@@ -264,7 +295,9 @@ def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = T
               trading under one name and filed in Salesforce under another.
       name    close name AND close coordinates. Neither half is sufficient
               alone: 'MORLEY(DELRAY BEACH)' vs 'Morley' defeats exact matching,
-              and two different boutiques can share a mall.
+              and two different boutiques can share a mall — measured on this
+              data, a Florida plaza puts unrelated storefronts 8-22 m apart, so
+              proximity alone would delete real prospects.
 
     Phone and domain need no distance check — they identify on their own, which
     is exactly why they catch what coordinates miss. Both are indexed through
@@ -272,15 +305,20 @@ def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = T
     them rather than deleting all of them.
 
     A MISSING phone is not a DIFFERENT phone: when either side has no value the
-    rule simply cannot fire, so these rules only ever remove rows. Candidates
-    with thin data still fall through to the name rule, as before.
+    rule cannot fire. So these rules only ever ADD an `existing` label; a
+    candidate with thin data stays a prospect.
 
-    with_dropped=True returns (kept, dropped) where dropped carries `matched_by`
-    and `matched_account`, so a run can be audited instead of trusted.
+    NOTE ON COVERAGE. This can only recognise accounts OSM actually holds.
+    Measured against the Florida book, 47 of 102 accounts have no OSM clothing
+    shop within 2 km at all — so `existing` here means "matched in OSM", never
+    "all our stockists". The map still needs the live Salesforce list.
     """
     known = accounts.dropna(subset=["ShippingLatitude", "ShippingLongitude"])
-    pairs = [(_norm(r.Name), r.ShippingLatitude, r.ShippingLongitude, r.Name)
-             for r in known.itertuples()]
+    # One entry per NAME FORM, not per account: an account carrying a trading
+    # name in brackets gets two chances to match. See _name_forms.
+    pairs = [(form, r.ShippingLatitude, r.ShippingLongitude, r.Name)
+             for r in known.itertuples()
+             for form in _name_forms(r.Name)]
     # Indexed off `accounts`, not `known`: an account with no coordinates is
     # still perfectly identifiable by its phone or website.
     by_phone = _unique_index(
@@ -288,7 +326,7 @@ def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = T
     by_domain = _unique_index(
         (_domain_key(getattr(r, "Website", None)), r.Name) for r in accounts.itertuples())
 
-    keep, dropped = [], []
+    rules, hits = [], []
     for c in cands.itertuples():
         rule = hit = None
 
@@ -310,25 +348,42 @@ def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = T
                     rule, hit = "name+distance", raw
                     break
 
-        (dropped if hit else keep).append((c.Index, rule, hit))
+        rules.append(rule)
+        hits.append(hit)
+
+    out = cands.copy()
+    out["matched_by"] = rules
+    out["matched_account"] = hits
+    out["status"] = ["existing" if h else "prospect" for h in hits]
 
     if verbose:
-        print(f"  already customers: {len(dropped)}   new candidates: {len(keep)}")
+        n_ex = sum(1 for h in hits if h)
+        print(f"  already customers: {n_ex}   new prospects: {len(out) - n_ex}")
         for rule in ("phone", "domain", "name+distance"):
-            rows = [(i, h) for i, r, h in dropped if r == rule]
+            rows = [(i, h) for i, (r, h) in enumerate(zip(rules, hits)) if r == rule]
             if not rows:
                 continue
             print(f"    by {rule}: {len(rows)}")
-            for idx, h in rows[:5]:
-                print(f"       {str(cands.loc[idx, 'store_name'])[:34]:36} = {h}")
+            for i, h in rows[:5]:
+                print(f"       {str(out.iloc[i]['store_name'])[:34]:36} = {h}")
+    return out
 
-    kept = cands.loc[[i for i, _, _ in keep]].reset_index(drop=True)
+
+def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = True,
+                  *, with_dropped: bool = False):
+    """classify_existing, then keep only the prospects.
+
+    Thin wrapper kept because the pipeline and the notebooks call it. New code
+    should prefer classify_existing and filter for itself — throwing the
+    `existing` rows away loses information worth storing.
+    """
+    labelled = classify_existing(cands, accounts, verbose=verbose)
+    is_new = labelled["status"] == "prospect"
+    kept = labelled[is_new].drop(columns=["status", "matched_by", "matched_account"])
+    kept = kept.reset_index(drop=True)
     if not with_dropped:
         return kept
-    out = cands.loc[[i for i, _, _ in dropped]].copy()
-    out["matched_by"] = [r for _, r, _ in dropped]
-    out["matched_account"] = [h for _, _, h in dropped]
-    return kept, out.reset_index(drop=True)
+    return kept, labelled[~is_new].reset_index(drop=True)
 
 
 # Place Details fields, by billing tier. website/address/phone are Basic+Contact;
