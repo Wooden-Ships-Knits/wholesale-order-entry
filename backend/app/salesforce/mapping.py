@@ -366,19 +366,37 @@ def build_account_create_payload(order: Any) -> dict[str, Any]:
 _SHIP_WINDOW_RE = re.compile(r"^\s*(\d{1,2})/(\d{1,2})-(\d{1,2})")
 
 
-def ship_window_dates(ship_window: str | None, season_code: str | None) -> dict[str, str] | None:
+def ship_window_dates(
+    ship_window: str | None, season_code: str | None, year: int | None = None
+) -> dict[str, str] | None:
     """Parse a ship window + season into the pieces the header needs.
 
     '1/1-20' + 'S27' -> {start:'2027-01-01', end:'2027-01-20',
                          name_range:'01/01 - 01/20', est:'01-01'}.
-    Year comes from the season code (F26/S27 -> 2026/2027). None if unparseable.
+    None if unparseable.
+
+    THE YEAR IS NOT THE SEASON'S YEAR. Spring 27 begins shipping in DECEMBER
+    2026, so '12/1-30' on the S27 tab is 2026 while '1/1-20' on the same tab is
+    2027. Taking 2000+27 for both put those December orders a year late.
+
+    `year` is the authority when given — the caller reads it from the sheet's
+    own 'Year' row (sheets.client.ship_window_years). Without it, the month
+    decides: a window in the last quarter of a SPRING season is the preceding
+    year, and one in the first quarter of a FALL season is the following year.
+    That rule is a fallback for tabs with no Year row, not a substitute for it.
     """
     m = _SHIP_WINDOW_RE.match(ship_window or "")
     s = _SEASON_CODE_RE.match((season_code or "").strip())
     if not m or not s:
         return None
-    year = 2000 + int(s.group(2))
     month, d1, d2 = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if year is None:
+        year = 2000 + int(s.group(2))
+        half = s.group(1).upper()
+        if half == "S" and month >= 10:
+            year -= 1          # Spring ships from the previous Oct-Dec
+        elif half == "F" and month <= 3:
+            year += 1          # Fall can trail into the next Jan-Mar
     try:
         start, end = date(year, month, d1), date(year, month, d2)
     except ValueError:
@@ -389,6 +407,25 @@ def ship_window_dates(ship_window: str | None, season_code: str | None) -> dict[
         "name_range": f"{month:02d}/{d1:02d} - {month:02d}/{d2:02d}",
         "est": f"{month:02d}-{d1:02d}",
     }
+
+
+def _window_year(ship_window: str | None, season_code: str | None) -> int | None:
+    """The calendar year the sheet gives this ship window, or None.
+
+    Imported lazily: app.sheets drags in google-api-python-client, and this
+    module is imported by code (and notebooks) that has no business needing
+    Sheets. A sheet that is unreachable must not block a Salesforce push, so
+    every failure falls through to ship_window_dates' month rule.
+    """
+    if not ship_window or not season_code:
+        return None
+    try:
+        from app.sheets import client as sheets_client
+
+        return sheets_client.ship_window_years(season_code).get(ship_window.strip())
+    except Exception:
+        logger.warning("Could not read ship-window years for %s", season_code, exc_info=True)
+        return None
 
 
 def build_sales_order_header(
@@ -413,7 +450,11 @@ def build_sales_order_header(
         COMMISSION_CROSS_CHECKED_BY: COMMISSION_CROSS_CHECKED,  # 'Novriati' (constant)
     }
 
-    win = ship_window_dates(order.ship_window, order.season_code)
+    win = ship_window_dates(
+        order.ship_window,
+        order.season_code,
+        _window_year(order.ship_window, order.season_code),
+    )
     if win:
         header[SALES_ORDER_START_SHIP] = win["start"]
         header[SHIP_THRU_DATE] = win["end"]
@@ -514,7 +555,11 @@ def build_sales_order_lines(order: Any) -> list[dict[str, Any]]:
     is the only way to control it — left unset, Kugamon supplies its own default
     and the header disagrees with Start Ship Date.
     """
-    win = ship_window_dates(order.ship_window, order.season_code)
+    win = ship_window_dates(
+        order.ship_window,
+        order.season_code,
+        _window_year(order.ship_window, order.season_code),
+    )
     date_required = win["start"] if win else None
 
     lines: list[dict[str, Any]] = []

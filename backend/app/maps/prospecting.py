@@ -28,6 +28,7 @@ import re
 import time
 import urllib.parse
 import urllib.request
+from collections.abc import Sequence
 from difflib import SequenceMatcher
 
 import pandas as pd
@@ -677,7 +678,7 @@ def _wrong_clothes(tags: dict) -> bool:
     return bool(t) and "women" not in t
 
 
-def discover_osm(state: str = "FL", *, drop_chains: bool = True,
+def discover_osm(state: str | Sequence[str] = "FL", *, drop_chains: bool = True,
                  drop_wrong_clothes: bool = True, drop_second_hand: bool = True,
                  min_repeats: int = 3, verbose: bool = True) -> pd.DataFrame:
     """Every clothing shop OSM knows inside a US state, as prospect rows.
@@ -691,6 +692,71 @@ def discover_osm(state: str = "FL", *, drop_chains: bool = True,
     shops nobody has added. It is a wider net than Places, not a better one —
     which is why the two are used for different jobs.
     """
+    # A territory is rarely one state ("Midwest - Aviva Landin" spans nine), so
+    # accept a list. Each state is a separate Overpass request: one failing
+    # mirror then costs that state, not the whole sweep, and progress is
+    # visible per state rather than as one long silence.
+    if not isinstance(state, str):
+        states = [str(x).strip().upper() for x in state if str(x).strip()]
+        if not states:
+            raise ValueError("discover_osm needs at least one state code")
+        if len(states) > 1:
+            frames, failed = [], []
+            for i, code in enumerate(states, 1):
+                if verbose:
+                    print(f"  [{i}/{len(states)}] {code}")
+                try:
+                    frames.append(
+                        discover_osm(
+                            code,
+                            drop_chains=drop_chains,
+                            drop_wrong_clothes=drop_wrong_clothes,
+                            drop_second_hand=drop_second_hand,
+                            # Repeated-name detection is deferred to the combined
+                            # frame below: a chain with one branch per state would
+                            # never reach the threshold within a single state.
+                            min_repeats=0,
+                            verbose=verbose,
+                        )
+                    )
+                except Exception as exc:
+                    # Overpass 504s on large states (CA is reliably slow). One
+                    # state failing must not throw away the ones that worked —
+                    # but a partial sweep that looked complete would be worse
+                    # than an error, so the gap is reported loudly and the
+                    # caller can re-run just the missing states.
+                    failed.append(code)
+                    print(f"    !! {code} FAILED ({type(exc).__name__}) — skipped")
+            if not frames:
+                raise RuntimeError(
+                    f"every state failed: {', '.join(states)}. Overpass is a free "
+                    "shared service; try again shortly."
+                )
+            out = pd.concat(frames, ignore_index=True)
+            # Border shops can sit inside two state boundary queries.
+            out = out.drop_duplicates(subset="osm_id").reset_index(drop=True)
+            if min_repeats:
+                counts: dict[str, int] = {}
+                for name in out["store_name"]:
+                    key = _norm(name)
+                    if key:
+                        counts[key] = counts.get(key, 0) + 1
+                repeats = {k for k, v in counts.items() if v >= min_repeats}
+                before = len(out)
+                out = out[~out["store_name"].map(lambda n: _norm(n) in repeats)]
+                out = out.reset_index(drop=True)
+                if verbose and before != len(out):
+                    print(f"  dropped {before - len(out)} more as repeated names "
+                          f"across {len(states)} states -> {len(out)} candidates")
+            if verbose:
+                done = len(states) - len(failed)
+                print(f"  TOTAL across {done}/{len(states)} states: {len(out)} candidates")
+                if failed:
+                    print(f"  INCOMPLETE — no data for: {', '.join(failed)}. "
+                          f"Re-run discover_osm({failed!r}) and concat.")
+            return out
+        state = states[0]
+
     query = f"""
     [out:json][timeout:180];
     area["ISO3166-2"="US-{state}"][admin_level=4]->.a;
@@ -896,8 +962,8 @@ def add_conflict_fast(cands: pd.DataFrame, accounts: pd.DataFrame,
     return out
 
 
-def run_state(sf, territory: str, state: str = "FL") -> pd.DataFrame:
-    """Whole-state sweep: OSM -> dedupe -> straight-line conflict. No Google.
+def run_state(sf, territory: str, state: str | Sequence[str] | None = None) -> pd.DataFrame:
+    """Whole-territory sweep: OSM -> label existing -> straight-line conflict.
 
     Deliberately free of billed calls so it can be run over and over while the
     filters are tuned. Enrich afterwards, on a shortlist:
@@ -905,7 +971,29 @@ def run_state(sf, territory: str, state: str = "FL") -> pd.DataFrame:
         df = p.run_state(sf, "FL - Jason Hilsenrad")
         short = df[~df.potential_conflict].head(50)
         short = p.add_details(p.resolve_place_ids(short))   # billed
+
+    `state` is optional and normally omitted: the REGION sheet already knows
+    which states a territory covers, and a territory is rarely one of them —
+    "Midwest - Aviva Landin" is nine. Deriving it means a sweep cannot quietly
+    cover a fraction of the book because someone passed the label's prefix.
+    Pass it explicitly only to sweep something narrower than the territory.
     """
+    if state is None:
+        # Imported HERE, not at module scope. app.sheets pulls in
+        # google-api-python-client, and requiring that just to import this
+        # module broke the notebook — where the sweep is normally driven and
+        # where nothing else needs Sheets. Only deriving the state list needs
+        # it, so only that path pays for it.
+        from app.sheets import client as sheets_client
+
+        state = sheets_client.states_for_territory(territory)
+        if not state:
+            raise ValueError(
+                f"No states mapped to {territory!r} in the REGION sheet — pass "
+                "state= explicitly, or add the territory to the sheet."
+            )
+        print(f"   {territory} covers {len(state)} state(s): {', '.join(state)}")
+
     print(f"1. OSM sweep of {state}")
     cands = discover_osm(state)
     print(f"2. dedupe against active accounts in {territory!r}")
