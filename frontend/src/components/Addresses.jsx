@@ -148,7 +148,13 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
         />
         {/* Renders nothing for customers, or when the account has no contacts.
             The field stays free text either way — a rep can name someone
-            Salesforce has never heard of. */}
+            Salesforce has never heard of. `contacts` rather than
+            `buyerContacts` because the component's own name already says whose.
+
+            A picked name skips titleCaseOnBlur, exactly as the autofill in
+            applyAccount() does — both write Salesforce's own casing, and the
+            title_case validator on the backend's buyer_name is what settles it.
+            Don't normalise only this path; that would split them apart. */}
         <BuyerContactPicker
           contacts={buyerContacts}
           selected={billTo.buyerName}
