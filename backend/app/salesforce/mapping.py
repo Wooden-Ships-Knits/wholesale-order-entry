@@ -21,6 +21,23 @@ PRICEBOOK_ENTRY = "PricebookEntry"
 # Canonical buyer-lookup key (decision 2026-07-14).
 ACCOUNT_LOOKUP_EMAIL = "ContactBuyingEmail__c"
 
+# The store's designated buyer: a real lookup to Contact (verified against the
+# org 2026-08-20). ACCOUNT_LOOKUP_EMAIL above is a formula over this same
+# contact's Email, so the buying contact IS the person the account lookup
+# already identifies — we were simply never asking for their name.
+#
+# It is a lookup, not a master-detail, so the contact it points at is NOT
+# guaranteed to belong to this account: 25 accounts point at a contact filed
+# under a different one. _account_contacts() below depends on that.
+CONTACT_BUYING_NAME = "ContactBuying__r.Name"
+CONTACT_BUYING_TITLE = "ContactBuying__r.Title"
+
+# Related contacts, as a child subquery, so a rep can pick a different person
+# and so accounts with no ContactBuying__c still have something to offer. Kept
+# out of ACCOUNT_FIELDS so that stays a tuple of scalar field names; client.py
+# appends this to the SELECT.
+ACCOUNT_CONTACTS_SUBQUERY = "(SELECT Name, Title FROM Contacts)"
+
 # Sales rep on the account; also the source for the Internal Use "Rep" picklist.
 SALESPERSON = "Salesperson__c"
 
@@ -167,6 +184,8 @@ ACCOUNT_FIELDS = (
     "Phone",
     "Fax",
     ACCOUNT_LOOKUP_EMAIL,
+    CONTACT_BUYING_NAME,
+    CONTACT_BUYING_TITLE,
     "Tax_ID_Number__c",
     "Tax_ID_Verified__c",
     "Tax_ID_Expires__c",
@@ -277,6 +296,44 @@ def map_nearby_account(rec: dict[str, Any]) -> dict[str, Any]:
         "lat": rec[SHIPPING_LAT],
         "lng": rec[SHIPPING_LNG],
     }
+
+
+def _buyer_name(rec: dict[str, Any]) -> str | None:
+    """The person for Bill To "Buyer name", or None to leave the field blank.
+
+    The account's designated buying contact answers this for 93.5% of wholesale
+    accounts. For the rest we fall back to a related Contact, but only when the
+    choice is unambiguous: Buyer name is required on an order that gets signed,
+    so a wrong name is worse than an empty one. 26% of accounts carry several
+    contacts, Contact has no "primary" flag in this org, and the leftovers are
+    full of ex-staff — there is nothing to guess from. Measured 2026-08-20:
+    4,731 accounts resolve here, +21 by fallback, 307 stay blank.
+
+    A rep who disagrees with the result picks from _account_contacts() instead.
+    """
+    buying = rec.get("ContactBuying__r") or {}
+    name = (buying.get("Name") or "").strip()
+    if name:
+        return name
+
+    contacts = (rec.get("Contacts") or {}).get("records") or []
+    named = [c for c in contacts if (c.get("Name") or "").strip()]
+    if len(named) == 1:
+        return named[0]["Name"].strip()
+
+    # Several contacts: a job title is the only signal, and it has to be a
+    # CURRENT buyer. Titles like "no longer" / "no longer there" mark people
+    # who left — naming them would be worse than naming nobody.
+    buyers = [
+        c
+        for c in named
+        if "buyer" in (c.get("Title") or "").lower()
+        and "no longer" not in (c.get("Title") or "").lower()
+    ]
+    if len(buyers) == 1:
+        return buyers[0]["Name"].strip()
+
+    return None
 
 
 def map_account(rec: dict[str, Any]) -> dict[str, Any]:
