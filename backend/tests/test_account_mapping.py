@@ -3,7 +3,12 @@
 Coverage is on the rule itself: which contact becomes Bill To "Buyer name",
 and — just as important — when we refuse to guess and leave it blank.
 """
-from app.salesforce.mapping import _account_contacts, _buyer_name, _is_former, map_account
+from app.salesforce.mapping import (
+    _account_contacts,
+    _buyer_name,
+    _is_former,
+    map_account,
+)
 
 
 def _account(buying=None, buying_title=None, contacts=None):
@@ -256,3 +261,23 @@ def test_is_former_reads_the_title_the_org_actually_types():
     assert _is_former("No Longer In Acc (prev asst)") is True
     assert _is_former("Buyer") is False
     assert _is_former(None) is False
+
+
+def test_a_mailbox_is_not_offered_as_a_buyer():
+    """Eight contacts are named things like "Postmaster@coat.com". Offering one
+    as a chip would put a real address on a public endpoint and one click from
+    a signed order."""
+    rec = _account(contacts=[_contact("Kara Shute"), _contact("Postmaster@coat.com")])
+    assert [c["name"] for c in _account_contacts(rec)] == ["Kara Shute"]
+
+
+def test_a_mailbox_does_not_make_a_sole_contact_ambiguous():
+    # JOAN SHEPP: one real person plus a receiving mailbox. She is the answer.
+    rec = _account(contacts=[_contact("Joan Shepp"), _contact("Receiving@joanshepp.com")])
+    assert _buyer_name(rec) == "Joan Shepp"
+
+
+def test_a_mailbox_is_never_the_buyer_name_even_when_alone():
+    rec = _account(contacts=[_contact("Noreply@me.com")])
+    assert _buyer_name(rec) is None
+    assert _account_contacts(rec) == []

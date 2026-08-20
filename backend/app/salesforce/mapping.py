@@ -165,8 +165,10 @@ NEARBY_ACCOUNT_FIELDS = ("Id", "Name", "ShippingCity", "ShippingState", SHIPPING
 # ------------------------------------------- Account create (new web accounts)
 # All confirmed against the org via describe on 2026-07-23. New wholesale stores
 # are BUSINESS accounts (person-account org, but a store is a business). Buyer
-# is a Contact on the account (ContactBuying__c / ContactBuyingEmail__c is a
-# non-createable rollup) — NOT created here; buyer details go into Description.
+# is a Contact on the account (ContactBuying__c is a lookup to that Contact,
+# and ContactBuyingEmail__c a non-createable formula over its Email — see the
+# buyer-contact block above) — NOT created here; buyer details go into
+# Description.
 BUSINESS_ACCOUNT_RECORD_TYPE_ID = "01290000000gohtAAA"
 TAX_ID_NUMBER = "Tax_ID_Number__c"
 AIR_VS_SEA = "AIR_VS_SEA__c"
@@ -305,6 +307,17 @@ def map_nearby_account(rec: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _is_person_name(name: str) -> bool:
+    """Is this Contact.Name a person, or a mailbox someone typed into the field?
+
+    Eight contacts are named things like "Postmaster@coat.com" and
+    "Receiving@joanshepp.com" — six of them on accounts a buyer can reach.
+    They are useless as a Bill To buyer, and offering one as a chip would put a
+    real address on a public endpoint and one click from a signed order.
+    """
+    return "@" not in name
+
+
 def _is_former(title: str | None) -> bool:
     """Does this job title say the person has left?
 
@@ -346,7 +359,14 @@ def _buyer_name(rec: dict[str, Any]) -> str | None:
         return name
 
     contacts = (rec.get("Contacts") or {}).get("records") or []
-    named = [c for c in contacts if (c.get("Name") or "").strip()]
+    named = [
+        c
+        for c in contacts
+        if (c.get("Name") or "").strip() and _is_person_name(c["Name"].strip())
+    ]
+    # A sole contact is trusted on being sole, title and all: an account with
+    # one person on it has given its answer, and JOAN SHEPP resolving to "Joan
+    # Shepp" only works because the mailbox beside her no longer counts.
     if len(named) == 1:
         return named[0]["Name"].strip()
 
@@ -388,7 +408,8 @@ def _account_contacts(rec: dict[str, Any]) -> list[dict[str, Any]]:
     seen = {e["name"].casefold() for e in head}
     rest = []
     for c in (rec.get("Contacts") or {}).get("records") or []:
-        if not (c.get("Name") or "").strip():
+        name = (c.get("Name") or "").strip()
+        if not name or not _is_person_name(name):
             continue
         e = _contact_entry(c)
         if e["name"].casefold() in seen:
