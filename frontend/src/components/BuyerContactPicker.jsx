@@ -6,17 +6,23 @@
 // Rep-only. The gate lives in App.jsx (isRepFilled), which hands customers an
 // empty list, so this component never has to know who is filling the form.
 // Contacts arrive best-first with ex-staff last; rendering order is theirs.
-export default function BuyerContactPicker({ contacts, selected, onPick }) {
+export default function BuyerContactPicker({ contacts = [], selected = '', onPick }) {
   if (!contacts.length) return null
 
   const current = selected.trim().toLowerCase()
 
   return (
     <div className="buyer-contacts">
-      <span className="buyer-contacts-label">Contacts on this account</span>
-      <ul className="buyer-contacts-list">
+      <span className="buyer-contacts-label" id="buyer-contacts-label">
+        Contacts on this account
+      </span>
+      {/* Sighted users get the grouping from proximity; someone tabbing in
+          from the Buyer name field would otherwise hear only a bare name. */}
+      <ul className="buyer-contacts-list" aria-labelledby="buyer-contacts-label">
         {contacts.map((c) => {
-          const isSelected = c.name.toLowerCase() === current
+          // Trimmed both sides: the backend strips names, but this must not
+          // quietly depend on that to keep the right chip lit.
+          const isSelected = c.name.trim().toLowerCase() === current
           return (
             <li key={c.name}>
               <button
