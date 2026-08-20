@@ -178,7 +178,11 @@ export default function App() {
       rank: m.rank || null,
     }))
     setBillToState({
-      buyerName: '',
+      // The account's buying contact from Salesforce. Blank when the org has
+      // no unambiguous answer (~6% of accounts) — the buyer types it then, as
+      // they did for every account before this. Never `name`: that is the
+      // store, and filling a person field with it was the ef1c8e2 bug.
+      buyerName: m.buyerName || '',
       street: m.billTo.street || '',
       cityState: m.billTo.cityState || '',
       zip: m.billTo.zip || '',
