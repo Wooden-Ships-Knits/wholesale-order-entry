@@ -3,7 +3,7 @@
 Coverage is on the rule itself: which contact becomes Bill To "Buyer name",
 and — just as important — when we refuse to guess and leave it blank.
 """
-from app.salesforce.mapping import _buyer_name
+from app.salesforce.mapping import _buyer_name, map_account
 
 
 def _account(buying=None, buying_title=None, contacts=None):
@@ -106,3 +106,50 @@ def test_treats_a_blank_buying_contact_name_as_absent():
 
 def test_strips_surrounding_whitespace():
     assert _buyer_name(_account(buying="  Marilyn Davis ")) == "Marilyn Davis"
+
+
+def _sf_account(**over):
+    """A full Account record as find_accounts() returns it."""
+    base = {
+        "Id": "0012v00000AbCdEAAV",
+        "Name": "A PIED",
+        "BillingStreet": "1 Main St",
+        "BillingCity": "Nashville",
+        "BillingState": "TN",
+        "BillingPostalCode": "37201",
+        "ShippingStreet": "1 Main St",
+        "ShippingCity": "Nashville",
+        "ShippingState": "TN",
+        "ShippingPostalCode": "37201",
+        "Phone": "(615) 555-0100",
+        "Fax": None,
+        "ContactBuyingEmail__c": "buyer@apied.com",
+        "ContactBuying__r": {"Name": "Kathleen Belavitch", "Title": "Owner"},
+        "Contacts": None,
+        "Tax_ID_Number__c": None,
+        "Tax_ID_Verified__c": False,
+        "Tax_ID_Expires__c": None,
+        "Salesperson__c": None,
+        "SalesTerritory__c": None,
+        "Special_Instructions__c": None,
+        "Rank__c": None,
+    }
+    base.update(over)
+    return base
+
+
+def test_map_account_exposes_the_buyer_name():
+    assert map_account(_sf_account())["buyerName"] == "Kathleen Belavitch"
+
+
+def test_map_account_buyer_name_is_none_when_unresolvable():
+    rec = _sf_account(ContactBuying__r=None, Contacts=None)
+    assert map_account(rec)["buyerName"] is None
+
+
+def test_map_account_still_reports_the_store_name_separately():
+    """Buyer name is a person; name is the store. Conflating them was the bug
+    that commit ef1c8e2 fixed — this pins them apart."""
+    mapped = map_account(_sf_account())
+    assert mapped["name"] == "A PIED"
+    assert mapped["buyerName"] == "Kathleen Belavitch"

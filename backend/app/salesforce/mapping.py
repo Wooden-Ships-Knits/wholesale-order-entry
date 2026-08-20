@@ -341,6 +341,10 @@ def map_account(rec: dict[str, Any]) -> dict[str, Any]:
     return {
         "accountId": rec["Id"],
         "name": rec.get("Name"),
+        # The person, as opposed to `name` (the store). Fills Bill To "Buyer
+        # name"; None when Salesforce cannot say who unambiguously, and the
+        # form then leaves the field for the buyer to type.
+        "buyerName": _buyer_name(rec),
         "billTo": {
             "street": rec.get("BillingStreet"),
             "cityState": _city_state(rec.get("BillingCity"), rec.get("BillingState")),
