@@ -3,7 +3,7 @@
 Coverage is on the rule itself: which contact becomes Bill To "Buyer name",
 and — just as important — when we refuse to guess and leave it blank.
 """
-from app.salesforce.mapping import _account_contacts, _buyer_name, map_account
+from app.salesforce.mapping import _account_contacts, _buyer_name, _is_former, map_account
 
 
 def _account(buying=None, buying_title=None, contacts=None):
@@ -234,3 +234,25 @@ def test_map_account_exposes_the_contact_list():
         {"name": "Kathleen Belavitch", "title": "Owner", "former": False},
         {"name": "Ann", "title": None, "former": False},
     ]
+
+
+def test_contacts_tolerate_a_bare_contacts_dict():
+    """SOQL omits the subquery key shape when an account has no contacts at
+    all; a missing "records" must degrade to empty, not raise."""
+    rec = _account()
+    rec["Contacts"] = {}
+    assert _account_contacts(rec) == []
+
+
+def test_dedupe_ignores_whitespace_against_the_buying_contact():
+    rec = _account(buying="Ann ", contacts=[_contact(" Ann"), _contact("Bob")])
+    assert [c["name"] for c in _account_contacts(rec)] == ["Ann", "Bob"]
+
+
+def test_is_former_reads_the_title_the_org_actually_types():
+    # Real titles from the org, plus the ones that must NOT match.
+    assert _is_former("no longer") is True
+    assert _is_former("buyer - no longer there") is True
+    assert _is_former("No Longer In Acc (prev asst)") is True
+    assert _is_former("Buyer") is False
+    assert _is_former(None) is False

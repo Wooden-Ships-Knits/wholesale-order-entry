@@ -298,6 +298,28 @@ def map_nearby_account(rec: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _is_former(title: str | None) -> bool:
+    """Does this job title say the person has left?
+
+    Free text typed by hand over fifteen years, so this is a substring match on
+    the one phrase the org actually uses ("no longer", "no longer there", "no
+    longer in Acc"). 284 contacts carry it. Both the buyer-name rule and the
+    rep's picker key off it, so it lives in one place — widening the phrase
+    list must not mean remembering to widen it twice.
+    """
+    return "no longer" in (title or "").lower()
+
+
+def _contact_entry(c: dict[str, Any]) -> dict[str, Any]:
+    """One Salesforce Contact -> one entry in the rep's buyer picker."""
+    title = (c.get("Title") or "").strip()
+    return {
+        "name": (c.get("Name") or "").strip(),
+        "title": title or None,
+        "former": _is_former(title),
+    }
+
+
 def _buyer_name(rec: dict[str, Any]) -> str | None:
     """The person for Bill To "Buyer name", or None to leave the field blank.
 
@@ -327,8 +349,7 @@ def _buyer_name(rec: dict[str, Any]) -> str | None:
     buyers = [
         c
         for c in named
-        if "buyer" in (c.get("Title") or "").lower()
-        and "no longer" not in (c.get("Title") or "").lower()
+        if "buyer" in (c.get("Title") or "").lower() and not _is_former(c.get("Title"))
     ]
     if len(buyers) == 1:
         return buyers[0]["Name"].strip()
@@ -354,23 +375,15 @@ def _account_contacts(rec: dict[str, Any]) -> list[dict[str, Any]]:
     the rep nothing. The buying contact keeps its lead even when former, so the
     ordering cannot contradict the prefilled value.
     """
-    def entry(c: dict[str, Any]) -> dict[str, Any]:
-        title = (c.get("Title") or "").strip()
-        return {
-            "name": (c.get("Name") or "").strip(),
-            "title": title or None,
-            "former": "no longer" in title.lower(),
-        }
-
     buying = rec.get("ContactBuying__r") or {}
-    head = [entry(buying)] if (buying.get("Name") or "").strip() else []
+    head = [_contact_entry(buying)] if (buying.get("Name") or "").strip() else []
 
     seen = {e["name"].casefold() for e in head}
     rest = []
     for c in (rec.get("Contacts") or {}).get("records") or []:
         if not (c.get("Name") or "").strip():
             continue
-        e = entry(c)
+        e = _contact_entry(c)
         if e["name"].casefold() in seen:
             continue
         seen.add(e["name"].casefold())
