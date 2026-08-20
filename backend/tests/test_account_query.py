@@ -26,13 +26,13 @@ def test_query_selects_the_buying_contact_title():
 
 
 def test_query_includes_the_related_contacts_subquery():
-    assert "(SELECT Name, Title FROM Contacts)" in _run_lookup(email="buyer@apied.com")
+    assert "(SELECT Name, Title FROM Contacts ORDER BY Name)" in _run_lookup(email="buyer@apied.com")
 
 
 def test_subquery_sits_inside_the_select_clause():
     """A child subquery is only legal between SELECT and FROM."""
     soql = _run_lookup(name="A PIED")
-    assert soql.index("(SELECT Name, Title FROM Contacts)") < soql.index(" FROM Account")
+    assert soql.index("(SELECT Name, Title FROM Contacts ORDER BY Name)") < soql.index(" FROM Account")
 
 
 def test_admin_lookup_gets_the_same_fields():
@@ -40,4 +40,4 @@ def test_admin_lookup_gets_the_same_fields():
     the buyer name."""
     soql = _run_lookup(account_id="0012v00000AbCdEAAV", include_excluded=True)
     assert "ContactBuying__r.Name" in soql
-    assert "(SELECT Name, Title FROM Contacts)" in soql
+    assert "(SELECT Name, Title FROM Contacts ORDER BY Name)" in soql

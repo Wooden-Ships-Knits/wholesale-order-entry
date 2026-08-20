@@ -36,7 +36,14 @@ CONTACT_BUYING_TITLE = "ContactBuying__r.Title"
 # and so accounts with no ContactBuying__c still have something to offer. Kept
 # out of ACCOUNT_FIELDS so that stays a tuple of scalar field names; client.py
 # appends this to the SELECT.
-ACCOUNT_CONTACTS_SUBQUERY = "(SELECT Name, Title FROM Contacts)"
+#
+# ORDER BY Name because child-record order is otherwise unspecified: without it
+# the rep's picker could list the same store's people in a different order on
+# each lookup. Alphabetical is also the order a rep scans in. No LIMIT needed —
+# the org's largest account has 203 contacts and returns done=True, and the
+# three accounts with the most contacts are all rank "E - No Marketing", which
+# EXCLUDED_RANKS_FIND_ACCOUNT already keeps out of the buyer lookup.
+ACCOUNT_CONTACTS_SUBQUERY = "(SELECT Name, Title FROM Contacts ORDER BY Name)"
 
 # Sales rep on the account; also the source for the Internal Use "Rep" picklist.
 SALESPERSON = "Salesperson__c"
@@ -389,8 +396,8 @@ def _account_contacts(rec: dict[str, Any]) -> list[dict[str, Any]]:
         seen.add(e["name"].casefold())
         rest.append(e)
 
-    # Stable sort, so current staff keep Salesforce's order and ex-staff fall
-    # to the back without being hidden.
+    # Stable sort, so current staff keep the query's alphabetical order and
+    # ex-staff fall to the back without being hidden.
     return head + sorted(rest, key=lambda e: e["former"])
 
 
