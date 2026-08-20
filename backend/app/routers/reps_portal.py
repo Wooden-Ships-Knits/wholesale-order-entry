@@ -21,11 +21,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db.models import Order
+from app.db.models import Order, Prospect, ProspectMark
 from app.db.session import get_db
 from app.login_guard import LoginGuard, client_ip
 from app.pdf import render as pdf_render
 from app.reps_auth import REP_NAMES, normalize_name, resolve_name, verify_rep
+from app.salesforce import client as sf_client
+from app.salesforce import mapping
 from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
@@ -336,3 +338,189 @@ def download_pdf(
         filename=filename,
         content_disposition_type="inline",
     )
+
+
+# ----------------------------------------------------------------- prospects
+
+def _prospect_row(p: Prospect, marked: bool) -> dict:
+    """One prospect, as the rep page needs it.
+
+    A SEPARATE serializer from _rep_row for the same reason that one is
+    separate from admin's: a shared one accretes fields, and this page must
+    stay incapable of emitting an order's value or card state.
+
+    `matchedAccount` / `matchedBy` are deliberately NOT here — they are the
+    sweep's own bookkeeping about which rule fired, of no use to a rep.
+    """
+    return {
+        "id": p.osm_id,  # stable across re-sweeps; the row uuid is not shown
+        "storeName": p.store_name,
+        "latitude": float(p.latitude) if p.latitude is not None else None,
+        "longitude": float(p.longitude) if p.longitude is not None else None,
+        "city": p.city,
+        "address": p.address,
+        "state": p.state,
+        "website": p.website,
+        "phone": p.phone,
+        "rating": float(p.rating) if p.rating is not None else None,
+        "reviewCount": p.review_count,
+        "womenswear": p.womenswear,
+        "potentialConflict": p.potential_conflict,
+        # Internal by design: reps are told which stockist is nearby (they get
+        # the same in the conflict email); customers never are.
+        "nearestStockist": p.nearest_stockist,
+        "distanceMiles": float(p.distance_miles) if p.distance_miles is not None else None,
+        "driveMinutes": p.drive_minutes,
+        "marked": marked,
+    }
+
+
+def _stockists() -> list[dict]:
+    """Every current store, LIVE from Salesforce, with coordinates.
+
+    NOT filtered by territory — the map shows the whole stockist picture, and
+    territory scoping will be layered on later. Note that this therefore shows
+    one rep the names and locations of accounts outside their book; the rep
+    ORDER list stays scoped, so this is a deliberate difference, not an
+    oversight.
+
+    Not read from the prospects table even though it carries a `status`
+    column: that label only means "this OSM shop matched an account", and OSM
+    holds barely a twentieth of the book — drawing grey dots from it would show
+    a handful of stores instead of all of them. Salesforce is the authority for
+    who we already sell to, so the map asks it every time.
+
+    Accounts without coordinates cannot be plotted and are skipped.
+    """
+    excluded = "','".join(mapping.EXCLUDED_RANKS)
+    q = (
+        "SELECT Id, Name, SalesTerritory__c, ShippingLatitude, ShippingLongitude "
+        "FROM Account "
+        f"WHERE (Rank__c = null OR Rank__c NOT IN ('{excluded}')) "
+        "AND ShippingLatitude != null AND ShippingLongitude != null"
+    )
+    try:
+        records = sf_client._client().query_all(q)["records"]
+    except Exception:
+        # A Salesforce outage must not blank the prospect map — the yellow dots
+        # are the point of the page and they come from our own database.
+        logger.warning("Could not load stockists from Salesforce", exc_info=True)
+        return []
+    return [
+        {
+            "name": r["Name"],
+            "territory": r.get("SalesTerritory__c"),
+            "latitude": r["ShippingLatitude"],
+            "longitude": r["ShippingLongitude"],
+        }
+        for r in records
+    ]
+
+
+@router.get("/prospects")
+def list_prospects(rep_name: str = RepRequired, db: Session = Depends(get_db)) -> dict:
+    rep_email = sheets_client.rep_email_for_writer(rep_name)
+    if not rep_email:
+        # Fail closed, exactly as /orders does: without an address there is no
+        # way to tell this rep's territory from anyone else's.
+        logger.warning("No sheet email for signed-in rep %s — showing no prospects", rep_name)
+        return {
+            "rep": rep_name,
+            "prospects": [],
+            # Stockists still load: the map is worth showing even when this
+            # rep has no prospects matched to them.
+            "accounts": _stockists(),
+            "counts": {"total": 0, "noConflict": 0, "marked": 0},
+            "message": (
+                "Your name isn't in the rep contact sheet yet, so no territory "
+                "can be matched to you. Ask the office to add it."
+            ),
+        }
+
+    # Which territories are this rep's, decided by the same sheet that routes
+    # their order email — so the dashboard and the inbox cannot disagree.
+    #
+    # Enumerated from SALESFORCE, not from distinct values in the prospects
+    # table. A rep's territory is a property of the rep; deriving it from the
+    # table meant an empty table produced an empty territory set, and the
+    # stockist layer then vanished because it had nothing to look up. The
+    # grey dots must not depend on the yellow ones existing.
+    try:
+        all_territories = sf_client.list_territories()
+    except Exception:
+        logger.warning("Could not list territories from Salesforce", exc_info=True)
+        all_territories = []
+    mine = {
+        t
+        for t in all_territories
+        if (sheets_client.rep_email_for_territory(t) or "").casefold() == rep_email.casefold()
+    }
+
+    rows = (
+        db.execute(
+            select(Prospect)
+            .where(Prospect.territory.in_(mine), Prospect.status == "prospect")
+            .order_by(Prospect.store_name)
+        )
+        .scalars()
+        .all()
+        if mine
+        else []
+    )
+
+    marked_ids = {
+        m.prospect_id
+        for m in db.execute(
+            select(ProspectMark).where(ProspectMark.rep_name == normalize_name(rep_name))
+        ).scalars()
+    }
+
+    return {
+        "rep": rep_name,
+        "prospects": [_prospect_row(p, p.id in marked_ids) for p in rows],
+        "accounts": _stockists(),
+        "counts": {
+            "total": len(rows),
+            "noConflict": sum(1 for p in rows if not p.potential_conflict),
+            "marked": sum(1 for p in rows if p.id in marked_ids),
+        },
+        "message": None,
+    }
+
+
+class MarkRequest(BaseModel):
+    marked: bool
+
+
+@router.post("/prospects/{osm_id:path}/mark")
+def mark_prospect(
+    osm_id: str,
+    payload: MarkRequest,
+    rep_name: str = RepRequired,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Star or un-star a prospect for the signed-in rep.
+
+    Keyed on osm_id because that is what the page holds, and `:path` because an
+    osm_id looks like "node/12345" — a bare {osm_id} would stop at the slash.
+
+    Un-starring DELETES the row rather than flipping a flag: the shortlist is
+    "these ones", and an absent row is the cleanest way to say no.
+    """
+    p = db.execute(select(Prospect).where(Prospect.osm_id == osm_id)).scalar_one_or_none()
+    if p is None:
+        raise HTTPException(status_code=404, detail="Unknown prospect")
+
+    key = normalize_name(rep_name)
+    existing = db.execute(
+        select(ProspectMark).where(
+            ProspectMark.prospect_id == p.id, ProspectMark.rep_name == key
+        )
+    ).scalar_one_or_none()
+
+    if payload.marked and existing is None:
+        db.add(ProspectMark(prospect_id=p.id, rep_name=key))
+    elif not payload.marked and existing is not None:
+        db.delete(existing)
+    db.commit()
+    return {"id": osm_id, "marked": payload.marked}

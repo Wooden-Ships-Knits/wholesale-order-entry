@@ -18,6 +18,7 @@ from sqlalchemy import (
     LargeBinary,
     Numeric,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -253,3 +254,116 @@ class OrderItem(Base):
     line_total: Mapped[Decimal] = mapped_column(Numeric(12, 2))
 
     order: Mapped[Order] = relationship(back_populates="items")
+
+
+class Prospect(Base):
+    """A shop that could stock Wooden Ships and does not yet.
+
+    Written by the sweep in app/maps/prospecting.py, read by /reps. The natural
+    key is `osm_id`, not the row id: a sweep is re-run whenever the filters
+    change, and matching on the OSM element is what lets a re-run UPDATE a shop
+    instead of duplicating it — which is also what stops a rep's shortlist
+    losing its target (see ProspectMark).
+
+    TWO SOURCES, DIFFERENT RULES. The OSM columns (name, coordinates, clothes,
+    brand, addr:*) are open data and may be kept indefinitely. The Google
+    columns (website, phone, rating, review_count, review_text) are Places
+    content, which Google's terms only allow to be cached for a limited period
+    — hence `enriched_at`: it says WHEN that half was fetched, so stale rows can
+    be refreshed or blanked rather than kept forever. place_id is the exception
+    Google permits storing indefinitely.
+    """
+
+    __tablename__ = "prospects"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+
+    # --- identity ---
+    osm_id: Mapped[str] = mapped_column(Text, unique=True, index=True)  # "node/1234"
+    place_id: Mapped[str | None] = mapped_column(Text)  # Google; safe to keep
+    store_name: Mapped[str] = mapped_column(Text)
+    # 'prospect' | 'existing' — see the migration note. `existing` means this
+    # OSM shop matched a Salesforce account, not that it is the whole book.
+    status: Mapped[str] = mapped_column(Text, server_default="prospect", index=True)
+    matched_account: Mapped[str | None] = mapped_column(Text)
+    matched_by: Mapped[str | None] = mapped_column(Text)
+
+    # --- where ---
+    latitude: Mapped[Decimal | None] = mapped_column(Numeric(10, 7))
+    longitude: Mapped[Decimal | None] = mapped_column(Numeric(10, 7))
+    city: Mapped[str | None] = mapped_column(Text)
+    address: Mapped[str | None] = mapped_column(Text)
+    state: Mapped[str | None] = mapped_column(Text)
+    postcode: Mapped[str | None] = mapped_column(Text)
+    # Which rep's book this belongs to. Indexed because /reps filters on it and
+    # scoping is a permission, not a convenience.
+    territory: Mapped[str | None] = mapped_column(Text, index=True)
+
+    # --- qualifying signals, all free, all from OSM tags ---
+    clothes: Mapped[str | None] = mapped_column(Text)  # raw tag, e.g. "men;women"
+    womenswear: Mapped[bool | None] = mapped_column(Boolean)
+    second_hand: Mapped[str | None] = mapped_column(Text)
+    brand: Mapped[str | None] = mapped_column(Text)  # set = a chain
+    types: Mapped[str | None] = mapped_column(Text)  # the OSM `shop` tag
+    opening_hours: Mapped[str | None] = mapped_column(Text)
+
+    # --- contact. OSM first, overwritten by Google when enriched ---
+    website: Mapped[str | None] = mapped_column(Text)
+    phone: Mapped[str | None] = mapped_column(Text)
+    email: Mapped[str | None] = mapped_column(Text)
+    instagram: Mapped[str | None] = mapped_column(Text)
+
+    # --- Google-only. Governed by enriched_at, see the class docstring ---
+    rating: Mapped[Decimal | None] = mapped_column(Numeric(2, 1))
+    review_count: Mapped[int | None] = mapped_column(Integer)
+    review_text: Mapped[str | None] = mapped_column(Text)
+    enriched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # --- conflict check, recomputed by the sweep ---
+    potential_conflict: Mapped[bool | None] = mapped_column(Boolean)
+    nearest_stockist: Mapped[str | None] = mapped_column(Text)
+    distance_miles: Mapped[Decimal | None] = mapped_column(Numeric(6, 1))
+    drive_minutes: Mapped[int | None] = mapped_column(Integer)
+
+    # --- provenance ---
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    # Stamped by every sweep that still finds this shop. A row whose
+    # last_seen_at stops moving has vanished from OSM — closed, renamed or
+    # retagged — which is worth knowing before a rep drives there. Deliberately
+    # not deleted: a disappearance is information.
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class ProspectMark(Base):
+    """One rep's shortlist entry for one prospect.
+
+    A SEPARATE TABLE, not a column on Prospect, for two reasons. The sweep
+    rewrites prospect rows wholesale, so a flag living there would be wiped
+    every time the filters were retuned. And a shortlist is per rep: a column
+    could only ever hold one rep's opinion, while two reps whose territories
+    touch may both be working the same town.
+    """
+
+    __tablename__ = "prospect_marks"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    prospect_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("prospects.id", ondelete="CASCADE"), index=True
+    )
+    # The normalized rep name from app/reps_auth.py — the same key the portal
+    # authenticates against, so a mark can never be attributed to a name the
+    # roster does not know.
+    rep_name: Mapped[str] = mapped_column(Text, index=True)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        # Un-starring deletes the row, so at most one per (rep, prospect).
+        UniqueConstraint("prospect_id", "rep_name", name="uq_prospect_mark"),
+    )

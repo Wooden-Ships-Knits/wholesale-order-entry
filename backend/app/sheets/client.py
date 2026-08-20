@@ -446,3 +446,76 @@ def list_ship_windows(season_code: str) -> list[str]:
     value = fetch()
     _cache[key] = (now + _CACHE_TTL_SECONDS, value)
     return value
+
+
+def states_for_territory(territory: str | None) -> list[str]:
+    """Every US state code the REGION sheet assigns to a territory.
+
+    The inverse of territory_for_state. A territory is rarely one state —
+    "Southeast - Jason Hilsenrad" spans several — so anything sweeping a
+    territory's geography has to ask for the whole list rather than assume the
+    label's prefix is the answer. Sorted so a sweep runs in a stable order.
+    """
+    key = _normalize_territory(territory)
+    if not key:
+        return []
+    return sorted(
+        code
+        for code, label in _territory_map().items()
+        if _normalize_territory(label) == key
+    )
+
+
+def ship_window_years(season_code: str) -> dict[str, int]:
+    """{ship window -> calendar year}, read from the sheet's 'Year' row.
+
+    A season is not a calendar year. Spring 27 starts shipping in DECEMBER
+    2026, so '12/1-30' on the S27 tab means 2026 while '1/1-20' on the same
+    tab means 2027. Deriving the year from the season code alone puts those
+    December orders twelve months late.
+
+    The sheet already answers this: a row labelled 'Year' carries one value per
+    ship-window column. This pairs the two by COLUMN INDEX, which is the only
+    thing that ties them together — the tabs differ in leading blank rows and
+    some stack two tables, so no fixed offset works.
+
+    Empty dict when the tab has no Year row; the caller then falls back to
+    inferring it (see mapping.ship_window_dates).
+    """
+    def fetch() -> dict[str, int]:
+        rows = _read(season_code)
+        year_row = next(
+            (r for r in rows if r and r[0][0].strip().lower() == "year"), None
+        )
+        if not year_row:
+            logger.info("No 'Year' row on the %s ship-window tab", season_code)
+            return {}
+        years: dict[int, int] = {}
+        for i, (value, _) in enumerate(year_row):
+            v = value.strip()
+            if v.isdigit() and len(v) == 4:
+                years[i] = int(v)
+
+        out: dict[str, int] = {}
+        for row in rows:
+            for i, (value, struck) in enumerate(row):
+                if struck or i not in years:
+                    continue
+                v = value.strip()
+                # First column wins: the same window string never legitimately
+                # appears twice under different years on one tab.
+                if _WINDOW_RE.match(v) and v not in out:
+                    out[v] = years[i]
+        return out
+
+    if not settings.shipping_window_sheet_id:
+        return {}
+
+    key = f"ship_window_years:{season_code}"
+    now = time.monotonic()
+    hit = _cache.get(key)
+    if hit and hit[0] > now:
+        return hit[1]
+    value = fetch()
+    _cache[key] = (now + _CACHE_TTL_SECONDS, value)
+    return value

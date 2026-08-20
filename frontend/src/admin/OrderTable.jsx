@@ -917,10 +917,16 @@ export default function OrderTable({
                     year: 'numeric',
                   })}
                 </span>
+                {/* The offset is not decoration: the time is rendered in the
+                    READER's zone, so the same order reads 9:04 AM in Florida
+                    and 9:04 PM in Jakarta. Naming the zone is what makes two
+                    people quoting a timestamp to each other mean the same
+                    moment. */}
                 <span className="sub">
                   {new Date(o.createdAt).toLocaleTimeString('en-US', {
                     hour: 'numeric',
                     minute: '2-digit',
+                    timeZoneName: 'shortOffset',
                   })}
                 </span>
               </td>
