@@ -81,16 +81,21 @@ accounts, and the sets are full of stale and non-buying staff.
 
 Autofill decides one name. A rep often needs a different one: `BURLINGTON COAT
 FACTORY` has a *sweater buyer* and an *accessory buyer*, and `ContactBuying__c`
-can only name one of them. So the account's contacts are also offered as
-clickable chips under the Buyer name field.
+can only name one of them. So the account's contacts are also offered as a
+dropdown under the Buyer name field, matching the `.match-select` control the
+account lookup already uses.
 
-**Shown to reps only** (`isRepFilled`), **whenever the account has at least one
-contact**. Of 3,175 accounts reachable in the buyer lookup, 3,057 (96.3%) have
-one or more; the other 118 behave exactly as today. A single-contact account
-still shows its one chip — the rep sees who Salesforce thinks the buyer is.
+**Shown to reps only** (`isRepFilled`), **and only when the account has more
+than one contact** — 782 of the 3,175 accounts reachable in the buyer lookup
+(24.6%). A single-contact account shows nothing: autofill has already put that
+person in the field, so a dropdown there would offer back the answer it just
+gave. (Revised 2026-08-20: this began as a row of chips shown at 1+ contacts.
+Chips added a control style the form did not otherwise have, and at one contact
+the picker was pure noise.)
 
 The picker does not change `_buyer_name()`. Ambiguous accounts still prefill
-blank; the chips just make the answer one click away instead of a retype.
+blank; the dropdown just makes the answer one selection away instead of a
+retype.
 
 Rep-ness here is a self-declared button, not authentication — the same soft gate
 the conflict-warning modal already uses (CLAUDE.md: "stockist names hidden from
@@ -116,21 +121,25 @@ already needs — **no additional query** — under three rules:
    a union, not the child records alone.
 2. **De-duplicated by name**, since the buying contact is normally also a child.
 3. **`former: true`** when the title contains "no longer" (284 contacts).
-   Those sort last and render greyed — not hidden, because `LILY'S BOUTIQUE`'s
-   only two contacts are both ex-staff and an empty picker there would tell the
-   rep nothing.
-
-Each chip shows name and title, because the title is what makes the choice
-decidable. Emails are deliberately left out — see below.
+   Those sort last and are grouped apart — not hidden, because `LILY'S
+   BOUTIQUE`'s only two contacts are both ex-staff and an empty picker there
+   would tell the rep nothing.
 
 4. **Contacts whose name is a mailbox are dropped entirely.** `Contact.Name` is
    free text and eight records hold things like `Postmaster@coat.com` and
    `Receiving@joanshepp.com`, six of them on reachable accounts. They are not
-   people, they are useless as a Bill To buyer, and offering one as a chip
-   would put a real address on a public endpoint one click from a signed order.
+   people, they are useless as a Bill To buyer, and offering one as an option
+   would put a real address on a public endpoint one selection from a signed
+   order.
    Dropping them also *sharpens* the fallback instead of narrowing it: `JOAN
    SHEPP` now resolves to "Joan Shepp", because the receiving mailbox beside
    her no longer makes the choice look ambiguous.
+
+Each option reads `Name — title`, because the title is what makes the choice
+decidable. A `<select>` cannot grey an option, so ex-staff go under a
+`No longer here` optgroup and everyone else under `Current`; the group label
+carries what the greyed-out chip used to. With no ex-staff the list stays flat.
+Emails are deliberately left out — see below.
 
 ### Known exposure
 
@@ -183,8 +192,8 @@ The field stays editable, required, and title-cased on blur. Selecting a
 different account overwrites it, because `applyAccount()` already replaces the
 whole `billTo` object.
 
-New `frontend/src/components/BuyerContactPicker.jsx` — one job: render the chips
-and report a click. `Addresses.jsx` renders it under the Buyer name field and is
+New `frontend/src/components/BuyerContactPicker.jsx` — one job: render the
+dropdown and report a selection. `Addresses.jsx` renders it under the Buyer name field and is
 otherwise untouched.
 
 The rep gate lives in `App.jsx`, where `isRepFilled` already does:
@@ -195,8 +204,10 @@ buyerContacts={isRepFilled ? accountContacts : []}
 
 so `Addresses` stays unaware of who is filling the form and renders what it is
 handed. `applyAccount()` stores `accountContacts`; a lookup matching nothing
-clears it. Clicking a chip sets `billTo.buyerName` — the field remains free
-text, so a rep can still name someone Salesforce has never heard of.
+clears it. Choosing an option sets `billTo.buyerName` — the field remains free
+text, so a rep can still name someone Salesforce has never heard of, and typing
+by hand drops the dropdown back to its placeholder because nobody on the list is
+who the order is for any more.
 
 No frontend test framework exists in this repo, so the picker is verified by
 `npm run build` plus a runtime pass with the `verify` skill. Introducing vitest
