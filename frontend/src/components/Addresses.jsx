@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import AddressMap from './AddressMap'
+import BuyerContactPicker from './BuyerContactPicker'
 
 // Format a US phone number progressively as the user types: keep only the
 // first 10 digits and render them as "(423) 240-9340".
@@ -82,7 +83,7 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
   )
 }
 
-export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false }) {
+export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false, buyerContacts = [] }) {
   const [sameAsBilling, setSameAsBilling] = useState(false)
 
   const shipHasAddress = Boolean(shipTo.street || shipTo.cityState || shipTo.zip)
@@ -144,6 +145,14 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
           autoComplete="name"
           titleCaseOnBlur
           required
+        />
+        {/* Renders nothing for customers, or when the account has no contacts.
+            The field stays free text either way — a rep can name someone
+            Salesforce has never heard of. */}
+        <BuyerContactPicker
+          contacts={buyerContacts}
+          selected={billTo.buyerName}
+          onPick={(name) => setBillTo('buyerName', name)}
         />
         {showLocationSearch && (
           <AddressMap
