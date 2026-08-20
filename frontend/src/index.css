@@ -1815,3 +1815,56 @@ button:hover {
       'ship   po';
   }
 }
+
+/* Rep-only buyer contact chips, under Bill To "Buyer name". */
+.buyer-contacts {
+  margin: -0.35rem 0 0.75rem;
+}
+.buyer-contacts-label {
+  display: block;
+  color: #6b6862;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+}
+.buyer-contacts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.contact-chip {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #d8d4cc;
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  /* the global dark-button rule would make this text white on white */
+  color: #1d1d1b;
+  font: inherit;
+  font-size: 0.82rem;
+}
+.contact-chip:hover {
+  background: #f3f0ea;
+}
+.contact-chip.is-selected {
+  border-color: #1d1d1b;
+  background: #1d1d1b;
+  color: #fff;
+}
+.contact-chip.is-former {
+  opacity: 0.55;
+}
+.contact-title {
+  display: block;
+  font-size: 0.72rem;
+  color: #6b6862;
+  margin-top: 0.05rem;
+}
+.contact-chip.is-selected .contact-title {
+  color: #d8d4cc;
+}
