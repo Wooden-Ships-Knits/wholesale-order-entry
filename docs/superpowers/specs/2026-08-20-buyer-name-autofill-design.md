@@ -224,8 +224,16 @@ today. Cases:
 
 ## Data quality follow-up (not code)
 
-`docs/releases/buyer-name-gaps.csv` lists all 328 accounts with no
-`ContactBuying__c`, categorised, with their candidate contacts. Setting
-`ContactBuying__c` on the 49 ambiguous accounts that are actually reachable in
-the buyer lookup would close most of the remaining gap; the rest are hidden by
-the `EXCLUDED_RANKS_FIND_ACCOUNT` filter and never reach the form.
+328 accounts have no `ContactBuying__c`. Setting it on the 49 ambiguous ones
+that are actually reachable in the buyer lookup — of which 32 are real stores
+and 17 are press accounts that never order — would close most of the remaining
+gap. The rest are hidden by the `EXCLUDED_RANKS_FIND_ACCOUNT` filter and never
+reach the form. Several are decidable at a glance: `MITZI & ROMANO` → Mitzi
+*[OWNER]*, `HAUT CHOCOLAT` → Linda Cunningham *[Owner]*, `JOAN SHEPP` → Joan
+Shepp.
+
+The categorised list — every account with its candidate contacts — is generated
+rather than committed: it carries named individuals and Salesforce account ids,
+and this repo has never tracked customer data. Ask the maintainer for the
+current copy, or regenerate it by querying `Account` where
+`ContactBuying__c = null` alongside each account's `Contacts`.
