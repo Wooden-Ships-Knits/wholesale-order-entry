@@ -1841,7 +1841,13 @@ button:hover {
   height: 100%;
 }
 
-.map-status {
+/* Scoped for the same reason as .map-search below: the order form and the
+   conflict checker use .map-status for a one-line message under the address
+   box, not a full-bleed overlay, and this unscoped copy was overriding theirs.
+   Nothing inside the prospect card renders .map-status today, so this currently
+   matches nothing — kept scoped rather than deleted so a status added to the
+   map later gets the overlay this was written for. */
+.prospect-map-card .map-status {
   position: absolute;
   inset: 0;
   display: flex;
@@ -1856,7 +1862,7 @@ button:hover {
 }
 /* Google draws its own controls top-left; keep the search clear of them. */
 /* Leaflet draws its zoom control top-left; sit clear of it. */
-.map-search { left: 52px; top: 8px; }
+.prospect-map-card .map-search { left: 52px; top: 8px; }
 .prospect-map-expand,
 .prospect-map-card .prospect-map-expand {
   position: absolute;
@@ -1895,15 +1901,20 @@ button:hover {
 .dot-account  { background: #9aa0a6; border: 1px solid #6b7280; }
 
 /* Search box overlaid on the map, like any map app. Left side, clear of
-   Leaflet's zoom control (top-left) by sitting below it. */
-.map-search {
+   Leaflet's zoom control (top-left) by sitting below it.
+
+   Scoped to .prospect-map-card: `.map-search` is also the ADDRESS input on the
+   order form (AddressMap.jsx) and on the conflict checker, where it must be an
+   ordinary full-width field. Unscoped, this absolute positioning dragged that
+   input to the top-left corner of the page. */
+.prospect-map-card .map-search {
   position: absolute;
   top: 8px;
   left: 52px;
   z-index: 600; /* above tiles and the legend, below Leaflet popups (700) */
   width: min(19rem, calc(100% - 130px));
 }
-.map-search input {
+.prospect-map-card .map-search input {
   width: 100%;
   padding: 0.35rem 0.6rem;
   font-size: 0.85rem;
