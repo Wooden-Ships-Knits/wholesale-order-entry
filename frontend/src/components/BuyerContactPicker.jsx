@@ -5,44 +5,51 @@
 //
 // Rep-only. The gate lives in App.jsx (isRepFilled), which hands customers an
 // empty list, so this component never has to know who is filling the form.
-// Contacts arrive best-first with ex-staff last; rendering order is theirs.
 export default function BuyerContactPicker({ contacts = [], selected = '', onPick }) {
-  if (!contacts.length) return null
+  // One contact is not a choice: autofill has already put them in the field, so
+  // a dropdown there would offer the answer it just gave. Only a store with
+  // several people has anything to ask about — 782 of them.
+  if (contacts.length < 2) return null
 
   const current = selected.trim().toLowerCase()
+  const match = contacts.find((c) => c.name.trim().toLowerCase() === current)
+
+  // Ex-staff stay on the list — LILY'S BOUTIQUE's only two contacts are both
+  // gone, and an empty picker there would tell the rep nothing — but they go
+  // in their own group. A <select> can't grey an option, so the group label
+  // carries what the greyed-out chip used to.
+  const here = contacts.filter((c) => !c.former)
+  const gone = contacts.filter((c) => c.former)
+
+  const option = (c) => (
+    <option key={c.name} value={c.name}>
+      {c.title ? `${c.name} — ${c.title}` : c.name}
+    </option>
+  )
 
   return (
-    <div className="buyer-contacts">
-      <span className="buyer-contacts-label" id="buyer-contacts-label">
-        Contacts on this account
-      </span>
-      {/* Sighted users get the grouping from proximity; someone tabbing in
-          from the Buyer name field would otherwise hear only a bare name. */}
-      <ul className="buyer-contacts-list" aria-labelledby="buyer-contacts-label">
-        {contacts.map((c) => {
-          // Trimmed both sides: the backend strips names, but this must not
-          // quietly depend on that to keep the right chip lit.
-          const isSelected = c.name.trim().toLowerCase() === current
-          return (
-            <li key={c.name}>
-              <button
-                type="button"
-                className={
-                  'contact-chip' +
-                  (isSelected ? ' is-selected' : '') +
-                  (c.former ? ' is-former' : '')
-                }
-                // A toggle-like control, so state has to reach a screen reader.
-                aria-pressed={isSelected}
-                onClick={() => onPick(c.name)}
-              >
-                <span className="contact-name">{c.name}</span>
-                {c.title && <span className="contact-title">{c.title}</span>}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    </div>
+    <label className="buyer-contacts">
+      Or pick a contact
+      <select
+        className="match-select"
+        // Reflects the field rather than owning it: type a name by hand and
+        // this falls back to the placeholder, because nobody on the list is
+        // who the order is for any more.
+        value={match ? match.name : ''}
+        onChange={(e) => e.target.value && onPick(e.target.value)}
+      >
+        <option value="" disabled>
+          {contacts.length} contacts on this account…
+        </option>
+        {gone.length > 0 ? (
+          <optgroup label="Current">{here.map(option)}</optgroup>
+        ) : (
+          here.map(option)
+        )}
+        {gone.length > 0 && (
+          <optgroup label="No longer here">{gone.map(option)}</optgroup>
+        )}
+      </select>
+    </label>
   )
 }

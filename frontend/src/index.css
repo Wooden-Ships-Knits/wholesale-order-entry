@@ -1957,6 +1957,14 @@ button:hover {
   background: #faf9f6;
   border-top: 1px solid #eee;
 }
+
+/* Rep-only buyer contact dropdown, under Bill To "Buyer name". Reuses
+   .match-select (the account-lookup dropdown) so the two pickers on this form
+   look like the same control. Being a <label> inside .address-col, it already
+   inherits that column's field spacing — nothing else to set. */
+.buyer-contacts {
+  margin-top: -0.2rem;
+}
 .map-search-results li:first-child.map-search-group { border-top: none; }
 .map-search-empty {
   padding: 0.4rem 0.6rem;
