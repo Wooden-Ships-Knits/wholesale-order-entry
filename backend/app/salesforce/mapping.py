@@ -21,6 +21,30 @@ PRICEBOOK_ENTRY = "PricebookEntry"
 # Canonical buyer-lookup key (decision 2026-07-14).
 ACCOUNT_LOOKUP_EMAIL = "ContactBuyingEmail__c"
 
+# The store's designated buyer: a real lookup to Contact (verified against the
+# org 2026-08-20). ACCOUNT_LOOKUP_EMAIL above is a formula over this same
+# contact's Email, so the buying contact IS the person the account lookup
+# already identifies — we were simply never asking for their name.
+#
+# It is a lookup, not a master-detail, so the contact it points at is NOT
+# guaranteed to belong to this account: 25 accounts point at a contact filed
+# under a different one. _account_contacts() below depends on that.
+CONTACT_BUYING_NAME = "ContactBuying__r.Name"
+CONTACT_BUYING_TITLE = "ContactBuying__r.Title"
+
+# Related contacts, as a child subquery, so a rep can pick a different person
+# and so accounts with no ContactBuying__c still have something to offer. Kept
+# out of ACCOUNT_FIELDS so that stays a tuple of scalar field names; client.py
+# appends this to the SELECT.
+#
+# ORDER BY Name because child-record order is otherwise unspecified: without it
+# the rep's picker could list the same store's people in a different order on
+# each lookup. Alphabetical is also the order a rep scans in. No LIMIT needed —
+# the org's largest account has 203 contacts and returns done=True, and the
+# three accounts with the most contacts are all rank "E - No Marketing", which
+# EXCLUDED_RANKS_FIND_ACCOUNT already keeps out of the buyer lookup.
+ACCOUNT_CONTACTS_SUBQUERY = "(SELECT Name, Title FROM Contacts ORDER BY Name)"
+
 # Sales rep on the account; also the source for the Internal Use "Rep" picklist.
 SALESPERSON = "Salesperson__c"
 
@@ -141,8 +165,10 @@ NEARBY_ACCOUNT_FIELDS = ("Id", "Name", "ShippingCity", "ShippingState", SHIPPING
 # ------------------------------------------- Account create (new web accounts)
 # All confirmed against the org via describe on 2026-07-23. New wholesale stores
 # are BUSINESS accounts (person-account org, but a store is a business). Buyer
-# is a Contact on the account (ContactBuying__c / ContactBuyingEmail__c is a
-# non-createable rollup) — NOT created here; buyer details go into Description.
+# is a Contact on the account (ContactBuying__c is a lookup to that Contact,
+# and ContactBuyingEmail__c a non-createable formula over its Email — see the
+# buyer-contact block above) — NOT created here; buyer details go into
+# Description.
 BUSINESS_ACCOUNT_RECORD_TYPE_ID = "01290000000gohtAAA"
 TAX_ID_NUMBER = "Tax_ID_Number__c"
 AIR_VS_SEA = "AIR_VS_SEA__c"
@@ -167,6 +193,8 @@ ACCOUNT_FIELDS = (
     "Phone",
     "Fax",
     ACCOUNT_LOOKUP_EMAIL,
+    CONTACT_BUYING_NAME,
+    CONTACT_BUYING_TITLE,
     "Tax_ID_Number__c",
     "Tax_ID_Verified__c",
     "Tax_ID_Expires__c",
@@ -279,11 +307,133 @@ def map_nearby_account(rec: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _is_person_name(name: str) -> bool:
+    """Is this Contact.Name a person, or a mailbox someone typed into the field?
+
+    Eight contacts are named things like "Postmaster@coat.com" and
+    "Receiving@joanshepp.com" — six of them on accounts a buyer can reach.
+    They are useless as a Bill To buyer, and offering one as a chip would put a
+    real address on a public endpoint and one click from a signed order.
+    """
+    return "@" not in name
+
+
+def _is_former(title: str | None) -> bool:
+    """Does this job title say the person has left?
+
+    Free text typed by hand over fifteen years, so this is a substring match on
+    the one phrase the org actually uses ("no longer", "no longer there", "no
+    longer in Acc"). 284 contacts carry it. Both the buyer-name rule and the
+    rep's picker key off it, so it lives in one place — widening the phrase
+    list must not mean remembering to widen it twice.
+    """
+    return "no longer" in (title or "").lower()
+
+
+def _contact_entry(c: dict[str, Any]) -> dict[str, Any]:
+    """One Salesforce Contact -> one entry in the rep's buyer picker."""
+    title = (c.get("Title") or "").strip()
+    return {
+        "name": (c.get("Name") or "").strip(),
+        "title": title or None,
+        "former": _is_former(title),
+    }
+
+
+def _buyer_name(rec: dict[str, Any]) -> str | None:
+    """The person for Bill To "Buyer name", or None to leave the field blank.
+
+    The account's designated buying contact answers this for 93.5% of wholesale
+    accounts. For the rest we fall back to a related Contact, but only when the
+    choice is unambiguous: Buyer name is required on an order that gets signed,
+    so a wrong name is worse than an empty one. 26% of accounts carry several
+    contacts, Contact has no "primary" flag in this org, and the leftovers are
+    full of ex-staff — there is nothing to guess from. Measured 2026-08-20:
+    4,731 accounts resolve here, +21 by fallback, 307 stay blank.
+
+    A rep who disagrees with the result picks from _account_contacts() instead.
+    """
+    buying = rec.get("ContactBuying__r") or {}
+    name = (buying.get("Name") or "").strip()
+    if name:
+        return name
+
+    contacts = (rec.get("Contacts") or {}).get("records") or []
+    named = [
+        c
+        for c in contacts
+        if (c.get("Name") or "").strip() and _is_person_name(c["Name"].strip())
+    ]
+    # A sole contact is trusted on being sole, title and all: an account with
+    # one person on it has given its answer, and JOAN SHEPP resolving to "Joan
+    # Shepp" only works because the mailbox beside her no longer counts.
+    if len(named) == 1:
+        return named[0]["Name"].strip()
+
+    # Several contacts: a job title is the only signal, and it has to be a
+    # CURRENT buyer. Titles like "no longer" / "no longer there" mark people
+    # who left — naming them would be worse than naming nobody.
+    buyers = [
+        c
+        for c in named
+        if "buyer" in (c.get("Title") or "").lower() and not _is_former(c.get("Title"))
+    ]
+    if len(buyers) == 1:
+        return buyers[0]["Name"].strip()
+
+    return None
+
+
+def _account_contacts(rec: dict[str, Any]) -> list[dict[str, Any]]:
+    """Everyone a rep may pick as the buyer, best candidate first.
+
+    Autofill names one person; a store often has several, and only a rep knows
+    which one an order is for — BURLINGTON COAT FACTORY keeps a sweater buyer
+    and an accessory buyer, and ContactBuying__c can only name one of them.
+
+    The buying contact leads and is ALWAYS included, even when it is not a
+    child of this account: ContactBuying__c is a plain lookup, and 25 accounts
+    point it at a contact filed under a different one (plus REAR VIEW MIRROR,
+    whose buying contact has no account at all). Listing only the child records
+    would show a prefilled name missing from the list beneath it.
+
+    Former staff stay in the list, marked and last — LILY'S BOUTIQUE's only two
+    contacts are both titled "no longer", and an empty picker there would tell
+    the rep nothing. The buying contact keeps its lead even when former, so the
+    ordering cannot contradict the prefilled value.
+    """
+    buying = rec.get("ContactBuying__r") or {}
+    head = [_contact_entry(buying)] if (buying.get("Name") or "").strip() else []
+
+    seen = {e["name"].casefold() for e in head}
+    rest = []
+    for c in (rec.get("Contacts") or {}).get("records") or []:
+        name = (c.get("Name") or "").strip()
+        if not name or not _is_person_name(name):
+            continue
+        e = _contact_entry(c)
+        if e["name"].casefold() in seen:
+            continue
+        seen.add(e["name"].casefold())
+        rest.append(e)
+
+    # Stable sort, so current staff keep the query's alphabetical order and
+    # ex-staff fall to the back without being hidden.
+    return head + sorted(rest, key=lambda e: e["former"])
+
+
 def map_account(rec: dict[str, Any]) -> dict[str, Any]:
     """Salesforce Account record -> frontend autofill payload."""
     return {
         "accountId": rec["Id"],
         "name": rec.get("Name"),
+        # The person, as opposed to `name` (the store). Fills Bill To "Buyer
+        # name"; None when Salesforce cannot say who unambiguously, and the
+        # form then leaves the field for the buyer to type.
+        "buyerName": _buyer_name(rec),
+        # Rep-only pick list for that field, rendered as chips under it. The
+        # frontend hands customers an empty list — see App.jsx's isRepFilled.
+        "contacts": _account_contacts(rec),
         "billTo": {
             "street": rec.get("BillingStreet"),
             "cityState": _city_state(rec.get("BillingCity"), rec.get("BillingState")),
