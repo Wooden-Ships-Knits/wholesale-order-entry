@@ -3,7 +3,7 @@
 Coverage is on the rule itself: which contact becomes Bill To "Buyer name",
 and — just as important — when we refuse to guess and leave it blank.
 """
-from app.salesforce.mapping import _buyer_name, map_account
+from app.salesforce.mapping import _account_contacts, _buyer_name, map_account
 
 
 def _account(buying=None, buying_title=None, contacts=None):
@@ -109,7 +109,8 @@ def test_strips_surrounding_whitespace():
 
 
 def _sf_account(**over):
-    """A full Account record as find_accounts() returns it."""
+    """A full Account record, shaped as find_accounts() returns it once the
+    Contacts subquery is wired in (Task 4)."""
     base = {
         "Id": "0012v00000AbCdEAAV",
         "Name": "A PIED",
@@ -153,3 +154,83 @@ def test_map_account_still_reports_the_store_name_separately():
     mapped = map_account(_sf_account())
     assert mapped["name"] == "A PIED"
     assert mapped["buyerName"] == "Kathleen Belavitch"
+
+
+def test_contacts_lead_with_the_buying_contact():
+    rec = _account(
+        buying="Kathleen Belavitch",
+        buying_title="Owner",
+        contacts=[_contact("Someone Else"), _contact("Kathleen Belavitch", "Owner")],
+    )
+    picked = _account_contacts(rec)
+    assert picked[0] == {"name": "Kathleen Belavitch", "title": "Owner", "former": False}
+
+
+def test_contacts_include_a_buying_contact_filed_under_another_account():
+    """25 accounts point ContactBuying__c at a contact that is not their own
+    child (SAND PEOPLE - LAHAINA -> Laura Phillipson). The prefilled name must
+    still appear in the list, or the field names someone the picker doesn't."""
+    rec = _account(buying="Laura Phillipson", contacts=[_contact("Front Desk")])
+    assert [c["name"] for c in _account_contacts(rec)] == ["Laura Phillipson", "Front Desk"]
+
+
+def test_contacts_do_not_repeat_the_buying_contact():
+    rec = _account(buying="Emily Egan", contacts=[_contact("Emily Egan")])
+    assert [c["name"] for c in _account_contacts(rec)] == ["Emily Egan"]
+
+
+def test_contact_dedupe_ignores_case():
+    rec = _account(buying="Emily Egan", contacts=[_contact("EMILY EGAN")])
+    assert len(_account_contacts(rec)) == 1
+
+
+def test_contacts_flag_former_staff():
+    rec = _account(contacts=[_contact("Emma Hopkin", "no longer")])
+    assert _account_contacts(rec) == [
+        {"name": "Emma Hopkin", "title": "no longer", "former": True}
+    ]
+
+
+def test_contacts_sort_former_staff_last():
+    rec = _account(contacts=[
+        _contact("Emma Hopkin", "no longer"),
+        _contact("Charlotte Glover"),
+        _contact("Helen Webster", "no longer"),
+        _contact("Sophie Jewell"),
+    ])
+    assert [c["name"] for c in _account_contacts(rec)] == [
+        "Charlotte Glover", "Sophie Jewell", "Emma Hopkin", "Helen Webster",
+    ]
+
+
+def test_a_former_buying_contact_still_leads():
+    """Ordering must agree with the prefilled value: _buyer_name() returns the
+    buying contact regardless of title, so it cannot sort to the bottom."""
+    rec = _account(
+        buying="Yolanda", buying_title="no longer", contacts=[_contact("Ann")]
+    )
+    picked = _account_contacts(rec)
+    assert picked[0]["name"] == "Yolanda"
+    assert picked[0]["former"] is True
+
+
+def test_contacts_have_no_title_key_value_when_untitled():
+    rec = _account(contacts=[_contact("Katie")])
+    assert _account_contacts(rec) == [{"name": "Katie", "title": None, "former": False}]
+
+
+def test_contacts_skip_blank_names():
+    rec = _account(contacts=[_contact("   "), _contact("Heidi Jorgensen")])
+    assert [c["name"] for c in _account_contacts(rec)] == ["Heidi Jorgensen"]
+
+
+def test_contacts_are_empty_when_the_account_has_none():
+    assert _account_contacts(_account()) == []
+
+
+def test_map_account_exposes_the_contact_list():
+    rec = _sf_account(Contacts={"records": [{"Name": "Ann", "Title": None}]})
+    assert map_account(rec)["contacts"] == [
+        {"name": "Kathleen Belavitch", "title": "Owner", "former": False},
+        {"name": "Ann", "title": None, "former": False},
+    ]

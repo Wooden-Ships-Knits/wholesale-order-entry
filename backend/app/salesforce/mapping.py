@@ -336,6 +336,51 @@ def _buyer_name(rec: dict[str, Any]) -> str | None:
     return None
 
 
+def _account_contacts(rec: dict[str, Any]) -> list[dict[str, Any]]:
+    """Everyone a rep may pick as the buyer, best candidate first.
+
+    Autofill names one person; a store often has several, and only a rep knows
+    which one an order is for — BURLINGTON COAT FACTORY keeps a sweater buyer
+    and an accessory buyer, and ContactBuying__c can only name one of them.
+
+    The buying contact leads and is ALWAYS included, even when it is not a
+    child of this account: ContactBuying__c is a plain lookup, and 25 accounts
+    point it at a contact filed under a different one (plus REAR VIEW MIRROR,
+    whose buying contact has no account at all). Listing only the child records
+    would show a prefilled name missing from the list beneath it.
+
+    Former staff stay in the list, marked and last — LILY'S BOUTIQUE's only two
+    contacts are both titled "no longer", and an empty picker there would tell
+    the rep nothing. The buying contact keeps its lead even when former, so the
+    ordering cannot contradict the prefilled value.
+    """
+    def entry(c: dict[str, Any]) -> dict[str, Any]:
+        title = (c.get("Title") or "").strip()
+        return {
+            "name": (c.get("Name") or "").strip(),
+            "title": title or None,
+            "former": "no longer" in title.lower(),
+        }
+
+    buying = rec.get("ContactBuying__r") or {}
+    head = [entry(buying)] if (buying.get("Name") or "").strip() else []
+
+    seen = {e["name"].casefold() for e in head}
+    rest = []
+    for c in (rec.get("Contacts") or {}).get("records") or []:
+        if not (c.get("Name") or "").strip():
+            continue
+        e = entry(c)
+        if e["name"].casefold() in seen:
+            continue
+        seen.add(e["name"].casefold())
+        rest.append(e)
+
+    # Stable sort, so current staff keep Salesforce's order and ex-staff fall
+    # to the back without being hidden.
+    return head + sorted(rest, key=lambda e: e["former"])
+
+
 def map_account(rec: dict[str, Any]) -> dict[str, Any]:
     """Salesforce Account record -> frontend autofill payload."""
     return {
@@ -345,6 +390,9 @@ def map_account(rec: dict[str, Any]) -> dict[str, Any]:
         # name"; None when Salesforce cannot say who unambiguously, and the
         # form then leaves the field for the buyer to type.
         "buyerName": _buyer_name(rec),
+        # Rep-only pick list for that field, rendered as chips under it. The
+        # frontend hands customers an empty list — see App.jsx's isRepFilled.
+        "contacts": _account_contacts(rec),
         "billTo": {
             "street": rec.get("BillingStreet"),
             "cityState": _city_state(rec.get("BillingCity"), rec.get("BillingState")),
