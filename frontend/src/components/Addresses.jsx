@@ -32,7 +32,7 @@ function titleCase(value) {
     .join('')
 }
 
-function Field({ label, value, onChange, type = 'text', required = false, autoComplete, disabled = false, placeholder, titleCaseOnBlur = false, list }) {
+function Field({ label, value, onChange, type = 'text', required = false, autoComplete, disabled = false, placeholder, titleCaseOnBlur = false }) {
   const [warning, setWarning] = useState('')
   const handleChange = (e) => {
     if (type === 'tel') {
@@ -77,16 +77,11 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
         disabled={disabled}
         placeholder={placeholder}
         inputMode={type === 'tel' ? 'numeric' : undefined}
-        // Attaches a <datalist> of suggestions without making the field a
-        // dropdown: it stays free text, it just offers what we know.
-        list={list}
       />
       {warning && <span className="field-warning">{warning}</span>}
     </label>
   )
 }
-
-const BUYER_CONTACTS_LIST_ID = 'buyer-contacts'
 
 export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false, buyerContacts = [] }) {
   const [sameAsBilling, setSameAsBilling] = useState(false)
@@ -143,26 +138,27 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
         <div className="col-head">
           <h2>Bill To</h2>
         </div>
-        {/* One field, not two: the account's contacts hang off this input as a
-            <datalist>, so a rep can type a name Salesforce has never heard of
-            or pick a known one, in the same box. The hint only surfaces when
-            there is actually a choice to make, and only for reps —
-            buyerContacts is empty for customers. */}
-        <Field
-          label="Buyer name"
-          value={billTo.buyerName}
-          onChange={(v) => setBillTo('buyerName', v)}
-          autoComplete="name"
-          titleCaseOnBlur
-          required
-          list={buyerContacts.length > 1 ? BUYER_CONTACTS_LIST_ID : undefined}
-          placeholder={
-            buyerContacts.length > 1
-              ? `Type a name, or pick from ${buyerContacts.length} contacts`
-              : undefined
-          }
-        />
-        <BuyerContactPicker id={BUYER_CONTACTS_LIST_ID} contacts={buyerContacts} />
+        {/* One control for Buyer name, never two. Several contacts to choose
+            between makes it a dropdown; otherwise it stays the free-text field,
+            which is what a new account or a buyer Salesforce doesn't know needs.
+            buyerContacts is empty for customers, so they always get the text
+            field. */}
+        {buyerContacts.length > 1 ? (
+          <BuyerContactPicker
+            contacts={buyerContacts}
+            value={billTo.buyerName}
+            onPick={(name) => setBillTo('buyerName', name)}
+          />
+        ) : (
+          <Field
+            label="Buyer name"
+            value={billTo.buyerName}
+            onChange={(v) => setBillTo('buyerName', v)}
+            autoComplete="name"
+            titleCaseOnBlur
+            required
+          />
+        )}
         {showLocationSearch && (
           <AddressMap
             lat={billTo.lat}

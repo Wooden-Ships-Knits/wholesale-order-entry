@@ -81,24 +81,32 @@ accounts, and the sets are full of stale and non-buying staff.
 
 Autofill decides one name. A rep often needs a different one: `BURLINGTON COAT
 FACTORY` has a *sweater buyer* and an *accessory buyer*, and `ContactBuying__c`
-can only name one of them. So the account's contacts are offered **inside the
-Buyer name field itself**, as a `<datalist>` on that input. The form keeps
-exactly one Buyer name field: a rep types a name Salesforce has never heard of,
-or picks a known one, in the same box.
+can only name one of them. So when a rep opens an account with more than one
+contact, **the Buyer name field is a `<select>` of those contacts** rather than
+a text box — the same `label > select` markup as Internal Use's "Order written
+by", which is why it needs no styling of its own. The form shows one control for
+Buyer name either way, never two.
 
 **Shown to reps only** (`isRepFilled`), **and only when the account has more
 than one contact** — 782 of the 3,175 accounts reachable in the buyer lookup
 (24.6%). A single-contact account shows nothing: autofill has already put that
 person in the field, so a dropdown there would offer back the answer it just
-gave. When the list is offered, the field's placeholder says so
-("Type a name, or pick from 4 contacts") — a `<datalist>` has no affordance of
-its own, so without that hint a rep would never know to look.
+gave — so those accounts keep the plain text field.
 
-(Revised twice on 2026-08-20. It began as a row of chips shown at 1+ contacts:
-chips added a control style the form did not otherwise have, and at one contact
-the picker was pure noise. It then became a separate `<select>`, which was still
-a second field competing with the one it fed. A `<datalist>` renders nothing of
-its own, so the answer belongs to the field that needs it.)
+**The tradeoff, decided deliberately:** on the 782 accounts that become a
+dropdown, a rep can only name a contact Salesforce already knows. A buyer the
+org has not recorded has to be added in Salesforce first, or entered on an
+account that still shows the text field. This was raised and accepted; the free
+-text path survives everywhere it is actually needed — new accounts, the 118
+reachable accounts with no contacts, and every customer-filled order.
+
+(Revised three times on 2026-08-20. Chips at 1+ contacts: a control style the
+form did not otherwise have, and noise at one contact. Then a separate `<select>`
+beside the field: a second field competing with the one it fed. Then a
+`<datalist>` on the field itself: one field, but invisible — a datalist has no
+arrow, no affordance, and cannot group or grey its entries. Landing on a real
+`<select>` gives the affordance and the grouping back, at the cost of free
+text where it fires.)
 
 The picker does not change `_buyer_name()`. Ambiguous accounts still prefill
 blank; the dropdown just makes the answer one selection away instead of a
@@ -142,12 +150,12 @@ already needs — **no additional query** — under three rules:
    SHEPP` now resolves to "Joan Shepp", because the receiving mailbox beside
    her no longer makes the choice look ambiguous.
 
-Each entry carries the name as its `value` — the part that lands in the field —
-and the title as its `label`, which browsers show beside the name and never
-insert. Ex-staff are still ordered last and still carry their "no longer" title,
-which is now the only marker available: a `<datalist>` can neither grey an entry
-nor group one. A browser that ignores `label` shows the bare name, which is the
-part that matters. Emails are deliberately left out — see below.
+Each option reads `Name — title`, because the title is what makes the choice
+decidable, while its `value` is the name alone — that is what reaches
+`billTo.buyerName`. Ex-staff sit under a `No longer here` optgroup and everyone
+else under `Current`; a `<select>` cannot grey an option, so the group label
+does that work. With no ex-staff the list stays flat. Emails are deliberately
+left out — see below.
 
 ### Known exposure
 
@@ -201,9 +209,8 @@ different account overwrites it, because `applyAccount()` already replaces the
 whole `billTo` object.
 
 New `frontend/src/components/BuyerContactPicker.jsx` — one job: render the
-`<datalist>` the Buyer name input names via its `list` attribute. It reports
-nothing and renders no visible element; the input's own `onChange` already
-carries a picked name, so there is no second code path to keep in step. `Addresses.jsx` renders it under the Buyer name field and is
+Buyer name field as a labelled `<select>`. `Addresses.jsx` renders either it or
+the text `Field`, never both, so there is exactly one control and one label. `Addresses.jsx` renders it under the Buyer name field and is
 otherwise untouched.
 
 The rep gate lives in `App.jsx`, where `isRepFilled` already does:
@@ -214,9 +221,11 @@ buyerContacts={isRepFilled ? accountContacts : []}
 
 so `Addresses` stays unaware of who is filling the form and renders what it is
 handed. `applyAccount()` stores `accountContacts`; a lookup matching nothing
-clears it. Picking a suggestion is an ordinary edit of the input, so it flows
-through the same `onChange` as typing — the field remains free text, and a rep
-can still name someone Salesforce has never heard of.
+clears it. Choosing an option sets `billTo.buyerName` through the same setter
+the text field uses, so validation and submission see no difference between a
+typed name and a picked one. The `<select>` is `required` and starts on a
+disabled placeholder, so an ambiguous account cannot submit whoever happens to
+sort first.
 
 No frontend test framework exists in this repo, so the picker is verified by
 `npm run build` plus a runtime pass with the `verify` skill. Introducing vitest
