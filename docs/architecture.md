@@ -72,7 +72,8 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
 
     | Form field | Account field |
     |---|---|
-    | Buyer name | `Name` (default); `ContactBuying__r.Name` overrides when set — see "Buyer contact" below |
+    | Account name (store) | `Name` |
+    | Buyer name (person) | `ContactBuying__r.Name`, else a sole unambiguous related Contact, else left blank — see "Buyer contact" below. **Never `Name`:** that is the store, and filling the person field with it was the bug `ef1c8e2` fixed. |
     | Bill To street | `BillingStreet` |
     | Bill To city/state | `BillingCity`, `BillingState` |
     | Bill To zip | `BillingPostalCode` |
@@ -87,11 +88,11 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
     | Internal Use: certificate on file | derive from `Tax_ID_Verified__c` (+ `Tax_ID_Expires__c` not past) |
 
   - **Buyer contact (added 2026-08-20):** `ContactBuying__c` — lookup to Contact, now used to source and offer alternate buyer names.
-    - The buyer lookup selects `ContactBuying__r.Name` (and `.Title`) to prefill Bill To "Buyer name", overriding the `Name` mapping above when the lookup is set.
+    - The buyer lookup selects `ContactBuying__r.Name` (and `.Title`) to prefill Bill To "Buyer name". The store's own `Name` is never a candidate for that field — see the fallback rule below for what happens when the lookup is unset.
     - `ContactBuyingEmail__c` is a formula over this same contact's Email, so the account's lookup key and its buyer name identify the same person.
     - A `(SELECT Name, Title FROM Contacts ORDER BY Name)` child subquery feeds the rep-only contact-picker chips under "Buyer name".
     - Set on 4,731 of 5,059 wholesale accounts (2026-08-20) — but it's a plain lookup, so 25 of those accounts point at a Contact filed under a different Account.
-    - Accounts without it fall back to a sole unambiguous related Contact, and otherwise leave "Buyer name" blank rather than guess.
+    - Accounts without it fall back to a related Contact, but only on an unambiguous signal — either the account has exactly one named Contact, or exactly one whose `Title` says "buyer" and does not say "no longer". Anything else leaves "Buyer name" blank rather than guess: it is required on an order that gets signed, so a wrong name is worse than an empty one.
     - See `docs/superpowers/specs/2026-08-20-buyer-name-autofill-design.md`.
   - **Picklists / option sources (added 2026-07-16):**
     - `Account.Salesperson__c` — picklist; active values feed `GET /api/reps`.
