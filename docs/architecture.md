@@ -90,7 +90,7 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
   - **Buyer contact (added 2026-08-20):** `ContactBuying__c` — lookup to Contact, now used to source and offer alternate buyer names.
     - The buyer lookup selects `ContactBuying__r.Name` (and `.Title`) to prefill Bill To "Buyer name". The store's own `Name` is never a candidate for that field — see the fallback rule below for what happens when the lookup is unset.
     - `ContactBuyingEmail__c` is a formula over this same contact's Email, so the account's lookup key and its buyer name identify the same person.
-    - A `(SELECT Name, Title FROM Contacts ORDER BY Name)` child subquery feeds the rep-only contact dropdown under "Buyer name", shown only when an account has more than one contact.
+    - A `(SELECT Name, Title FROM Contacts ORDER BY Name)` child subquery feeds a rep-only `<datalist>` on the "Buyer name" field itself, offered only when an account has more than one contact. There is no second field: the input stays free text and simply suggests.
     - Set on 4,731 of 5,059 wholesale accounts (2026-08-20) — but it's a plain lookup, so 25 of those accounts point at a Contact filed under a different Account.
     - Accounts without it fall back to a related Contact, but only on an unambiguous signal — either the account has exactly one named Contact, or exactly one whose `Title` says "buyer" and does not say "no longer". Anything else leaves "Buyer name" blank rather than guess: it is required on an order that gets signed, so a wrong name is worse than an empty one.
     - See `docs/superpowers/specs/2026-08-20-buyer-name-autofill-design.md`.

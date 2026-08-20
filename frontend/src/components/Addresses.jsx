@@ -32,7 +32,7 @@ function titleCase(value) {
     .join('')
 }
 
-function Field({ label, value, onChange, type = 'text', required = false, autoComplete, disabled = false, placeholder, titleCaseOnBlur = false }) {
+function Field({ label, value, onChange, type = 'text', required = false, autoComplete, disabled = false, placeholder, titleCaseOnBlur = false, list }) {
   const [warning, setWarning] = useState('')
   const handleChange = (e) => {
     if (type === 'tel') {
@@ -77,11 +77,16 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
         disabled={disabled}
         placeholder={placeholder}
         inputMode={type === 'tel' ? 'numeric' : undefined}
+        // Attaches a <datalist> of suggestions without making the field a
+        // dropdown: it stays free text, it just offers what we know.
+        list={list}
       />
       {warning && <span className="field-warning">{warning}</span>}
     </label>
   )
 }
+
+const BUYER_CONTACTS_LIST_ID = 'buyer-contacts'
 
 export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false, buyerContacts = [] }) {
   const [sameAsBilling, setSameAsBilling] = useState(false)
@@ -138,6 +143,11 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
         <div className="col-head">
           <h2>Bill To</h2>
         </div>
+        {/* One field, not two: the account's contacts hang off this input as a
+            <datalist>, so a rep can type a name Salesforce has never heard of
+            or pick a known one, in the same box. The hint only surfaces when
+            there is actually a choice to make, and only for reps —
+            buyerContacts is empty for customers. */}
         <Field
           label="Buyer name"
           value={billTo.buyerName}
@@ -145,21 +155,14 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
           autoComplete="name"
           titleCaseOnBlur
           required
+          list={buyerContacts.length > 1 ? BUYER_CONTACTS_LIST_ID : undefined}
+          placeholder={
+            buyerContacts.length > 1
+              ? `Type a name, or pick from ${buyerContacts.length} contacts`
+              : undefined
+          }
         />
-        {/* Renders nothing for customers, or when the account has no contacts.
-            The field stays free text either way — a rep can name someone
-            Salesforce has never heard of. `contacts` rather than
-            `buyerContacts` because the component's own name already says whose.
-
-            A picked name skips titleCaseOnBlur, exactly as the autofill in
-            applyAccount() does — both write Salesforce's own casing, and the
-            title_case validator on the backend's buyer_name is what settles it.
-            Don't normalise only this path; that would split them apart. */}
-        <BuyerContactPicker
-          contacts={buyerContacts}
-          selected={billTo.buyerName}
-          onPick={(name) => setBillTo('buyerName', name)}
-        />
+        <BuyerContactPicker id={BUYER_CONTACTS_LIST_ID} contacts={buyerContacts} />
         {showLocationSearch && (
           <AddressMap
             lat={billTo.lat}
