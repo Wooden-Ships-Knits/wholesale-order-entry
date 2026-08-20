@@ -467,7 +467,11 @@ def find_accounts(
     order to e.g. a "E - No Marketing" store silently looked like "not in
     Salesforce" and wiped the order's territory and rank.
     """
-    fields = ", ".join(mapping.ACCOUNT_FIELDS)
+    # The child subquery is not a scalar field, so it lives outside
+    # ACCOUNT_FIELDS; it must still land inside the SELECT clause, where SOQL
+    # requires it. Related contacts feed both the buyer-name fallback and the
+    # rep's contact picker.
+    fields = ", ".join((*mapping.ACCOUNT_FIELDS, mapping.ACCOUNT_CONTACTS_SUBQUERY))
     if email:
         where = f"{mapping.ACCOUNT_LOOKUP_EMAIL} = '{soql_str(email)}'"
     elif account_id:
