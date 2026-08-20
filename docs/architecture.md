@@ -72,7 +72,8 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
 
     | Form field | Account field |
     |---|---|
-    | Buyer name | `Name` |
+    | Account name (store) | `Name` |
+    | Buyer name (person) | `ContactBuying__r.Name`, else a sole unambiguous related Contact, else left blank — see "Buyer contact" below. **Never `Name`:** that is the store, and filling the person field with it was the bug `ef1c8e2` fixed. |
     | Bill To street | `BillingStreet` |
     | Bill To city/state | `BillingCity`, `BillingState` |
     | Bill To zip | `BillingPostalCode` |
@@ -86,11 +87,18 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
     | Internal Use: Rep | `Salesperson__c` (picklist); also `Internal_Rep__c` (reference) |
     | Internal Use: certificate on file | derive from `Tax_ID_Verified__c` (+ `Tax_ID_Expires__c` not past) |
 
+  - **Buyer contact (added 2026-08-20):** `ContactBuying__c` — lookup to Contact, now used to source and offer alternate buyer names.
+    - The buyer lookup selects `ContactBuying__r.Name` (and `.Title`) to prefill Bill To "Buyer name". The store's own `Name` is never a candidate for that field — see the fallback rule below for what happens when the lookup is unset.
+    - `ContactBuyingEmail__c` is a formula over this same contact's Email, so the account's lookup key and its buyer name identify the same person.
+    - A `(SELECT Name, Title FROM Contacts ORDER BY Name)` child subquery feeds "Buyer name" when a rep is filling the form and the account has more than one contact: the field becomes a `<select>` of those contacts instead of a text box. One control either way — accounts with one contact or none keep the free-text field, which is where a buyer Salesforce does not know gets entered.
+    - Set on 4,731 of 5,059 wholesale accounts (2026-08-20) — but it's a plain lookup, so 25 of those accounts point at a Contact filed under a different Account.
+    - Accounts without it fall back to a related Contact, but only on an unambiguous signal — either the account has exactly one named Contact, or exactly one whose `Title` says "buyer" and does not say "no longer". Anything else leaves "Buyer name" blank rather than guess: it is required on an order that gets signed, so a wrong name is worse than an empty one.
+    - See `docs/superpowers/specs/2026-08-20-buyer-name-autofill-design.md`.
   - **Picklists / option sources (added 2026-07-16):**
     - `Account.Salesperson__c` — picklist; active values feed `GET /api/reps`.
     - `Account.SalesTerritory__c` — free text ("Midwest - Aviva Landin", …); the option list for `GET /api/territories` is the distinct values in use (`GROUP BY`), not a picklist describe.
     - `kugo2p__SalesOrder__c.Written_By__c` — picklist on the managed-package sales order object; active values feed `GET /api/order-writers` and the Internal Use "Order written by" / "Split with" dropdowns.
-  - Other potentially relevant fields (not used in v1): `Terms__c` (payment terms picklist), `Discount_Sweaters__c` / `Discount_Accessories__c` (% discounts — **CONFIRMED: not applied on the form; discounts are handled by admin during manual processing. The form always shows price-book prices.**), `Deposit_Required__c` (%), `Season__c` (multipicklist on Account), `ContactBuying__c` (reference to buying contact).
+  - Other potentially relevant fields (not used in v1): `Terms__c` (payment terms picklist), `Discount_Sweaters__c` / `Discount_Accessories__c` (% discounts — **CONFIRMED: not applied on the form; discounts are handled by admin during manual processing. The form always shows price-book prices.**), `Deposit_Required__c` (%), `Season__c` (multipicklist on Account).
 
 ### 3.3 Queries (SOQL, illustrative)
 - Seasons (`GET /api/seasons`) — the active per-season wholesale books:

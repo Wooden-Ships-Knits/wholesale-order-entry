@@ -84,6 +84,9 @@ export default function App() {
   const [certOnFile, setCertOnFile] = useState(false)
   const [certFile, setCertFile] = useState(null)
   const [lookupNoMatch, setLookupNoMatch] = useState(false)
+  // Contacts on the looked-up account, for the rep-only buyer picker. Empty
+  // until a lookup succeeds, and emptied again when one matches nothing.
+  const [accountContacts, setAccountContacts] = useState([])
   const [terms, setTermsState] = useState({ signatureName: '', signatureDate: today(), accepted: false, infoConfirmed: false, draftSignature: false, draftSignatureEmail: '' })
   const [internal, setInternalState] = useState({
     newOrReorder: '',
@@ -177,8 +180,13 @@ export default function App() {
       specialInstructions: m.specialInstructions || null,
       rank: m.rank || null,
     }))
+    setAccountContacts(m.contacts || [])
     setBillToState({
-      buyerName: '',
+      // The account's buying contact from Salesforce. Blank when the org has
+      // no unambiguous answer (~6% of accounts) — the buyer types it then, as
+      // they did for every account before this. Never `name`: that is the
+      // store, and filling a person field with it was the ef1c8e2 bug.
+      buyerName: m.buyerName || '',
       street: m.billTo.street || '',
       cityState: m.billTo.cityState || '',
       zip: m.billTo.zip || '',
@@ -518,7 +526,12 @@ export default function App() {
       
       <BuyerLookup
         onSelect={applyAccount}
-        onResult={(m) => setLookupNoMatch(m.length === 0)}
+        onResult={(m) => {
+          setLookupNoMatch(m.length === 0)
+          // No account, no contacts — otherwise the previous store's people
+          // stay on screen next to a form the rep is now filling from scratch.
+          if (m.length === 0) setAccountContacts([])
+        }}
         accountName={form.accountName}
         setAccountName={(v) => setField('accountName', v.toUpperCase())}
       />
@@ -535,6 +548,10 @@ export default function App() {
         // New customers ship to their billing address most of the time, so
         // "Same as Bill To" defaults on for them (Ship To still editable).
         isNewAccount={isNewAccount}
+        // Rep-only: a customer knows their own name and has no business seeing
+        // their store's other staff. isRepFilled is a self-declared radio, the
+        // same soft gate the conflict warning uses.
+        buyerContacts={isRepFilled ? accountContacts : []}
       />
 
       {(form.salesTerritory || territoryStatus) && (

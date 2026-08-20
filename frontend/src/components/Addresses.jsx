@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import AddressMap from './AddressMap'
+import BuyerContactPicker from './BuyerContactPicker'
 
 // Format a US phone number progressively as the user types: keep only the
 // first 10 digits and render them as "(423) 240-9340".
@@ -82,7 +83,7 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
   )
 }
 
-export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false }) {
+export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false, buyerContacts = [] }) {
   const [sameAsBilling, setSameAsBilling] = useState(false)
 
   const shipHasAddress = Boolean(shipTo.street || shipTo.cityState || shipTo.zip)
@@ -137,14 +138,27 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
         <div className="col-head">
           <h2>Bill To</h2>
         </div>
-        <Field
-          label="Buyer name"
-          value={billTo.buyerName}
-          onChange={(v) => setBillTo('buyerName', v)}
-          autoComplete="name"
-          titleCaseOnBlur
-          required
-        />
+        {/* One control for Buyer name, never two. Several contacts to choose
+            between makes it a dropdown; otherwise it stays the free-text field,
+            which is what a new account or a buyer Salesforce doesn't know needs.
+            buyerContacts is empty for customers, so they always get the text
+            field. */}
+        {buyerContacts.length > 1 ? (
+          <BuyerContactPicker
+            contacts={buyerContacts}
+            value={billTo.buyerName}
+            onPick={(name) => setBillTo('buyerName', name)}
+          />
+        ) : (
+          <Field
+            label="Buyer name"
+            value={billTo.buyerName}
+            onChange={(v) => setBillTo('buyerName', v)}
+            autoComplete="name"
+            titleCaseOnBlur
+            required
+          />
+        )}
         {showLocationSearch && (
           <AddressMap
             lat={billTo.lat}

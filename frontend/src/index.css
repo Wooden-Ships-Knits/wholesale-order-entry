@@ -1815,3 +1815,197 @@ button:hover {
       'ship   po';
   }
 }
+
+/* ---- Prospects tab (/reps) -------------------------------------------- */
+/* The map card. Height is fixed rather than aspect-ratio'd: Leaflet needs a
+   resolved pixel height on its container or it renders a zero-height map. */
+.prospect-map-card {
+  position: relative;
+  height: 280px;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  background: #eee;
+  /* Only the box changes when expanding — the map element itself never moves
+     in the DOM, so Leaflet keeps its state. */
+  transition: height 0.2s ease;
+}
+.prospect-map-card.expanded {
+  position: fixed;
+  inset: 3vh 3vw;
+  height: auto;
+  z-index: 1001; /* above .conflict-modal-overlay */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+.prospect-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Scoped for the same reason as .map-search below: the order form and the
+   conflict checker use .map-status for a one-line message under the address
+   box, not a full-bleed overlay, and this unscoped copy was overriding theirs.
+   Nothing inside the prospect card renders .map-status today, so this currently
+   matches nothing — kept scoped rather than deleted so a status added to the
+   map later gets the overlay this was written for. */
+.prospect-map-card .map-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #a33;
+  background: #f4f2ee;
+}
+/* Google draws its own controls top-left; keep the search clear of them. */
+/* Leaflet draws its zoom control top-left; sit clear of it. */
+.prospect-map-card .map-search { left: 52px; top: 8px; }
+.prospect-map-expand,
+.prospect-map-card .prospect-map-expand {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 500; /* over the tiles, under Leaflet's own popups (700) */
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px solid #bbb;
+  cursor: pointer;
+}
+.prospect-map-legend {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 500;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+}
+.prospect-map-legend .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 0.25rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.dot-prospect { background: #f2e027; border: 1px solid #ae8207; }
+.dot-conflict { background: #f2e027; border: 2px solid #b9451d; }
+.dot-account  { background: #9aa0a6; border: 1px solid #6b7280; }
+
+/* Search box overlaid on the map, like any map app. Left side, clear of
+   Leaflet's zoom control (top-left) by sitting below it.
+
+   Scoped to .prospect-map-card: `.map-search` is also the ADDRESS input on the
+   order form (AddressMap.jsx) and on the conflict checker, where it must be an
+   ordinary full-width field. Unscoped, this absolute positioning dragged that
+   input to the top-left corner of the page. */
+.prospect-map-card .map-search {
+  position: absolute;
+  top: 8px;
+  left: 52px;
+  z-index: 600; /* above tiles and the legend, below Leaflet popups (700) */
+  width: min(19rem, calc(100% - 130px));
+}
+.prospect-map-card .map-search input {
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid #bbb;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.map-search-results {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #bbb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  max-height: 15rem;
+  overflow-y: auto;
+}
+.map-search-results button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  background: none;
+  color: #1d1d1b;
+  border: none;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.map-search-results button:hover,
+.map-search-results button.active {
+  background: #f2efe9;
+  color: #1d1d1b;
+}
+/* The row Enter will take — a bar on the left, so it is distinguishable from
+   the plain hover highlight. */
+.map-search-results button.active {
+  box-shadow: inset 3px 0 0 #1a1a1a;
+}
+.map-search-results .sub {
+  font-size: 0.72rem;
+  color: #777;
+}
+.map-search-group {
+  padding: 0.3rem 0.6rem 0.15rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #999;
+  background: #faf9f6;
+  border-top: 1px solid #eee;
+}
+
+.map-search-results li:first-child.map-search-group { border-top: none; }
+.map-search-empty {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  color: #777;
+}
+.city-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  background: #fdf8e8;
+  border: 1px solid #e6d8a8;
+}
+.city-banner span { color: #6b6b6b; }
+.city-banner .link-btn { margin-left: 0; }
+
+.prospect-summary {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #555;
+}
+/* The row is a map control, so say so on hover. */
+.prospect-table tbody tr { cursor: pointer; }
+.prospect-table tbody tr:hover { background: #f6f4ef; }
+.mark-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.mark-btn.marked { color: #d9a520; }
+.mark-btn:hover { background: none; color: #d9a520; }
+.badge-women { color: #2f6f4e; }
+.map-popup { font-size: 0.82rem; line-height: 1.5; }

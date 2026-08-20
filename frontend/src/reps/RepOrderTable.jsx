@@ -303,10 +303,14 @@ export default function RepOrderTable({
                   year: 'numeric',
                 })}
               </span>
+              {/* Reps are spread across time zones and the office is not in
+                  any of them, so a bare clock time is ambiguous. Same format
+                  as /admin. */}
               <span className="sub">
                 {new Date(o.createdAt).toLocaleTimeString('en-US', {
                   hour: 'numeric',
                   minute: '2-digit',
+                  timeZoneName: 'shortOffset',
                 })}
               </span>
             </td>
