@@ -110,6 +110,9 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         # Buyer-selected ship window. Editable from /admin (the season is not —
         # changing it would invalidate every line item's price book).
         "shipWindow": o.ship_window,
+        # The buyer has saved a draft through their link: this order is still
+        # being edited and its totals may move again before it is signed.
+        "draftSavedAt": o.draft_saved_at,
         "accountName": o.account_name,
         # Internal Use "Order written by" — a rep-filled order records who wrote
         # it; a customer-filled one leaves it empty.

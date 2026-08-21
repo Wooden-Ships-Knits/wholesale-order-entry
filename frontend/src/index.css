@@ -2009,3 +2009,110 @@ button:hover {
 .mark-btn:hover { background: none; color: #d9a520; }
 .badge-women { color: #2f6f4e; }
 .map-popup { font-size: 0.82rem; line-height: 1.5; }
+
+/* ---- Save draft on the signing page ---------------------------------- */
+/* STACKED, not side by side. Signing is the decision; saving is the way out of
+   it — putting them shoulder to shoulder made them read as equal choices, and
+   on a phone the pair either wrapped awkwardly or squeezed the primary button
+   until its label no longer fit. */
+.sign-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  /* Clear air above: the buttons sat flush against the signature box, so the
+     black bar read as part of the field rather than the action below it. */
+  margin-top: 1.5rem;
+  /* Not full-bleed. A button as wide as the form is a banner, not a control —
+     and on a wide screen the label floats in the middle of nothing. 22rem is
+     wide enough for "Sign this order — 24 pcs, $1,584.00" and narrow enough to
+     read as a button; on a phone it is already wider than the column, so it
+     fills naturally without a second rule. */
+  max-width: 22rem;
+  /* Centred in the form. Left-aligned they sat under the signature box and
+     read as another field; the page's one decision deserves to sit on its own
+     axis. */
+  margin-left: auto;
+  margin-right: auto;
+}
+.sign-actions .submit-btn,
+.draft-btn {
+  width: 100%;
+  /* 44px is the smallest comfortably tappable target on iOS; the default
+     button padding lands under that once the font shrinks on a phone. */
+  min-height: 44px;
+}
+/* Visually secondary: outlined rather than filled, so the eye still goes to
+   Sign first. */
+.draft-btn {
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px solid #1a1a1a;
+  cursor: pointer;
+}
+.draft-btn:hover:not(:disabled) { background: #efece6; color: #1d1d1b; }
+.draft-btn:disabled { opacity: 0.5; cursor: default; }
+.draft-hint {
+  margin-top: 0.6rem;
+  text-align: center;
+}
+
+/* ---- Signing page on a phone / iPad ----------------------------------- */
+/* Two separate concerns, so two separate queries.
+   TOUCH rules key off the pointer, not the viewport: an iPad is 810px wide and
+   would miss any phone-sized breakpoint, yet it is the same Safari with the
+   same 16px zoom rule and the same fingers. LAYOUT rules stay on width, where
+   they belong. */
+@media (hover: none) and (pointer: coarse) {
+  /* iOS Safari zooms the whole page whenever a focused field is under 16px,
+     and never zooms back out. Root is 15px here, so every inherited field is
+     just under the line. */
+  .sign-page input,
+  .sign-page select,
+  .sign-page textarea {
+    font-size: 16px;
+  }
+  /* Carries !important for its handwriting face, so matching it needs the
+     same weight. */
+  .signature-input {
+    font-size: 1.35rem !important;
+  }
+
+  /* The consent boxes are the one thing a buyer MUST hit before signing, and a
+     default checkbox renders about 13px. */
+  .sign-page label.check {
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0.85rem 0;
+  }
+  .sign-page label.check input {
+    width: 22px;
+    height: 22px;
+    margin-top: 0;
+    flex: 0 0 auto;
+  }
+
+  /* 44px is the smallest comfortably tappable target on iOS. */
+  .sign-actions .submit-btn,
+  .draft-btn {
+    min-height: 44px;
+    white-space: normal;
+    line-height: 1.35;
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Nothing on this page should scroll the page sideways — the product table
+     has its own .table-wrap for that. */
+  .sign-page {
+    overflow-x: hidden;
+  }
+}
+
+/* iPad portrait sits above the phone breakpoint but below desktop: the summary
+   grid is the only thing that genuinely needs the room. */
+@media (max-width: 900px) and (min-width: 641px) {
+  .sign-summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

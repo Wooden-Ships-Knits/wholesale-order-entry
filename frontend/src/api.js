@@ -89,6 +89,26 @@ export async function getOrderToSign(token) {
   return res.json()
 }
 
+// Save the buyer's work in progress WITHOUT signing. Same payload shape as
+// signOrder minus the signature — the server ignores a signatureName sent here
+// anyway, so a half-filled signature box can never half-sign the order.
+export async function saveDraft(token, payload) {
+  const res = await fetch(`/api/sign/${encodeURIComponent(token)}/draft`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msgs = extractErrors(body, res.status)
+    const err = new Error(msgs.join(' '))
+    err.messages = msgs
+    err.status = res.status
+    throw err
+  }
+  return body
+}
+
 export async function signOrder(token, payload) {
   const res = await fetch(`/api/sign/${encodeURIComponent(token)}`, {
     method: 'POST',

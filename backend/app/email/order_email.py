@@ -169,6 +169,51 @@ Wooden Ships
     return subject, body
 
 
+def rep_chase_email(ctx: dict) -> tuple[str, str]:
+    """The LATER nudges to the rep — days 16 and 26 — after day 6 went unheeded.
+
+    Separate from rep_followup_email because the message has changed: day 6
+    says "email is not working, please call"; this one says "we asked you ten
+    days ago and it is still not signed". Sending the day-6 wording again would
+    read as an automated repeat rather than an escalation.
+
+    Wording supplied by Wooden Ships 2026-08-19; keep it as written.
+    """
+    subject = (
+        f"❗Pls CALL this account: {_store(ctx)} - {ctx['season_label']}" + _tag(ctx)
+    )
+    body = """Hi,
+
+Ten days ago, we asked you to call this account. They are not replying to email reminders to sign their order.
+
+We have made more attempts to get a Signature but the order is not signed yet.
+The last email was sent to them yesterday.
+
+**Could you please call the account today**, ask them to find the email, click and sign.
+
+These orders are NOT in the system.
+\u2022 They are not in your reports
+\u2022 No yarn is ordered
+\u2022 No capacity is booked
+\u2022 No ship window is locked
+
+If you have any questions or feedback, just reply to this email.
+
+Thank you!
+Wooden Ships
+"""
+    return subject, body
+
+
+def send_rep_chase(to: str, ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
+    """A day-16 / day-26 escalation, to the rep, with the PDF and no link."""
+    subject, body = rep_chase_email(ctx)
+    return mailer.send_email(
+        to, subject, body, [(filename, pdf_bytes, "pdf")],
+        html=mailer.html_from_text(body),
+    )
+
+
 def send_rep_followup(to: str, ctx: dict, pdf_bytes: bytes, filename: str) -> bool:
     """The day-6 nudge, to the rep, with the PDF and no signing link."""
     subject, body = rep_followup_email(ctx)

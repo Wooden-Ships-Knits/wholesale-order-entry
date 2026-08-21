@@ -49,6 +49,38 @@ def upgrade() -> None:
         sa.Column(
             "status", sa.Text(), nullable=False, server_default=sa.text("'prospect'")
         ),
+
+        # --- assessment -----------------------------------------------------
+        # A judgement about whether the shop is worth approaching, as opposed to
+        # `status`, which is a mechanical fact about whether we already sell to
+        # it. The two are independent: an `existing` account can still be
+        # assessed, and most prospects have no assessment at all.
+        #
+        # ALL NULLABLE. Nothing produces these yet, and a prospect that has not
+        # been assessed genuinely has no verdict — a NOT NULL column would make
+        # every insert from the sweep fail until the assessment step exists.
+        sa.Column("verdict", sa.Text()),
+        sa.Column("confidence", sa.Text()),
+        sa.Column("for_the_rep", sa.Text()),      # the one line a rep should read
+        sa.Column("reasons", sa.Text()),          # why yes
+        sa.Column("against", sa.Text()),          # why no
+        # NOT the OSM `types` column below: that is the raw `shop` tag, this is
+        # our own classification of what kind of shop it is.
+        sa.Column("store_type", sa.Text()),
+        # NOT the OSM `brand` column below: that holds the brand tag and marks a
+        # chain, this counts how many labels the shop carries.
+        sa.Column("brand_count", sa.Integer()),
+        sa.Column("products_per_brand", sa.Numeric(8, 2)),
+        sa.Column("tag_lift", sa.Numeric(8, 3)),
+        sa.Column("price_median", sa.Numeric(10, 2)),
+        sa.Column("price_range", sa.Text()),      # free text, e.g. "$48-$220"
+        sa.Column("knitwear_share", sa.Numeric(5, 4)),        # 0.0000-1.0000
+        sa.Column("knitwear_price_median", sa.Numeric(10, 2)),
+        sa.Column("signature_tags_carried", sa.Text()),
+        # When the assessment last ran. Null = never assessed, which is what
+        # distinguishes "no verdict yet" from "assessed and found wanting".
+        sa.Column("assessed_at", sa.DateTime(timezone=True)),
+
         sa.Column("matched_account", sa.Text()),  # the Salesforce Name it matched
         sa.Column("matched_by", sa.Text()),  # phone | domain | name+distance
         # where
@@ -96,6 +128,11 @@ def upgrade() -> None:
     # A typo would otherwise create a third, silent status that no query counts.
     op.create_check_constraint(
         "ck_prospects_status", "prospects", "status IN ('prospect', 'existing')"
+    )
+    op.create_index("ix_prospects_verdict", "prospects", ["verdict"])
+    # A typo would otherwise create a third, silent verdict that no query counts.
+    op.create_check_constraint(
+        "ck_prospects_verdict", "prospects", "verdict IN ('prospect', 'existing')"
     )
 
     op.create_table(

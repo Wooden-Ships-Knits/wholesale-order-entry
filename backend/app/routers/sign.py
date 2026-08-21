@@ -60,8 +60,13 @@ def sign_url(token: str) -> str:
     return f"{base}/sign/{token}"
 
 
-class SignRequest(CamelModel):
-    signature_name: str = Field(min_length=1, max_length=200)
+class DraftRequest(CamelModel):
+    """Everything the buyer may change. NO signature field, deliberately.
+
+    Pydantic drops unknown keys, so a page that posts its signature box to the
+    draft endpoint has that value silently ignored rather than half-signing the
+    order — the signature is only ever accepted by SignRequest below.
+    """
     # The order as the buyer wants it. Sent in full (not as a diff) so the
     # server never has to reconcile partial state against what it holds.
     items: list[OrderItemIn] = Field(default_factory=list, max_length=200)
@@ -81,6 +86,12 @@ class SignRequest(CamelModel):
     po_number: str = Field("", max_length=100)
     notes: str = Field("", max_length=5000)
     payment: Payment | None = None
+
+
+class SignRequest(DraftRequest):
+    """A draft, plus the one thing that makes it binding."""
+
+    signature_name: str = Field(min_length=1, max_length=200)
 
 
 def _order_for_token(db: Session, token: str) -> Order:
@@ -104,6 +115,9 @@ def _public_view(order: Order) -> dict:
     whether a stranger holding the link should read them."""
     return {
         "orderId": str(order.id)[:8],
+        # Lets the page say "picking up where you left off" instead of looking
+        # like the rep wrote it this way.
+        "draftSavedAt": order.draft_saved_at,
         "season": order.season_code,
         "seasonLabel": mapping.season_label(order.season_code),
         "orderDate": order.order_date,
@@ -168,32 +182,37 @@ def get_order_for_signing(token: str, db: Session = Depends(get_db)) -> dict:
     return _public_view(_order_for_token(db, token))
 
 
-@router.post("/{token}")
-def sign_order(
-    token: str,
-    payload: SignRequest,
-    background: BackgroundTasks,
-    db: Session = Depends(get_db),
-) -> dict:
-    order = _order_for_token(db, token)
-    short_id = str(order.id)[:8]
+def _reject_unless_open(order) -> None:
+    """The other half of the admin freeze (see admin._reject_if_awaiting_signature).
 
-    # The other half of the admin freeze (see admin._reject_if_awaiting_signature).
-    # An accepted order is already in Salesforce as a Kugamon Draft; letting a
-    # link signed afterwards rewrite the lines here would leave the two systems
-    # permanently disagreeing. Declined is simpler — there is nothing to sign.
+    An accepted order is already in Salesforce as a Kugamon Draft; letting a
+    link rewrite the lines afterwards would leave the two systems permanently
+    disagreeing. Declined is simpler — there is nothing left to change.
+    """
     if order.status != "submitted":
         raise HTTPException(
             status_code=409,
             detail=(
                 "This order has already been reviewed by our team, so it can no longer "
-                "be signed here. Please reply to our email and we'll help."
+                "be changed here. Please reply to our email and we'll help."
             ),
         )
 
+
+def _apply_buyer_edits(order, payload, *, enforce_minimums: bool):
+    """Write the buyer's version onto the order. Shared by sign and save-draft.
+
+    Returns (items, order_items, total_qty, total_amount, card_digits,
+    prev_filename). Does NOT commit, does not touch the signature, and does not
+    render — the callers differ in exactly those three things.
+
+    enforce_minimums is False for a draft: half a basket is the normal state
+    part-way through, and refusing to store it defeats the point. Signing always
+    enforces.
+    """
     items = [i for i in payload.items if i.pieces > 0]
     order_items, total_qty, total_amount, errors = order_lines.build(
-        order.season_code, items
+        order.season_code, items, enforce_minimums=enforce_minimums
     )
     if errors:
         raise HTTPException(status_code=422, detail={"errors": errors})
@@ -247,15 +266,6 @@ def sign_order(
     # corrected above — send it where they can actually read it.
     order.order_copy_email = order.ship_email
 
-    signed_at = datetime.now(timezone.utc)
-    order.signature_name = payload.signature_name.strip()
-    order.signature_date = signed_at.date()
-    order.signature_signed_at = signed_at
-    order.terms_accepted = True
-    # Spend the token: the link works exactly once.
-    order.signature_token = None
-    order.signature_token_expires_at = None
-
     # ---- payment ----
     # CLAUDE.md rule 1 holds exactly as on submit: the number is read once,
     # here, to derive last4 and to draw the encrypted admin copy. It is never a
@@ -278,6 +288,120 @@ def sign_order(
             # Name/expiry corrected without re-entering the number.
             order.card_name = p.card_name or order.card_name
             order.card_exp = p.exp_date or order.card_exp
+
+    return items, order_items, total_qty, total_amount, card_digits, prev_filename
+
+
+@router.patch("/{token}/draft")
+def save_draft(token: str, payload: DraftRequest, db: Session = Depends(get_db)) -> dict:
+    """Persist the buyer's work in progress WITHOUT signing it.
+
+    The same edits as signing, stopping short of the four lines that make the
+    order binding: no signature name, no signed-at, no terms accepted, and the
+    token is NOT spent — the whole point is that the link keeps working.
+
+    Because GET /{token} already returns the order's live state, a returning
+    buyer sees their last save with no extra machinery.
+
+    Minimums are not enforced here (CLAUDE.md rule 5 still governs SIGNING,
+    which is the submission). A card IS accepted and re-encrypted exactly as at
+    signing — the number has to be captured when it is typed, since we never
+    store it in the clear and could not rebuild the admin copy later. The
+    retention sweep runs on created_at, so saving one early neither starts nor
+    extends any clock.
+    """
+    order = _order_for_token(db, token)
+    short_id = str(order.id)[:8]
+    _reject_unless_open(order)
+
+    (
+        items,
+        order_items,
+        total_qty,
+        total_amount,
+        card_digits,
+        prev_filename,
+    ) = _apply_buyer_edits(order, payload, enforce_minimums=False)
+
+    order.draft_saved_at = datetime.now(timezone.utc)
+
+    # Re-render the stored PDF so /admin never shows the office a total the
+    # buyer has already moved on from — the copy on disk is served straight
+    # from the filesystem, so nothing else would refresh it.
+    try:
+        pdf_context = pdf_context_builder.build(order, items=order_items)
+        masked_card = pdf_context_builder.masked_card(order)
+        pdf_context["card"] = masked_card
+        pdf_context["draft"] = True  # stamps DRAFT on the page — see template.html
+        pdf_bytes = pdf_render.render_order_pdf(pdf_context)
+
+        if card_digits and crypto.configured():
+            pdf_context["card"] = {**masked_card, "number": card_digits, "full": True}
+            order.card_pdf_enc = crypto.encrypt(pdf_render.render_order_pdf(pdf_context))
+            logger.info("Order %s: card entered on a draft, admin copy re-encrypted", short_id)
+        elif card_digits:
+            logger.warning(
+                "CARD_ENCRYPTION_KEY not set — no admin card copy kept for order %s", short_id
+            )
+    except Exception:
+        logger.exception("Draft PDF render failed for order %s", short_id)
+        raise HTTPException(
+            status_code=500,
+            detail="Your draft could not be saved (PDF generation failed). Please try again.",
+        )
+    finally:
+        # Drop every in-memory reference to the number before the request ends.
+        pdf_context["card"] = None
+        card_digits = ""
+
+    db.commit()
+
+    filename = pdf_render.order_pdf_filename(
+        order.season_code, order.buyer_name or "", order.created_at, order.id
+    )
+    try:
+        pdf_render.save_order_pdf(pdf_bytes, filename)
+        if filename != prev_filename:
+            pdf_render.delete_output_file(prev_filename)
+    except OSError:
+        # The draft itself is committed; only the PDF on disk is now stale.
+        logger.exception("Order %s: draft saved but its PDF could not be written", short_id)
+
+    logger.info("Order %s: draft saved by the buyer (%d pcs)", short_id, total_qty)
+    # The live view, so the page can re-render from the server's truth rather
+    # than assume its own optimistic state was accepted.
+    return _public_view(order)
+
+
+@router.post("/{token}")
+def sign_order(
+    token: str,
+    payload: SignRequest,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> dict:
+    order = _order_for_token(db, token)
+    short_id = str(order.id)[:8]
+
+    _reject_unless_open(order)
+
+    (
+        items,
+        order_items,
+        total_qty,
+        total_amount,
+        card_digits,
+        prev_filename,
+    ) = _apply_buyer_edits(order, payload, enforce_minimums=True)
+
+    signed_at = datetime.now(timezone.utc)
+    order.signature_name = payload.signature_name.strip()
+    order.signature_date = signed_at.date()
+    order.signature_signed_at = signed_at
+    order.terms_accepted = True
+    # Spend the token: the link works exactly once.
+    order.signature_token = None
+    order.signature_token_expires_at = None
 
     # Re-render the masked PDF so the stored copy shows the signature and the
     # final quantities, and the admin copy too when a new card was supplied.
