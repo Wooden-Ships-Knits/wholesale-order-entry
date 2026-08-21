@@ -113,10 +113,14 @@ class Order(Base):
     # What the mail server said ("Address not found", the SMTP diagnostic), so
     # /admin can show why without anyone opening the mailbox.
     signature_bounce_reason: Mapped[str | None] = mapped_column(Text)
-    # One-off nudge to the REP (not the buyer) when their order is still
-    # unsigned after settings.rep_followup_hours. Null = not sent yet; a
-    # timestamp rather than a bool so "when" is answerable, and so it can be
-    # nulled to re-arm the nudge if a request is ever sent afresh.
+    # Nudges to the REP (not the buyer) while their order stays unsigned, at the
+    # ages in settings.rep_followup_hours. The COUNTER is the cursor — how many
+    # have gone — so adding a stage to that list starts firing it for orders
+    # already past the earlier ones. The timestamp says when the last one went,
+    # which is what /admin shows; null both to re-arm the whole sequence.
+    rep_followups_sent: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
     rep_followup_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     signature_reminders_sent: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"

@@ -22,20 +22,27 @@ class Settings(BaseSettings):
     # card number to charge. At 30/30 the two run out together, which is the
     # tightest this may safely be; raise card_retention_days first if this ever
     # goes higher.
-    signature_link_days: int = 30
+    signature_link_days: int = 36
     # Unsigned orders are chased automatically at these ages, counted from when
     # the first request was emailed. Empty list = no reminders.
-    # 2 days, 5, 15, 22, 29 (set 2026-08-06). The last one is a day short of
+    # 2 days, 5, 11, 16, 21, 26, 31 (set 2026-08-19). The last one is short of
     # signature_link_days on purpose: a threshold at or past the link's own
     # expiry can never fire, because the sweep refuses to chase a dead link
     # rather than mail the buyer a URL that 410s. Keep the final entry below
     # signature_link_days * 24 if either is ever changed.
-    signature_reminder_hours: list[int] = [48, 120, 360, 528, 696]
-    # A single nudge to the REP when their order is still unsigned this many
-    # hours after the request went out — 6 days, i.e. one day after the buyer's
-    # second chaser, when it is clear the emails alone are not landing. 0
-    # disables it. Sent once per order, never repeated.
-    rep_followup_hours: int = 144
+    signature_reminder_hours: list[int] = [48, 120, 264, 384, 504, 624, 744]
+    # Nudges to the REP when their order is still unsigned this many hours
+    # after the request went out — days 6, 16 and 26. Empty list disables them.
+    #
+    # Day 6 is one day after the buyer's second chaser, when it is clear the
+    # emails alone are not landing. Days 16 and 26 escalate, and carry DIFFERENT
+    # wording (order_email.rep_chase_email) — by then the message is no longer
+    # "email isn't working" but "we have asked you before".
+    #
+    # A list rather than one value, matching signature_reminder_hours: the
+    # count of nudges already sent is the cursor, so adding a stage here starts
+    # firing it for orders already past the earlier ones.
+    rep_followup_hours: list[int] = [144, 384, 624]
 
     # The two notices the team sends itself at ADMIN_EMAIL — "New wholesale
     # order" and "Order signed". Off since 2026-08-06: every order is already
@@ -78,7 +85,7 @@ class Settings(BaseSettings):
     # Admin copies are purged this many days after submit even if the order was
     # never accepted or declined, so cards never linger. Raised 14 -> 30 on
     # 2026-08-06 to match signature_link_days — see the note there.
-    card_retention_days: int = 30
+    card_retention_days: int = 36
 
     # Nearby-stockist conflict check. Server-side Google key (Distance Matrix)
     # — NOT the browser key in frontend/.env; IP-restrict it. Empty = the
