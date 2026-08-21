@@ -5,8 +5,8 @@
 // rules and the error wording are literally the same code the order form runs.
 // The server re-prices and re-validates everything anyway (routers/sign.py) —
 // this is the mirror, not the authority.
-import { useEffect, useMemo, useState } from 'react'
-import { getOrderToSign, getProducts, getShipWindows, signOrder } from '../api'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { getOrderToSign, getProducts, getShipWindows, saveDraft, signOrder } from '../api'
 import { catalogKey, computeTotals, validateMinimums } from '../validation'
 import Addresses from '../components/Addresses'
 import Notes from '../components/Notes'
@@ -53,6 +53,14 @@ export default function SignPage({ token }) {
   const [replaceCard, setReplaceCard] = useState(false)
 
   const [signatureName, setSignatureName] = useState('')
+  const [savingDraft, setSavingDraft] = useState(false)
+  // When the buyer last pressed Save draft, seeded from the order so a
+  // returning buyer is told their work is here rather than guessing.
+  const [draftSavedAt, setDraftSavedAt] = useState(null)
+  // Anything typed since the last save. Drives both the button's wording and
+  // the tab-close warning — without it, a buyer who closes the tab loses work
+  // they reasonably assumed a Save button had protected.
+  const [dirty, setDirty] = useState(false)
   const [accepted, setAccepted] = useState(false)
   // Mirrors the order form's second acknowledgement. Client-side only, like on
   // the form: the backend has no info_confirmed field, it gates submission.
@@ -61,12 +69,41 @@ export default function SignPage({ token }) {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(null)
 
+  // Mark the form dirty on any real edit. A ref counter rather than a flag on
+  // `order`: the load below sets a dozen pieces of state in one batch, so the
+  // first run of this effect after loading IS that batch, not the buyer typing.
+  // Skipping exactly that run is what stops a freshly opened page claiming
+  // unsaved changes.
+  const hydrationRuns = useRef(0)
+  useEffect(() => {
+    if (!order) return
+    if (hydrationRuns.current === 0) {
+      hydrationRuns.current = 1
+      return
+    }
+    setDirty(true)
+  }, [order, lines, billTo, shipTo, orderDate, shipWindow, poNumber, notes, payment, replaceCard])
+
+  // A Save button implies work is safe; without this a buyer who closes the
+  // tab after typing loses everything since their last save with no warning.
+  // Suppressed once signed — leaving a finished order is not a mistake.
+  useEffect(() => {
+    if (!dirty || done) return
+    const warn = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty, done])
+
   useEffect(() => {
     let cancelled = false
     getOrderToSign(token)
       .then((data) => {
         if (cancelled) return
         setOrder(data)
+        setDraftSavedAt(data.draftSavedAt || null)
         setLines(data.items.length ? data.items.map(lineFromItem) : [makeLine()])
         setBillToState({ ...data.billTo })
         setShipToState({ ...data.shipTo })
@@ -130,6 +167,49 @@ export default function SignPage({ token }) {
       prev.length > 1 ? prev.filter((l) => l.id !== id) : prev.map(() => makeLine()),
     )
 
+  /** Everything the buyer may change, in the shape both endpoints accept. */
+  function buildPayload() {
+    const items = resolved
+      .filter((l) => l.row && (perLine[l.id]?.pieces || 0) > 0)
+      .map((l) => ({
+        styleName: l.row.styleName,
+        color: l.row.color,
+        qtyXs: l.qty.xs || 0,
+        qtySm: l.qty.sm || 0,
+        qtyMl: l.qty.ml || 0,
+      }))
+    return {
+      items,
+      billTo,
+      shipTo,
+      orderDate: orderDate || null,
+      shipWindow,
+      poNumber,
+      notes,
+      // Card fields only travel when the buyer actually replaced the card;
+      // otherwise we send the metadata and the stored card stands.
+      payment: replaceCard ? payment : { ...payment, cardNumber: '', cvv: '' },
+    }
+  }
+
+  /** Save without signing. Deliberately runs NO minimum checks — a half-built
+   *  order is the normal state part-way through, and refusing to keep it is
+   *  exactly what this button exists to prevent. Signing still enforces. */
+  async function handleSaveDraft() {
+    setNotice('')
+    setSavingDraft(true)
+    try {
+      const res = await saveDraft(token, buildPayload())
+      setDraftSavedAt(res.draftSavedAt || new Date().toISOString())
+      setDirty(false)
+      setNotice('Draft saved. You can close this page and come back to the same link.')
+    } catch (err) {
+      setNotice(err.message)
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
   async function handleSign(e) {
     e.preventDefault()
     setNotice('')
@@ -144,34 +224,14 @@ export default function SignPage({ token }) {
       return
     }
 
-    const items = resolved
-      .filter((l) => l.row && (perLine[l.id]?.pieces || 0) > 0)
-      .map((l) => ({
-        styleName: l.row.styleName,
-        color: l.row.color,
-        qtyXs: l.qty.xs || 0,
-        qtySm: l.qty.sm || 0,
-        qtyMl: l.qty.ml || 0,
-      }))
-
     setSubmitting(true)
     try {
       const res = await signOrder(token, {
         signatureName: signatureName.trim(),
-        items,
-        billTo,
-        shipTo,
-        orderDate: orderDate || null,
-        shipWindow,
-        poNumber,
-        notes,
-        // Card fields only travel when the buyer actually replaced the card;
-        // otherwise we send the metadata and the stored card stands.
-        payment: replaceCard
-          ? payment
-          : { ...payment, cardNumber: '', cvv: '' },
+        ...buildPayload(),
       })
       setDone(res)
+      setDirty(false)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setNotice(err.message)
@@ -442,9 +502,28 @@ export default function SignPage({ token }) {
 
         {notice && <div className="error-banner">{notice}</div>}
 
-        <button type="submit" className="submit-btn" disabled={submitting}>
-          {submitting ? 'Signing…' : `Sign this order — ${totalPieces} pcs, ${money(totalAmount)}`}
-        </button>
+        <div className="sign-actions">
+          <button type="submit" className="submit-btn" disabled={submitting || savingDraft}>
+            {submitting ? 'Signing…' : `Sign this order — ${totalPieces} pcs, ${money(totalAmount)}`}
+          </button>
+          {/* type="button" so it never triggers the form's submit handler —
+              this is the one control that must NOT sign. */}
+          <button
+            type="button"
+            className="draft-btn"
+            onClick={handleSaveDraft}
+            disabled={submitting || savingDraft}
+          >
+            {savingDraft ? 'Saving…' : 'Save draft'}
+          </button>
+        </div>
+        <p className="sign-note draft-hint">
+          Saving keeps your changes without signing — the same link will bring you
+          back to them. Your card is only taken when you sign.
+          {draftSavedAt && !dirty && (
+            <> {' '}<strong>Draft saved {new Date(draftSavedAt).toLocaleString()}.</strong></>
+          )}
+        </p>
       </form>
     </main>
   )

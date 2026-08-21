@@ -2009,3 +2009,25 @@ button:hover {
 .mark-btn:hover { background: none; color: #d9a520; }
 .badge-women { color: #2f6f4e; }
 .map-popup { font-size: 0.82rem; line-height: 1.5; }
+
+/* ---- Save draft on the signing page ---------------------------------- */
+.sign-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+.sign-actions .submit-btn { flex: 1 1 22rem; }
+/* Visually secondary: signing is the action, saving is the escape hatch. */
+.draft-btn {
+  flex: 0 0 auto;
+  padding: 0 1.25rem;
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px solid #1a1a1a;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.draft-btn:hover:not(:disabled) { background: #efece6; color: #1d1d1b; }
+.draft-btn:disabled { opacity: 0.5; cursor: default; }
+.draft-hint { margin-top: 0.6rem; }
