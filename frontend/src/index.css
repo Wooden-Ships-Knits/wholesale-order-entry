@@ -2019,6 +2019,15 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  /* Clear air above: the buttons sat flush against the signature box, so the
+     black bar read as part of the field rather than the action below it. */
+  margin-top: 1.5rem;
+  /* Not full-bleed. A button as wide as the form is a banner, not a control —
+     and on a wide screen the label floats in the middle of nothing. 22rem is
+     wide enough for "Sign this order — 24 pcs, $1,584.00" and narrow enough to
+     read as a button; on a phone it is already wider than the column, so it
+     fills naturally without a second rule. */
+  max-width: 22rem;
 }
 .sign-actions .submit-btn,
 .draft-btn {
