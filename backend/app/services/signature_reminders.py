@@ -133,21 +133,28 @@ def _order_pdf(order: Order) -> tuple[str, bytes] | None:
 
 
 def send_due_rep_followups(db: Session) -> int:
-    """One nudge to the rep per order still unsigned after rep_followup_hours.
+    """Nudge the rep at each age in settings.rep_followup_hours (days 6, 16, 26).
 
     Deliberately NOT filtered on signature_bounced_at, unlike the buyer's
     chasers: a bounced address is the case where the rep most needs telling,
     because nothing will reach the buyer by email at all until someone corrects
-    it. The chasers stop; this one still goes.
+    it. The chasers stop; these still go.
 
-    rep_followup_sent_at is written and committed BEFORE the send, so a crash
-    costs this nudge rather than repeating it on every tick — the same trade
-    the buyer's chasers make, and the right one for a once-per-order email.
+    STAGE 1 USES DIFFERENT WORDING FROM 2 AND 3. Day 6 says "email is not
+    working, please call"; the later ones say "we asked you ten days ago".
+    Repeating the day-6 text would read as an automated echo, not an escalation.
+
+    rep_followups_sent is written and committed BEFORE the send, so a crash
+    costs one nudge rather than repeating it on every tick — the same trade the
+    buyer's chasers make.
     """
-    if settings.rep_followup_hours <= 0:
+    schedule = settings.rep_followup_hours
+    if not schedule:
         return 0
 
     now = datetime.now(timezone.utc)
+    # Only the FIRST unsent stage can be due, so the cutoff is the earliest
+    # threshold any candidate could have crossed.
     due = list(
         db.scalars(
             select(Order).where(
@@ -156,15 +163,21 @@ def send_due_rep_followups(db: Session) -> int:
                 Order.signature_requested_at.is_not(None),
                 Order.signature_token_expires_at > now,
                 Order.status == "submitted",
-                Order.rep_followup_sent_at.is_(None),
-                Order.signature_requested_at
-                <= now - timedelta(hours=settings.rep_followup_hours),
+                Order.rep_followups_sent < len(schedule),
+                Order.signature_requested_at <= now - timedelta(hours=min(schedule)),
             )
         )
     )
 
     sent = 0
     for order in due:
+        stage = order.rep_followups_sent or 0
+        if stage >= len(schedule):
+            continue
+        age = now - order.signature_requested_at
+        if age < timedelta(hours=schedule[stage]):
+            continue  # this order has not reached its NEXT stage yet
+
         short_id = str(order.id)[:8]
         rep_to = sheets_client.rep_email_for_order(
             order.order_written_by, order.sales_territory
@@ -175,12 +188,14 @@ def send_due_rep_followups(db: Session) -> int:
                 "%r / territory %r — no follow-up sent",
                 short_id, order.order_written_by, order.sales_territory,
             )
-            # Stamped anyway: without a rep address there is nobody to tell,
-            # and leaving it null would re-check this order every hour forever.
+            # Counted anyway: without a rep address there is nobody to tell, and
+            # leaving the cursor put would re-check this order every hour.
+            order.rep_followups_sent = stage + 1
             order.rep_followup_sent_at = now
             db.commit()
             continue
 
+        order.rep_followups_sent = stage + 1
         order.rep_followup_sent_at = now
         db.commit()
 
@@ -197,10 +212,14 @@ def send_due_rep_followups(db: Session) -> int:
             "total_qty": order.total_qty,
             "total_amount": order.total_amount,
         }
+        send = order_email.send_rep_followup if stage == 0 else order_email.send_rep_chase
         try:
-            if order_email.send_rep_followup(rep_to, ctx, pdf_bytes, filename):
+            if send(rep_to, ctx, pdf_bytes, filename):
                 sent += 1
-                logger.info("Rep follow-up sent for unsigned order %s", short_id)
+                logger.info(
+                    "Rep follow-up %d/%d sent for unsigned order %s",
+                    stage + 1, len(schedule), short_id,
+                )
             else:
                 logger.error("Rep follow-up for order %s could not be sent", short_id)
         except Exception:
