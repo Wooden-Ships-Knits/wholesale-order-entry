@@ -86,6 +86,11 @@ def build(order: Order, *, created_at=None, items=None) -> dict[str, Any]:
             "campaign": order.campaign,
             "po_number": order.po_number,
             "rep": order.rep,
+            # The PDF's "Rep" line shows this, not `rep`: Salesperson__c names
+            # an individual and is often blank or stale, while the territory is
+            # what the office routes and reports on. Both are carried so the
+            # template can change its mind without another migration.
+            "sales_territory": order.sales_territory,
             "order_written_by": order.order_written_by,
             # Re-derived for display: the columns are now structured (0016),
             # but the PDF still reads "Y — Name" / "N" as the team expects.

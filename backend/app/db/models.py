@@ -122,6 +122,11 @@ class Order(Base):
         Integer, nullable=False, server_default="0"
     )
     rep_followup_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set every time the BUYER saves a draft through the signing link, and left
+    # alone by signing itself. Null = they have never opened it and saved; a
+    # timestamp = the order on file is theirs, not the rep's, and /admin must
+    # say so before anyone accepts a total that is still moving.
+    draft_saved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     signature_reminders_sent: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
@@ -291,6 +296,30 @@ class Prospect(Base):
     status: Mapped[str] = mapped_column(Text, server_default="prospect", index=True)
     matched_account: Mapped[str | None] = mapped_column(Text)
     matched_by: Mapped[str | None] = mapped_column(Text)
+
+    # --- assessment -------------------------------------------------------
+    # Whether the shop is worth approaching, as opposed to `status`, which is
+    # the mechanical fact of whether we already sell to it. Independent: an
+    # `existing` account can still be assessed, and most prospects never are.
+    # All nullable — null means "not assessed", not "assessed as no".
+    verdict: Mapped[str | None] = mapped_column(Text)
+    confidence: Mapped[str | None] = mapped_column(Text)
+    for_the_rep: Mapped[str | None] = mapped_column(Text)
+    reasons: Mapped[str | None] = mapped_column(Text)
+    against: Mapped[str | None] = mapped_column(Text)
+    # Our classification — NOT the raw OSM `shop` tag, which is `types` below.
+    store_type: Mapped[str | None] = mapped_column(Text)
+    # How many labels the shop carries — NOT `brand` below, which is the OSM
+    # brand tag and marks a chain.
+    brand_count: Mapped[int | None] = mapped_column(Integer)
+    products_per_brand: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
+    tag_lift: Mapped[Decimal | None] = mapped_column(Numeric(8, 3))
+    price_median: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    price_range: Mapped[str | None] = mapped_column(Text)
+    knitwear_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    knitwear_price_median: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    signature_tags_carried: Mapped[str | None] = mapped_column(Text)
+    assessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # --- where ---
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(10, 7))

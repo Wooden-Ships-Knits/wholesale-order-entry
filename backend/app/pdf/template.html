@@ -50,6 +50,19 @@
   /* Typed name rendered as a handwritten-style signature (font bundled in the
      image via fonts-dancingscript). */
   .signature { font-family: 'Dancing Script', cursive; font-size: 18pt; }
+  /* A saved-but-unsigned copy. Printed, an unsigned PDF is otherwise almost
+     indistinguishable from a signed one — this says so before anyone files it
+     as an agreed order. Repeated on every page via the running header. */
+  .draft-stamp {
+    text-align: center;
+    letter-spacing: 0.25em;
+    font-size: 9pt;
+    font-weight: bold;
+    color: #b9451d;
+    border: 1px solid #b9451d;
+    padding: 2pt 0;
+    margin-bottom: 6pt;
+  }
   /* Unsigned copy: a rule to sign on, sized to match the signature line above
      so the block does not change height once the name lands on it. */
   .sig-blank {
@@ -105,6 +118,9 @@
 </style>
 </head>
 <body>
+  {% if draft %}
+  <div class="draft-stamp">DRAFT — SAVED BY THE BUYER, NOT YET SIGNED</div>
+  {% endif %}
 
   <!-- ══════════════════════════ masthead ══════════════════════════ -->
   <table class="grid">
@@ -298,7 +314,12 @@
     </tr>
     <tr>
       {# PO # moved to the masthead 2026-08-04 — it is no longer internal-only. #}
-      <td><span class="lbl">Rep</span><span class="val">{{ order.rep or "—" }}</span></td>
+      {# The TERRITORY, not order.rep. Salesperson__c names an individual and is
+         often blank or stale on an account, while the territory is what the
+         office routes and reports on — and it is what the reps themselves
+         recognise. order.rep is still stored; it just isn't what this line
+         shows. #}
+      <td><span class="lbl">Rep</span><span class="val">{{ order.sales_territory or "—" }}</span></td>
       <td><span class="lbl">Order written by</span><span class="val">{{ order.order_written_by or "—" }}</span></td>
       <td colspan="2"><span class="lbl">Split &nbsp; Y | N &nbsp; with</span>
         <span class="val">{{ order.split_with or "N" }}</span></td>

@@ -23,22 +23,33 @@ from app.validation.order_minimum import validate_minimums
 logger = logging.getLogger(__name__)
 
 
-def build(season: str, items: list[Any]) -> tuple[list[OrderItem], int, Decimal, list[dict]]:
+def build(
+    season: str, items: list[Any], *, enforce_minimums: bool = True
+) -> tuple[list[OrderItem], int, Decimal, list[dict]]:
     """(order_items, total_qty, total_amount, errors) for one season's lines.
 
     `items` are schema objects with .style_name, .color, .qty_xs/_sm/_ml and
     .pieces — already filtered to those with a quantity. A non-empty `errors`
     means nothing should be persisted; the lists returned alongside it are
     incomplete by design.
+
+    enforce_minimums=False is for SAVING A DRAFT, where half a basket is the
+    normal state and refusing to store it defeats the point. It relaxes only
+    the order-shape rules (18 pieces, 4 per style, 2 per SKU, and "no items at
+    all"); an unknown product is still an error, because there is no line to
+    build from it. Signing always enforces — CLAUDE.md rule 5 puts the
+    authority server-side, and a draft is not a submission.
     """
     errors: list[dict] = []
 
-    if not items:
-        errors.append({"code": "no_items", "message": "The order has no quantities."})
-
-    errors.extend(validate_minimums(items))
+    if enforce_minimums:
+        if not items:
+            errors.append({"code": "no_items", "message": "The order has no quantities."})
+        errors.extend(validate_minimums(items))
     if errors:
         return [], 0, Decimal("0"), errors
+    if not items:
+        return [], 0, Decimal("0"), []
 
     # Resolve the season's wholesale price book — authoritative prices + ids.
     books = {
