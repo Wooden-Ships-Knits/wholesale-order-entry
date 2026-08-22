@@ -211,4 +211,12 @@ class Settings(BaseSettings):
     notice_cache_dir: str = "/output/notices/cache"
     notice_output_dir: str = "/output/notices"
 
+    # --- prospect scoring (app/prospects/) ---
+    # Where the scraper caches the pages it fetches. Absolute and mounted, like
+    # the two above: the scraper's own default is the relative "data/.cache",
+    # which inside the container resolves to /app/data/.cache and is thrown away
+    # on every rebuild — so each re-run would re-fetch every shop's catalogue.
+    # The cache is what keeps a second pass cheap and polite to the shops.
+    prospect_cache_dir: str = "/output/prospects/cache"
+
 settings = Settings()

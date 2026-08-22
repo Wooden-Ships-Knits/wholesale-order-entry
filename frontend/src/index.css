@@ -2008,6 +2008,28 @@ button:hover {
 .mark-btn.marked { color: #d9a520; }
 .mark-btn:hover { background: none; color: #d9a520; }
 .badge-women { color: #2f6f4e; }
+
+/* ---- Prospect assessment (app/prospects/assess.py) --------------------- */
+/* Colour carries the verdict, so the WORD has to as well: a rep printing the
+   list or reading it colour-blind must still get the answer. Hence labels, not
+   dots. */
+.verdict-strong { color: #2f6f4e; font-weight: 600; }
+.verdict-possible { color: #8a6d1f; font-weight: 600; }
+.verdict-weak { color: #999; }
+.verdict-unknown { color: #999; font-style: italic; }
+/* The rep sentence is one or two lines of prose in a table cell. Clamped so a
+   long one cannot push every other row's height out; the full text is the
+   title attribute. */
+.verdict-note {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 22rem;
+}
+/* Deliberately the one thing in this column that is red. It means the answer
+   above it failed its own check. */
+.verdict-problem { color: #a33; }
 .map-popup { font-size: 0.82rem; line-height: 1.5; }
 
 /* ---- Save draft on the signing page ---------------------------------- */

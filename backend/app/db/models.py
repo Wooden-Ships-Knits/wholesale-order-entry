@@ -315,10 +315,29 @@ class Prospect(Base):
     products_per_brand: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
     tag_lift: Mapped[Decimal | None] = mapped_column(Numeric(8, 3))
     price_median: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-    price_range: Mapped[str | None] = mapped_column(Text)
+    # The spread between the cheapest and dearest item, NOT a "$48-$220" range:
+    # the payload carries no min or max, so that string cannot be built. Read it
+    # beside price_median — two shops can share a median and still be different
+    # shops, one spanning $2-$545 and the other $39-$698.
+    price_range: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     knitwear_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
     knitwear_price_median: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     signature_tags_carried: Mapped[str | None] = mapped_column(Text)
+    # The shop's own tags that name knitwear — its word for the thing we make.
+    # NOT a subset of signature_tags_carried above: that one asks whether a shop
+    # is merchandised like our customers, and only three of its 78 tags name
+    # knitwear at all.
+    knit_tags_carried: Mapped[str | None] = mapped_column(Text)
+    # 'tags+products' | 'products_only' | 'tags_only' | 'none' — where the
+    # knitwear was found. 'none' is what forces a weak verdict under rule 2, so
+    # this is the audit trail for the commonest reason a shop is called weak.
+    # 'products_only' is not the weaker answer: of 271 accounts, 97 show
+    # knitwear in their products alone and none in their tags alone.
+    knit_evidence: Mapped[str | None] = mapped_column(Text)
+    # What judge.check() found wrong with the answer — a brand the shop does not
+    # carry, or a verdict that breaks a hard rule. The one field that says "do
+    # not trust this row"; a verdict shown to a rep without it is unmarked.
+    problems: Mapped[str | None] = mapped_column(Text)
     assessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # --- where ---

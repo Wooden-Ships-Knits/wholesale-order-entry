@@ -1,0 +1,52 @@
+# Database browser. An OVERLAY — it has no `db` of its own and is never brought
+# up alone; it merges into whichever stack you name first and joins that
+# stack's network, which is what makes the hostname `db` resolve.
+#
+#   production stack (pgdata):
+#     docker compose -f docker-compose.yml -f docker-compose.tools.yml up -d adminer
+#
+#   dev stack (pgdata_dev):
+#     docker compose -f docker-compose.dev.yml -f docker-compose.tools.yml up -d adminer
+#
+#   then open http://localhost:8081  (ADMINER_PORT to move it)
+#   System PostgreSQL · Server db · Username/Password/Database = POSTGRES_* from
+#   the .env you started the stack with.
+#
+#   stop it again:
+#     docker compose -f docker-compose.yml -f docker-compose.tools.yml stop adminer
+#
+# No overlay needed for a quick look:
+#     docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
+#
+services:
+  adminer:
+    # Pinned to 5.x. 6.0 is days old and this is a tool you want boring.
+    image: adminer:5
+    environment:
+      # Pre-fills the login form's Server field, so only the password is typed.
+      ADMINER_DEFAULT_SERVER: db
+
+    ports:
+      # BOUND TO 127.0.0.1, and this is the whole point of the line.
+      #
+      # docker-compose.dev.yml already binds its nginx this way, with the note
+      # that publishing on 0.0.0.0 would put a second copy of the site — real
+      # customer data — on http://<VM ip>:8083 with no TLS and no password.
+      # This is worse: not a copy of the site but the database itself, with
+      # every order, card reference and account in it, behind a login form
+      # whose password is the one in .env.
+      #
+      # On the VM, reach it by tunnelling instead of republishing:
+      #   ssh -L 8081:localhost:8081 <vm>
+      # ADMINER_PORT lets the dev stack sit beside production's:
+      #   ADMINER_PORT=8084 docker compose -f docker-compose.dev.yml \
+      #       -f docker-compose.tools.yml --env-file .env.dev up -d adminer
+      - "127.0.0.1:${ADMINER_PORT:-8081}:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # NOT `unless-stopped`, unlike every other service here. A database browser
+    # should be running because you started it, not because the VM rebooted.
+    restart: "no"

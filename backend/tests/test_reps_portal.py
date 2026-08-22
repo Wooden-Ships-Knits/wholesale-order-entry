@@ -15,7 +15,7 @@ from app import reps_auth
 from app.main import app
 from app.reps_auth import REP_NAMES
 from app.routers import reps_portal
-from app.routers.reps_portal import _owns, _rep_row
+from app.routers.reps_portal import _owns, _prospect_row, _rep_row
 
 # One password per rep — the whole point of the scheme is that Aviva's does not
 # open Rande's dashboard, so the fixtures need two distinct ones.
@@ -676,3 +676,72 @@ def test_every_roster_name_resolves_to_an_address(monkeypatch):
 
     unresolved = [name for name in REP_NAMES if not real_sheets.rep_email_for_writer(name)]
     assert not unresolved, f"not in the sheet's Name column: {unresolved}"
+
+
+# --- the prospect row -------------------------------------------------------
+
+PROSPECT_ROW_KEYS = {
+    "id", "storeName", "latitude", "longitude", "city", "address", "state",
+    "website", "phone", "rating", "reviewCount", "womenswear",
+    "potentialConflict", "nearestStockist", "distanceMiles", "driveMinutes",
+    "marked",
+    # The assessment. A row that has one and does not say so reads as
+    # unassessed, which is the same as not having paid for it.
+    "verdict", "confidence", "forTheRep", "reasons", "against", "problems",
+    "assessedAt",
+}
+
+
+def _prospect(**over):
+    base = dict(
+        osm_id="node/13372898360", store_name="Allure Glamour",
+        latitude=Decimal("33.818432"), longitude=Decimal("-117.2295092"),
+        city="Perris", address="2560 N Perris Boulevard", state="CA",
+        website="allureglamour.com", phone="+1-951-216-3110",
+        rating=None, review_count=None, womenswear=True,
+        potential_conflict=False, nearest_stockist="BELLE BOUTIQUE (CA)",
+        distance_miles=Decimal("24.3"), drive_minutes=None,
+        verdict=None, confidence=None, for_the_rep=None, reasons=None,
+        against=None, problems=None, assessed_at=None,
+    )
+    base.update(over)
+    return SimpleNamespace(**base)
+
+
+def test_prospect_row_serializes_exactly_the_allowed_keys():
+    assert set(_prospect_row(_prospect(), False)) == PROSPECT_ROW_KEYS
+
+
+def test_an_assessed_prospect_says_so():
+    """The bug this pins: the verdict was written to the row and never left the
+    server, so a shop that cost a scrape and a model call looked untouched."""
+    row = _prospect_row(_prospect(
+        verdict="strong", confidence="high",
+        for_the_rep="Carries knitwear at our price point; worth a call.",
+        reasons="knitwear in tags and products; 14 brands",
+        assessed_at=NOW,
+    ), False)
+    assert row["verdict"] == "strong"
+    assert row["forTheRep"].startswith("Carries knitwear")
+    assert row["assessedAt"] == NOW.isoformat()
+
+
+def test_an_unassessed_prospect_carries_nulls_not_absence():
+    """The page has to tell "not assessed yet" from "assessed as weak"."""
+    row = _prospect_row(_prospect(), False)
+    assert row["verdict"] is None
+    assert row["assessedAt"] is None
+
+
+def test_problems_reach_the_rep():
+    """judge.check()'s findings are the only thing marking an answer as
+    untrustworthy. Withholding them shows a rep an unchecked answer with
+    nothing to say it is one."""
+    row = _prospect_row(_prospect(verdict="strong", problems="invented brand: Loro Piana"), False)
+    assert row["problems"] == "invented brand: Loro Piana"
+
+
+def test_the_prospect_row_still_cannot_emit_an_order_or_a_card():
+    """Same guard as _rep_row's: this page must stay incapable of it."""
+    row = _prospect_row(_prospect(verdict="strong"), False)
+    assert not any(k.lower().startswith(("card", "total", "signature")) for k in row)

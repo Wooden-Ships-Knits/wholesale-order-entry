@@ -756,6 +756,10 @@ def discover_osm(state: str | Sequence[str] = "FL", *, drop_chains: bool = True,
                           f"Re-run discover_osm({failed!r}) and concat.")
             return out
         state = states[0]
+    # Normalised HERE, not only inside the list branch: a caller passing the
+    # string "ca" reached the Overpass query as US-ca (which works) and would
+    # have stamped "ca" onto every row, where it matches no state filter.
+    state = str(state).strip().upper()
 
     query = f"""
     [out:json][timeout:180];
@@ -839,6 +843,13 @@ def discover_osm(state: str | Sequence[str] = "FL", *, drop_chains: bool = True,
             "email": tags.get("email") or tags.get("contact:email"),
             "opening_hours": tags.get("opening_hours"),
             "postcode": tags.get("addr:postcode"),
+            # The one fact this sweep knows for certain and OSM never tags:
+            # the query asked for exactly this state's boundary. add_details
+            # prefers Google's answer when it runs (`_state_of(r) or
+            # _first(row, "state")`), so this is the free floor under it, not a
+            # competitor. Without it a free run_state sweep carries no state at
+            # all -- which is how 225 rows landed with the column NULL.
+            "state": state,
         })
     # A name occurring this often in ONE state is a chain nobody has brand-tagged
     # — Surf Style x13, Sunelli x7, Versona x4, none of them in CHAINS. Catching
