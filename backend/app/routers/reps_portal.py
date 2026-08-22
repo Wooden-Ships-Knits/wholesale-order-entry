@@ -397,14 +397,18 @@ def _prospect_row(p: Prospect, marked: bool) -> dict:
     }
 
 
-def _stockists() -> list[dict]:
-    """Every current store, LIVE from Salesforce, with coordinates.
+def _stockists(rep_name: str) -> list[dict]:
+    """The signed-in rep's current stores, LIVE from Salesforce, with coordinates.
 
-    NOT filtered by territory — the map shows the whole stockist picture, and
-    territory scoping will be layered on later. Note that this therefore shows
-    one rep the names and locations of accounts outside their book; the rep
-    ORDER list stays scoped, so this is a deliberate difference, not an
-    oversight.
+    SCOPED BY THE TERRITORY LABEL naming the rep. Salesforce labels follow
+    "Region - Owner" ("Midwest - Aviva Landin", "FL - House", "Majors - US"),
+    so a rep owns exactly those whose label carries their name. A label naming
+    nobody — House, or a bare region — is house business and belongs to no rep,
+    which is why those accounts appear on nobody's map.
+
+    Matched on the LABEL rather than through the reps email sheet because
+    Salesforce carries 41 territory values and the sheet only 12; the sheet
+    would silently hide every account filed under one of the other 29.
 
     Not read from the prospects table even though it carries a `status`
     column: that label only means "this OSM shop matched an account", and OSM
@@ -414,11 +418,16 @@ def _stockists() -> list[dict]:
 
     Accounts without coordinates cannot be plotted and are skipped.
     """
+    name = (rep_name or "").strip()
+    if not name:
+        return []
     excluded = "','".join(mapping.EXCLUDED_RANKS)
+    safe = name.replace("\\", "\\\\").replace("'", r"\'").replace("%", r"\%")
     q = (
         "SELECT Id, Name, SalesTerritory__c, ShippingLatitude, ShippingLongitude "
         "FROM Account "
-        f"WHERE (Rank__c = null OR Rank__c NOT IN ('{excluded}')) "
+        f"WHERE SalesTerritory__c LIKE '%{safe}%' "
+        f"AND (Rank__c = null OR Rank__c NOT IN ('{excluded}')) "
         "AND ShippingLatitude != null AND ShippingLongitude != null"
     )
     try:
@@ -428,6 +437,8 @@ def _stockists() -> list[dict]:
         # are the point of the page and they come from our own database.
         logger.warning("Could not load stockists from Salesforce", exc_info=True)
         return []
+    if not records:
+        logger.info("No stockists match a territory naming %r", name)
     return [
         {
             "name": r["Name"],
@@ -451,7 +462,7 @@ def list_prospects(rep_name: str = RepRequired, db: Session = Depends(get_db)) -
             "prospects": [],
             # Stockists still load: the map is worth showing even when this
             # rep has no prospects matched to them.
-            "accounts": _stockists(),
+            "accounts": _stockists(rep_name),
             "counts": {"total": 0, "noConflict": 0, "marked": 0},
             "message": (
                 "Your name isn't in the rep contact sheet yet, so no territory "
@@ -500,7 +511,7 @@ def list_prospects(rep_name: str = RepRequired, db: Session = Depends(get_db)) -
     return {
         "rep": rep_name,
         "prospects": [_prospect_row(p, p.id in marked_ids) for p in rows],
-        "accounts": _stockists(),
+        "accounts": _stockists(rep_name),
         "counts": {
             "total": len(rows),
             "noConflict": sum(1 for p in rows if not p.potential_conflict),
