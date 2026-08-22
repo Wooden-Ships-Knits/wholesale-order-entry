@@ -372,6 +372,28 @@ def _prospect_row(p: Prospect, marked: bool) -> dict:
         "distanceMiles": float(p.distance_miles) if p.distance_miles is not None else None,
         "driveMinutes": p.drive_minutes,
         "marked": marked,
+        # --- the assessment (app/prospects/assess.py) ------------------------
+        # The answer only, not the measurements behind it. A rep is deciding
+        # whether to make a call, and `for_the_rep` is the sentence written for
+        # exactly that; brand_count and knitwear_share are how the verdict was
+        # reached, which is an audit question and belongs on a page that can
+        # show its working.
+        #
+        # All seven are NULL until assess_pending has paid for the row, and the
+        # page needs to tell "nobody has looked at this yet" from "somebody
+        # looked and it is weak" -- so they are always PRESENT and null, never
+        # absent.
+        "verdict": p.verdict,
+        "confidence": p.confidence,
+        "forTheRep": p.for_the_rep,
+        "reasons": p.reasons,
+        "against": p.against,
+        # judge.check()'s findings -- an invented brand, or a verdict that
+        # breaks a hard rule. The only field that says "do not trust this row",
+        # so withholding it puts an unchecked answer in front of a rep with
+        # nothing to mark it as one.
+        "problems": p.problems,
+        "assessedAt": p.assessed_at.isoformat() if p.assessed_at else None,
     }
 
 
@@ -484,8 +506,34 @@ def list_prospects(rep_name: str = RepRequired, db: Session = Depends(get_db)) -
             "noConflict": sum(1 for p in rows if not p.potential_conflict),
             "marked": sum(1 for p in rows if p.id in marked_ids),
         },
-        "message": None,
+        # An empty list has to say WHY, because three unrelated situations
+        # render as the same blank page: no sheet email (handled above), no
+        # territory owned, and a sweep that has simply never covered this rep's
+        # states. The last one is not hypothetical — the first sweep loaded was
+        # CA/HI, so every other rep opened this tab to "Showing 0 of 0
+        # prospects" with nothing to say whether that was an answer or a fault.
+        "message": _no_prospects_message(mine) if not rows else None,
     }
+
+
+def _no_prospects_message(territories: set[str]) -> str:
+    """Why this rep's prospect list is empty, in words a rep can act on.
+
+    Names the territories rather than saying "your territories": a rep who owns
+    two and expected shops in one needs to see which set was actually searched,
+    and a rep who owns none is looking at a different problem entirely.
+    """
+    if not territories:
+        return (
+            "No sales territory is assigned to you in Salesforce, so there is "
+            "nothing to match prospects against. Ask the office to check it."
+        )
+    named = ", ".join(sorted(territories))
+    return (
+        f"No prospects have been swept for your territory yet ({named}). "
+        "This is not a fault — the search simply has not been run for your "
+        "states. Ask the office to sweep them."
+    )
 
 
 class MarkRequest(BaseModel):

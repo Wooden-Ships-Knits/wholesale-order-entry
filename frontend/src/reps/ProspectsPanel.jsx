@@ -14,9 +14,17 @@ const FILTERS = [
   { value: '', label: 'All' },
   // The default view a rep wants: somewhere we do not already have a store.
   { value: 'open', label: 'No stockist nearby' },
+  // The assessment's own answer (app/prospects/assess.py). Of 225 swept shops
+  // only a handful ever score this well, and without a chip to isolate them a
+  // rep is hunting three rows inside two hundred identical ones.
+  { value: 'worth', label: 'Worth a call' },
   { value: 'women', label: 'Womenswear' },
   { value: 'marked', label: 'My shortlist' },
 ]
+
+// Verdicts that mean "pick up the phone". `weak` and `insufficient_data` are
+// both answers, not absences — see the note on WORTH_A_CALL in Map.jsx.
+const WORTH_A_CALL = new Set(['strong', 'possible'])
 
 export default function ProspectsPanel() {
   const [prospects, setProspects] = useState([])
@@ -41,7 +49,15 @@ export default function ProspectsPanel() {
       setProspects(d.prospects || [])
       setAccounts(d.accounts || [])
       setCounts(d.counts || null)
-      setNotice(d.mocked ? 'Showing sample data — the prospects endpoint is not live yet.' : '')
+      // d.message is the server's explanation for an EMPTY list — no sales
+      // territory, or no sweep run for this rep's states yet. It was being
+      // dropped here, so those cases rendered as a bare "Showing 0 of 0
+      // prospects" and read as a broken page rather than as an answer.
+      setNotice(
+        d.mocked
+          ? 'Showing sample data — the prospects endpoint is not live yet.'
+          : d.message || '',
+      )
     } catch (err) {
       setError(err.message)
     } finally {
@@ -69,11 +85,19 @@ export default function ProspectsPanel() {
     () =>
       prospects.filter((p) => {
         if (filter === 'open' && p.potentialConflict) return false
+        if (filter === 'worth' && !WORTH_A_CALL.has(p.verdict)) return false
         if (filter === 'women' && !p.womenswear) return false
         if (filter === 'marked' && !p.marked) return false
         return true
       }),
     [prospects, filter],
+  )
+
+  // Counted over EVERYTHING loaded, not over `visible` — the whole point is to
+  // advertise findings the current chip is hiding.
+  const worthCount = useMemo(
+    () => prospects.filter((p) => WORTH_A_CALL.has(p.verdict)).length,
+    [prospects],
   )
 
   // Matches over everything loaded, not just `visible`: searching for a store
@@ -238,6 +262,15 @@ export default function ProspectsPanel() {
             onClick={() => setFilter(f.value)}
           >
             {f.label}
+            {/* ONLY on this chip, and it earns the exception. The default view
+                is "No stockist nearby", and every shop the assessment rates
+                worth calling can sit inside a catchment — in the first CA/HI
+                run all three did. Without the count the tab opens on a list
+                that excludes every finding, and reads as though the assessment
+                turned up nothing. */}
+            {f.value === 'worth' && worthCount > 0 && (
+              <span className="chip-count"> {worthCount}</span>
+            )}
           </button>
         ))}
         <button type="button" className="link-btn" onClick={load} disabled={loading}>
@@ -246,7 +279,9 @@ export default function ProspectsPanel() {
       </div>
 
       {error && <p className="admin-error">{error}</p>}
-      {notice && <p className="admin-error">{notice}</p>}
+      {/* NOT admin-error: "no sweep has covered your states yet" is an answer,
+          and styling it red tells a rep something is broken when nothing is. */}
+      {notice && <p className="admin-notice">{notice}</p>}
 
       {/* The backdrop is a SIBLING of the map card, never its parent. React
           reconciles by position in the tree, so moving <Map> inside an overlay

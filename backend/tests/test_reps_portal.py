@@ -15,7 +15,7 @@ from app import reps_auth
 from app.main import app
 from app.reps_auth import REP_NAMES
 from app.routers import reps_portal
-from app.routers.reps_portal import _owns, _rep_row
+from app.routers.reps_portal import _owns, _prospect_row, _rep_row
 
 # One password per rep — the whole point of the scheme is that Aviva's does not
 # open Rande's dashboard, so the fixtures need two distinct ones.
@@ -676,3 +676,128 @@ def test_every_roster_name_resolves_to_an_address(monkeypatch):
 
     unresolved = [name for name in REP_NAMES if not real_sheets.rep_email_for_writer(name)]
     assert not unresolved, f"not in the sheet's Name column: {unresolved}"
+
+
+# --- the prospect row -------------------------------------------------------
+
+PROSPECT_ROW_KEYS = {
+    "id", "storeName", "latitude", "longitude", "city", "address", "state",
+    "website", "phone", "rating", "reviewCount", "womenswear",
+    "potentialConflict", "nearestStockist", "distanceMiles", "driveMinutes",
+    "marked",
+    # The assessment. A row that has one and does not say so reads as
+    # unassessed, which is the same as not having paid for it.
+    "verdict", "confidence", "forTheRep", "reasons", "against", "problems",
+    "assessedAt",
+}
+
+
+def _prospect(**over):
+    base = dict(
+        osm_id="node/13372898360", store_name="Allure Glamour",
+        latitude=Decimal("33.818432"), longitude=Decimal("-117.2295092"),
+        city="Perris", address="2560 N Perris Boulevard", state="CA",
+        website="allureglamour.com", phone="+1-951-216-3110",
+        rating=None, review_count=None, womenswear=True,
+        potential_conflict=False, nearest_stockist="BELLE BOUTIQUE (CA)",
+        distance_miles=Decimal("24.3"), drive_minutes=None,
+        verdict=None, confidence=None, for_the_rep=None, reasons=None,
+        against=None, problems=None, assessed_at=None,
+    )
+    base.update(over)
+    return SimpleNamespace(**base)
+
+
+def test_prospect_row_serializes_exactly_the_allowed_keys():
+    assert set(_prospect_row(_prospect(), False)) == PROSPECT_ROW_KEYS
+
+
+def test_an_assessed_prospect_says_so():
+    """The bug this pins: the verdict was written to the row and never left the
+    server, so a shop that cost a scrape and a model call looked untouched."""
+    row = _prospect_row(_prospect(
+        verdict="strong", confidence="high",
+        for_the_rep="Carries knitwear at our price point; worth a call.",
+        reasons="knitwear in tags and products; 14 brands",
+        assessed_at=NOW,
+    ), False)
+    assert row["verdict"] == "strong"
+    assert row["forTheRep"].startswith("Carries knitwear")
+    assert row["assessedAt"] == NOW.isoformat()
+
+
+def test_an_unassessed_prospect_carries_nulls_not_absence():
+    """The page has to tell "not assessed yet" from "assessed as weak"."""
+    row = _prospect_row(_prospect(), False)
+    assert row["verdict"] is None
+    assert row["assessedAt"] is None
+
+
+def test_problems_reach_the_rep():
+    """judge.check()'s findings are the only thing marking an answer as
+    untrustworthy. Withholding them shows a rep an unchecked answer with
+    nothing to say it is one."""
+    row = _prospect_row(_prospect(verdict="strong", problems="invented brand: Loro Piana"), False)
+    assert row["problems"] == "invented brand: Loro Piana"
+
+
+def test_the_prospect_row_still_cannot_emit_an_order_or_a_card():
+    """Same guard as _rep_row's: this page must stay incapable of it."""
+    row = _prospect_row(_prospect(verdict="strong"), False)
+    assert not any(k.lower().startswith(("card", "total", "signature")) for k in row)
+
+
+# --- the empty prospect list has to say WHY --------------------------------
+#
+# Three different situations render as the same blank page otherwise, and the
+# first one that happened in real use ("Showing 0 of 0 prospects") was a rep
+# signed in against a sweep that had only ever covered somebody else's states.
+
+def _prospects_for(monkeypatch, rep, *, email, territories, rows=()):
+    monkeypatch.setattr(reps_portal.sheets_client, "rep_email_for_writer",
+                        lambda n: email)
+    monkeypatch.setattr(reps_portal.sf_client, "list_territories",
+                        lambda: list(territories))
+    monkeypatch.setattr(reps_portal.sheets_client, "rep_email_for_territory",
+                        lambda t: email)
+    monkeypatch.setattr(reps_portal, "_stockists", lambda: [])
+
+    # Two queries in order: the prospects (read with .all()) and then the
+    # rep's marks (iterated directly). One stub has to serve both shapes.
+    class _S(list):
+        def all(self): return list(self)
+    class _R:
+        def __init__(self, items): self._items = _S(items)
+        def scalars(self): return self._items
+    class _DB:
+        def __init__(self): self.calls = 0
+        def execute(self, *a, **k):
+            self.calls += 1
+            return _R(rows if self.calls == 1 else [])
+    return reps_portal.list_prospects(rep_name=rep, db=_DB())
+
+
+def test_a_rep_with_no_sheet_email_is_told_so(monkeypatch):
+    out = _prospects_for(monkeypatch, "Nobody", email=None, territories=[])
+    assert out["counts"]["total"] == 0
+    assert "contact sheet" in out["message"]
+
+
+def test_a_rep_whose_territories_hold_no_prospects_is_told_which(monkeypatch):
+    """The real cause of the first 0-of-0: the sweep had only covered CA/HI, so
+    every other rep got a blank page with nothing saying the sweep had simply
+    never run for them."""
+    out = _prospects_for(monkeypatch, "Aviva Landin",
+                         email=AVIVA, territories=["Midwest - Aviva Landin"])
+    assert out["counts"]["total"] == 0
+    assert out["message"], "an empty list with no explanation reads as broken"
+    assert "Midwest - Aviva Landin" in out["message"]
+
+
+def test_a_rep_with_prospects_gets_no_message(monkeypatch):
+    """A message beside real rows would be noise."""
+    out = _prospects_for(monkeypatch, "Rande Cohen", email=RANDE,
+                         territories=["CA/HI - Rande Cohen"],
+                         rows=[_prospect(id=uuid.UUID("3c2f0a1e-0000-0000-0000-000000000001"))])
+    assert out["counts"]["total"] == 1
+    assert out["message"] is None

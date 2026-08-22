@@ -4,7 +4,9 @@
 //
 // Colours mirror the Python map (app/maps/prospecting.py::plot) on purpose —
 // grey for stores we already sell to, yellow for prospects — so the folium HTML
-// and this page read as one tool rather than two.
+// and this page read as one tool rather than two. The verdict layer below is an
+// addition the folium map has no equivalent for: it varies SIZE and OPACITY of
+// the same yellow, never the hue, so "yellow means prospect" stays true.
 
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
@@ -22,6 +24,30 @@ const PROSPECT = { color: '#ae8207', fillColor: '#f2e027', fillOpacity: 0.9, wei
 // prospect — but ringed, because "there is already a store nearby" is the one
 // thing a rep must see before picking up the phone.
 const CONFLICT = { ...PROSPECT, color: '#b9451d', weight: 2 }
+
+// How the assessment (app/prospects/assess.py) changes a dot. Size and opacity
+// only — the stroke stays free to mean "conflict", which is the one thing a rep
+// must see before phoning, and hue stays free to mean "prospect".
+//
+// A shop with NO verdict is drawn unchanged, at the base size. That is the
+// honest default: it has not been assessed, which is different from having been
+// assessed poorly, and shrinking it would state a finding nobody made.
+const VERDICT = {
+  strong: { radius: 9, fillOpacity: 1 },
+  possible: { radius: 8, fillOpacity: 1 },
+  weak: { radius: 4, fillOpacity: 0.4 },
+  // Not "bad" — we could not read the shelf. Faded because there is nothing to
+  // act on, not because the shop was judged and found wanting. 30 of the first
+  // 92 landed here through scraper failure alone.
+  insufficient_data: { radius: 4, fillOpacity: 0.25 },
+}
+
+/** Base style for a prospect: its conflict state, then its verdict. */
+const prospectStyle = (p) => {
+  const base = p.potentialConflict ? CONFLICT : PROSPECT
+  const v = VERDICT[p.verdict]
+  return v ? { ...base, ...v } : base
+}
 
 // When a city is selected, its stores grow and everything else fades rather
 // than disappearing. Removing the others would lose the context that makes the
@@ -43,8 +69,26 @@ const esc = (s) =>
 /** Popup body. Built as a string because Leaflet popups are plain DOM — there
  *  is no React tree inside the map, and rendering one per marker for ~900
  *  markers would cost far more than it returns. */
+const VERDICT_LABEL = {
+  strong: 'Strong', possible: 'Possible', weak: 'Weak',
+  insufficient_data: 'Couldn\u2019t read site',
+}
+
 function popupHtml(p) {
   const bits = [`<strong>${esc(p.storeName)}</strong>`]
+  // Directly under the name: it is the answer the rep opened the dot for, and
+  // burying it under the address would make the map a worse version of the
+  // table rather than a different view of it.
+  if (p.verdict) {
+    const label = VERDICT_LABEL[p.verdict] || p.verdict
+    bits.push(
+      `<span class="popup-verdict verdict-${esc(p.verdict)}">${esc(label)}</span>` +
+        (p.forTheRep ? `<br/>${esc(p.forTheRep)}` : ''),
+    )
+  }
+  // judge.check() disagreed with the verdict above. The only marker saying the
+  // answer is unchecked, so it cannot be left out of the map copy of it.
+  if (p.problems) bits.push(`<span class="verdict-problem">\u26a0 unchecked: ${esc(p.problems)}</span>`)
   if (p.address) bits.push(esc(p.address))
   if (p.rating != null) bits.push(`★ ${esc(p.rating)}${p.reviewCount ? ` (${esc(p.reviewCount)})` : ''}`)
   if (p.phone) bits.push(esc(p.phone))
@@ -135,8 +179,8 @@ export default function Map({
 
     prospects.forEach((p) => {
       if (p.latitude == null || p.longitude == null) return
-      const base = p.potentialConflict ? CONFLICT : PROSPECT
-      const m = L.circleMarker([p.latitude, p.longitude], styleFor(base, stateOf(p)))
+      const m = L.circleMarker([p.latitude, p.longitude],
+                               styleFor(prospectStyle(p), stateOf(p)))
         .bindPopup(popupHtml(p))
         .addTo(pLayer)
       // Highlighted pins should sit above the faded ones.

@@ -8,6 +8,16 @@
 
 const DASH = <span className="unknown">—</span>
 
+// app/prospects/assess.py writes one of these four, or NULL when nobody has
+// looked yet. The label is spelled out because "insufficient_data" is a column
+// value, not a sentence a rep should have to read.
+const VERDICTS = {
+  strong: { label: 'Strong', className: 'verdict-strong' },
+  possible: { label: 'Possible', className: 'verdict-possible' },
+  weak: { label: 'Weak', className: 'verdict-weak' },
+  insufficient_data: { label: 'Couldn’t read site', className: 'verdict-unknown' },
+}
+
 export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
   if (rows.length === 0) {
     return (
@@ -30,6 +40,7 @@ export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
           <th>Where</th>
           <th className="num">Rating</th>
           <th>Contact</th>
+          <th>Assessment</th>
           <th>Nearest stockist</th>
         </tr>
       </thead>
@@ -96,6 +107,36 @@ export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
                 )}
                 {p.phone && <span className="sub">{p.phone}</span>}
               </div>
+            </td>
+            {/* Never blank when a row HAS been assessed and never a verdict
+                when it has not: "not looked at yet" and "looked at and weak"
+                are different answers, and a rep planning a week needs to tell
+                them apart. */}
+            <td>
+              {p.verdict ? (
+                <div className="cert-missing">
+                  <span className={VERDICTS[p.verdict]?.className}>
+                    {VERDICTS[p.verdict]?.label || p.verdict}
+                  </span>
+                  {/* The sentence written for exactly this decision. Truncated
+                      by CSS, not by JS — the full text is the title. */}
+                  {p.forTheRep && (
+                    <span className="sub verdict-note" title={p.forTheRep}>
+                      {p.forTheRep}
+                    </span>
+                  )}
+                  {/* judge.check() disagreed with the answer above it. Shown
+                      LOUDLY: this is the only thing marking the verdict beside
+                      it as one nobody has checked. */}
+                  {p.problems && (
+                    <span className="sub verdict-problem" title={p.problems}>
+                      ⚠ unchecked: {p.problems}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="unknown">not assessed</span>
+              )}
             </td>
             <td>
               {p.nearestStockist ? (
