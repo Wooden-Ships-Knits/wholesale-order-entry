@@ -2030,6 +2030,23 @@ button:hover {
 /* Deliberately the one thing in this column that is red. It means the answer
    above it failed its own check. */
 .verdict-problem { color: #a33; }
+/* The same verdict word inside a Leaflet popup, which is plain DOM outside the
+   React tree — so it needs its own block rather than inheriting the table's. */
+.popup-verdict { font-weight: 600; }
+/* The count riding on the "Worth a call" chip. Muted on an inactive chip and
+   inherited on the active one, so it reads as part of the label either way. */
+.chip-count { font-weight: 600; opacity: 0.75; }
+/* An explanation, not a fault. Deliberately not the red of .admin-error — see
+   the note in ProspectsPanel. */
+.admin-notice {
+  color: #5b5344;
+  background: #f6f4ef;
+  border-left: 3px solid #c9bfa8;
+  padding: 0.55rem 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+.map-popup .verdict-problem { display: inline-block; margin-top: 0.15rem; }
 .map-popup { font-size: 0.82rem; line-height: 1.5; }
 
 /* ---- Save draft on the signing page ---------------------------------- */

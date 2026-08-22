@@ -745,3 +745,59 @@ def test_the_prospect_row_still_cannot_emit_an_order_or_a_card():
     """Same guard as _rep_row's: this page must stay incapable of it."""
     row = _prospect_row(_prospect(verdict="strong"), False)
     assert not any(k.lower().startswith(("card", "total", "signature")) for k in row)
+
+
+# --- the empty prospect list has to say WHY --------------------------------
+#
+# Three different situations render as the same blank page otherwise, and the
+# first one that happened in real use ("Showing 0 of 0 prospects") was a rep
+# signed in against a sweep that had only ever covered somebody else's states.
+
+def _prospects_for(monkeypatch, rep, *, email, territories, rows=()):
+    monkeypatch.setattr(reps_portal.sheets_client, "rep_email_for_writer",
+                        lambda n: email)
+    monkeypatch.setattr(reps_portal.sf_client, "list_territories",
+                        lambda: list(territories))
+    monkeypatch.setattr(reps_portal.sheets_client, "rep_email_for_territory",
+                        lambda t: email)
+    monkeypatch.setattr(reps_portal, "_stockists", lambda: [])
+
+    # Two queries in order: the prospects (read with .all()) and then the
+    # rep's marks (iterated directly). One stub has to serve both shapes.
+    class _S(list):
+        def all(self): return list(self)
+    class _R:
+        def __init__(self, items): self._items = _S(items)
+        def scalars(self): return self._items
+    class _DB:
+        def __init__(self): self.calls = 0
+        def execute(self, *a, **k):
+            self.calls += 1
+            return _R(rows if self.calls == 1 else [])
+    return reps_portal.list_prospects(rep_name=rep, db=_DB())
+
+
+def test_a_rep_with_no_sheet_email_is_told_so(monkeypatch):
+    out = _prospects_for(monkeypatch, "Nobody", email=None, territories=[])
+    assert out["counts"]["total"] == 0
+    assert "contact sheet" in out["message"]
+
+
+def test_a_rep_whose_territories_hold_no_prospects_is_told_which(monkeypatch):
+    """The real cause of the first 0-of-0: the sweep had only covered CA/HI, so
+    every other rep got a blank page with nothing saying the sweep had simply
+    never run for them."""
+    out = _prospects_for(monkeypatch, "Aviva Landin",
+                         email=AVIVA, territories=["Midwest - Aviva Landin"])
+    assert out["counts"]["total"] == 0
+    assert out["message"], "an empty list with no explanation reads as broken"
+    assert "Midwest - Aviva Landin" in out["message"]
+
+
+def test_a_rep_with_prospects_gets_no_message(monkeypatch):
+    """A message beside real rows would be noise."""
+    out = _prospects_for(monkeypatch, "Rande Cohen", email=RANDE,
+                         territories=["CA/HI - Rande Cohen"],
+                         rows=[_prospect(id=uuid.UUID("3c2f0a1e-0000-0000-0000-000000000001"))])
+    assert out["counts"]["total"] == 1
+    assert out["message"] is None

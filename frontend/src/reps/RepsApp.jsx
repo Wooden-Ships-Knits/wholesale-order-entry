@@ -15,7 +15,7 @@ import RepOrderTable from './RepOrderTable'
 
 const TABS = [
   { value: 'orders', label: 'Orders' },
-  // { value: 'prospects', label: 'Prospects' },
+  { value: 'prospects', label: 'Prospects' },
 ]
 
 // All first, unlike /admin's "Awaiting review": the office triages a pending
