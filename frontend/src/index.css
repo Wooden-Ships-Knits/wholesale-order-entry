@@ -2178,3 +2178,26 @@ button:hover {
 .sort-arrow { opacity: 0.35; font-size: 0.9em; }
 .sort-btn.active { font-weight: 700; }
 .sort-btn.active .sort-arrow { opacity: 1; }
+
+/* ---- Map layer toggles (the legend doubles as the control) -------------- */
+.prospect-map-legend label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+  user-select: none;
+}
+.prospect-map-legend input[type='checkbox'] {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+}
+/* A hidden layer must still read as "available but off", not as absent. */
+.prospect-map-legend .layer-off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}

@@ -53,10 +53,6 @@ export default function ProspectTable({
   onToggleMark,
   busyId,
 }) {
-  // Towns come from the UNFILTERED rows: picking one must not remove the
-  // others from the list you picked it from.
-  const cities = [...new Set((allRows || []).map((p) => p.city).filter(Boolean))].sort()
-
   return (
     <table className="admin-table prospect-table">
       <thead>
@@ -89,30 +85,22 @@ export default function ProspectTable({
             />
           </th>
           <th>
-            <select
-              aria-label="Filter by town"
+            {/* Free text, not a dropdown: a state-wide sweep produces hundreds
+                of towns, and scrolling a list that long to find one is slower
+                than typing three letters of it. Matches the address too, so a
+                street or postcode narrows it as well. */}
+            <input
+              type="search"
+              placeholder="Town or address"
+              aria-label="Filter by town or address"
               value={filters.city}
               onChange={(e) => onFilterChange('city', e.target.value)}
-            >
-              <option value="">All</option>
-              {cities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            />
           </th>
-          <th>
-            <select
-              aria-label="Filter by website"
-              value={filters.website}
-              onChange={(e) => onFilterChange('website', e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="yes">Has a website</option>
-              <option value="no">No website</option>
-            </select>
-          </th>
+          {/* No Contact filter: "has a website" is already how the enrichment
+              step is targeted, and nobody browses this table by it. The cell
+              stays so the six filter cells keep lining up with six columns. */}
+          <th aria-hidden="true" />
           <th>
             {/* "Not assessed" is a real choice, not the absence of one — it is
                 the pile a rep works through, and blank already means "all". */}
