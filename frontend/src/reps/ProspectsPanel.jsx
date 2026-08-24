@@ -17,9 +17,9 @@ import {
 import ProspectTable from './ProspectTable'
 
 const FILTERS = [
-  { value: 'open', label: 'All' },
-  // The default view is all without filter
-  { value: '', label: 'No stockist nearby' },
+  { value: '', label: 'All' },
+  // The default view a rep wants: somewhere we do not already have a store.
+  { value: 'open', label: 'No stockist nearby' },
   // The assessment's own answer (app/prospects/assess.py). Of 225 swept shops
   // only a handful ever score this well, and without a chip to isolate them a
   // rep is hunting three rows inside two hundred identical ones.
@@ -36,7 +36,7 @@ export default function ProspectsPanel() {
   const [prospects, setProspects] = useState([])
   const [accounts, setAccounts] = useState([])
   const [counts, setCounts] = useState(null)
-  const [filter, setFilter] = useState('open')
+  const [filter, setFilter] = useState('')
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState(false)
   const [focus, setFocus] = useState(null)
