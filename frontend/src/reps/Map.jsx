@@ -12,8 +12,13 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const FL_CENTER = [27.8, -81.7]
-const FL_ZOOM = 6
+// The whole lower 48. A rep's territory can be nine states, and several span
+// the country — opening on one state meant most reps landed somewhere their
+// dots were not. Alaska and Hawaii sit outside this; the search box or a chip
+// gets there in one step, which is better than zooming out far enough to fit
+// them and rendering everyone else too small to read.
+const US_CENTER = [39.5, -98.35]
+const US_ZOOM = 4
 
 const ACCOUNT = { color: '#6b7280', fillColor: '#9aa0a6', fillOpacity: 0.85, weight: 1, radius: 5 }
 // Midway between the folium map's acid '#f2ff01' and the softer '#f2c14e'
@@ -132,8 +137,8 @@ export default function Map({
       // rendering starts to stutter on pan, and this is the same volume the
       // folium map struggled with.
       preferCanvas: true,
-      center: FL_CENTER,
-      zoom: FL_ZOOM,
+      center: US_CENTER,
+      zoom: US_ZOOM,
       scrollWheelZoom: false, // enabled only when expanded — see below
     })
     // CartoDB Positron — the SAME basemap as the Python map
