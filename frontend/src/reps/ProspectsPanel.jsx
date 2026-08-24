@@ -23,8 +23,8 @@ const FILTERS = [
   // The assessment's own answer (app/prospects/assess.py). Of 225 swept shops
   // only a handful ever score this well, and without a chip to isolate them a
   // rep is hunting three rows inside two hundred identical ones.
-  { value: 'worth', label: 'Worth a call' },
-  { value: 'women', label: 'Womenswear' },
+  // { value: 'worth', label: 'Worth a call' },
+  // { value: 'women', label: 'Womenswear' },
   { value: 'marked', label: 'My shortlist' },
 ]
 
