@@ -17,9 +17,9 @@ import {
 import ProspectTable from './ProspectTable'
 
 const FILTERS = [
-  { value: '', label: 'All' },
-  // The default view a rep wants: somewhere we do not already have a store.
-  { value: 'open', label: 'No stockist nearby' },
+  { value: 'open', label: 'All' },
+  // The default view is all without filter
+  { value: '', label: 'No stockist nearby' },
   // The assessment's own answer (app/prospects/assess.py). Of 225 swept shops
   // only a handful ever score this well, and without a chip to isolate them a
   // rep is hunting three rows inside two hundred identical ones.
