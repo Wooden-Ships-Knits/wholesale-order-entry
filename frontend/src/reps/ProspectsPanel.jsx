@@ -47,6 +47,9 @@ export default function ProspectsPanel() {
   const [colFilters, setColFilters] = useState(EMPTY_FILTERS)
   // key = null means "server order"; clicking a header cycles asc -> desc -> off.
   const [sort, setSort] = useState({ key: null, dir: 'asc' })
+  // Which circle types the map draws. A view control, not a filter — the table
+  // below still lists every row.
+  const [layers, setLayers] = useState({ prospect: true, conflict: true, account: true })
   const [busyId, setBusyId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -338,6 +341,7 @@ export default function ProspectsPanel() {
           expanded={expanded}
           focus={focus}
           highlightCity={city}
+          layers={layers}
         />
 
         {/* Sits ON the map, like any map app's search. It moves the view; it
@@ -398,10 +402,25 @@ export default function ProspectsPanel() {
         >
           {expanded ? 'Close' : 'Expand'}
         </button>
+        {/* The legend IS the layer control. A separate panel would repeat these
+            three labels and leave the reader matching one list to the other. */}
         <div className="prospect-map-legend">
-          <span><i className="dot dot-prospect" /> prospect</span>
-          <span><i className="dot dot-conflict" /> stockist within 10 mi</span>
-          <span><i className="dot dot-account" /> our store</span>
+          {[
+            ['prospect', 'dot-prospect', 'prospect'],
+            ['conflict', 'dot-conflict', 'stockist within 10 mi'],
+            ['account', 'dot-account', 'our store'],
+          ].map(([key, dotClass, label]) => (
+            <label key={key} className={layers[key] ? undefined : 'layer-off'}>
+              <input
+                type="checkbox"
+                checked={layers[key]}
+                onChange={(e) =>
+                  setLayers((l) => ({ ...l, [key]: e.target.checked }))
+                }
+              />
+              <i className={`dot ${dotClass}`} /> {label}
+            </label>
+          ))}
         </div>
       </div>
 

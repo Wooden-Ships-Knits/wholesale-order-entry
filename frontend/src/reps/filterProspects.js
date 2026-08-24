@@ -23,9 +23,8 @@ export const VERDICTS = {
 // so an empty set matches everything and the checks compose.
 export const EMPTY_FILTERS = {
   storeName: '',
-  city: '',
+  city: '', // free text — matches the town OR the street address
   verdict: '', // '' | one of VERDICTS | 'none' for not-yet-assessed
-  website: '', // '' | 'yes' | 'no'
 }
 
 const has = (value, needle) =>
@@ -34,14 +33,14 @@ const has = (value, needle) =>
 export function filterProspects(rows, f) {
   return rows.filter((p) => {
     if (f.storeName && !has(p.storeName, f.storeName)) return false
-    if (f.city && p.city !== f.city) return false
+    // Town OR address: the box says "Town or address", and a rep looking for
+    // a high street should not have to know which column it landed in.
+    if (f.city && !(has(p.city, f.city) || has(p.address, f.city))) return false
     // 'none' is a real choice, not the absence of one: "nobody has looked at
     // this yet" is the pile a rep works through, and it cannot be expressed by
     // leaving the dropdown blank because blank means "all".
     if (f.verdict === 'none' && p.verdict) return false
     if (f.verdict && f.verdict !== 'none' && p.verdict !== f.verdict) return false
-    if (f.website === 'yes' && !p.website) return false
-    if (f.website === 'no' && p.website) return false
     return true
   })
 }

@@ -109,6 +109,10 @@ export default function Map({
   expanded = false,
   focus = null,
   highlightCity = null, // { name, bounds } — stores in this city stand out
+  // Which circles to draw. Hiding a layer is a VIEW choice, not a filter: the
+  // table still lists every row, so dropping the grey dots to read a crowded
+  // high street does not change what the rep is working from.
+  layers = { prospect: true, conflict: true, account: true },
 }) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
@@ -169,16 +173,22 @@ export default function Map({
     const stateOf = (row) =>
       !city ? 'normal' : (row.city || '').trim().toLowerCase() === city ? 'hit' : 'dim'
 
-    accounts.forEach((a, i) => {
-      if (a.latitude == null || a.longitude == null) return
-      const m = L.circleMarker([a.latitude, a.longitude], styleFor(ACCOUNT, stateOf(a)))
-        .bindPopup(`<div class="map-popup"><strong>${esc(a.name)}</strong><br/>current stockist</div>`)
-        .addTo(aLayer)
-      markersRef.current[`account:${i}`] = m
-    })
+    if (layers.account) {
+      accounts.forEach((a, i) => {
+        if (a.latitude == null || a.longitude == null) return
+        const m = L.circleMarker([a.latitude, a.longitude], styleFor(ACCOUNT, stateOf(a)))
+          .bindPopup(`<div class="map-popup"><strong>${esc(a.name)}</strong><br/>current stockist</div>`)
+          .addTo(aLayer)
+        markersRef.current[`account:${i}`] = m
+      })
+    }
 
     prospects.forEach((p) => {
       if (p.latitude == null || p.longitude == null) return
+      // Two prospect layers, toggled separately: "we already sell nearby" and
+      // "we do not" are the two piles a rep sorts into, and being able to drop
+      // one is most of the value of a legend.
+      if (!(p.potentialConflict ? layers.conflict : layers.prospect)) return
       const m = L.circleMarker([p.latitude, p.longitude],
                                styleFor(prospectStyle(p), stateOf(p)))
         .bindPopup(popupHtml(p))
@@ -187,7 +197,7 @@ export default function Map({
       if (stateOf(p) === 'hit') m.bringToFront()
       markersRef.current[p.id] = m
     })
-  }, [prospects, accounts, highlightCity])
+  }, [prospects, accounts, highlightCity, layers])
 
   // Frame the chosen city on the bounds of the stores actually in it. No
   // boundary polygon is drawn: we do not have one, and a rectangle or a
