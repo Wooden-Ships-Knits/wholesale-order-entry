@@ -168,3 +168,51 @@ def test_every_column_to_columns_writes_exists_on_the_model():
     columns = set(Prospect.__table__.columns.keys())
     written = set(assess.to_columns({"price_p25_p50_p75": [1, 2, 3]}))
     assert written <= columns, written - columns
+
+
+# --- scoping a run to one territory ----------------------------------------
+#
+# A whole-book sweep is 1,289 shops and ~6 hours. Run in store_name order that
+# leaves every rep's book half-done for the whole run; run per territory and
+# each one finishes complete and usable.
+
+def _where_of(**kwargs):
+    """The WHERE clause pending() built, as text.
+
+    Deliberately not str(query): that renders the whole SELECT, whose column
+    list contains "prospects.territory" whether or not it was filtered on — an
+    assertion against it passes for the wrong reason.
+    """
+    seen = {}
+    class _DB:
+        def execute(self, q):
+            seen["q"] = q
+            class _R:
+                def scalars(_s):
+                    class _S:
+                        def all(__s): return []
+                    return _S()
+            return _R()
+    assess.pending(_DB(), **kwargs)
+    return str(seen["q"].whereclause)
+
+
+def test_pending_can_be_scoped_to_one_territory():
+    assert "prospects.territory =" in _where_of(territory="CA/HI - Rande Cohen")
+
+
+def test_pending_without_a_territory_still_covers_everything():
+    assert "prospects.territory" not in _where_of()
+
+
+def test_assess_pending_passes_the_territory_through(monkeypatch):
+    """The filter is useless if the batch runner drops it."""
+    got = {}
+    def _fake_pending(db, limit=None, territory=None):
+        got["territory"] = territory
+        return []
+    monkeypatch.setattr(assess, "pending", _fake_pending)
+    # `complete` supplied, so the OpenAI-configured check is never reached.
+    assess.assess_pending(object(), territory="Midwest - Aviva Landin",
+                          complete=lambda s, u: "{}")
+    assert got["territory"] == "Midwest - Aviva Landin"

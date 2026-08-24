@@ -203,23 +203,31 @@ def to_columns(result: dict) -> dict:
     return row
 
 
-def pending(db, limit=None):
+def pending(db, limit=None, territory=None):
     """Prospects with a website that nobody has assessed yet.
 
     Filtered on `website` because the assessment reads a shop's own catalogue
     and there is nothing to read without one -- of 225 real sweep rows, 92 have
     the tag. Sending the other 133 would buy a scrape each to be told so.
+
+    `territory` scopes a run to one rep's book. A whole-book sweep is ~1,300
+    shops and six hours; run in store_name order that leaves every territory
+    half-assessed for the entire run, and a batch stopped halfway helps nobody.
+    One territory at a time finishes each book complete and usable.
     """
     q = (select(Prospect)
          .where(Prospect.website.isnot(None), Prospect.website != "",
-                Prospect.assessed_at.is_(None))
-         .order_by(Prospect.store_name))
+                Prospect.assessed_at.is_(None)))
+    if territory:
+        q = q.where(Prospect.territory == territory)
+    q = q.order_by(Prospect.store_name)
     if limit:
         q = q.limit(limit)
     return db.execute(q).scalars().all()
 
 
-def assess_pending(db, limit=None, complete=None, scrape=None) -> int:
+def assess_pending(db, limit=None, complete=None, scrape=None,
+                   territory=None) -> int:
     """Assess every unassessed prospect with a website. Returns how many were
     written. No-op when OpenAI is not configured, matching run_classify.
 
@@ -235,8 +243,9 @@ def assess_pending(db, limit=None, complete=None, scrape=None) -> int:
 
     pattern = load_pattern()
     system = system_message(pattern)          # ~5,200 tokens, built once
-    rows = pending(db, limit)
-    logger.info("Assessing %d prospect(s)", len(rows))
+    rows = pending(db, limit, territory)
+    logger.info("Assessing %d prospect(s)%s", len(rows),
+                f" in {territory}" if territory else "")
 
     written = 0
     for p in rows:
