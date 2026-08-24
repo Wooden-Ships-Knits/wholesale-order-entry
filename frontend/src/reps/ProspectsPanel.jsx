@@ -8,6 +8,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getProspects, markProspect } from './api'
 import ProspectMap from './Map'
+import {
+  EMPTY_FILTERS,
+  filterProspects,
+  hasActiveFilters,
+  sortProspects,
+} from './filterProspects'
 import ProspectTable from './ProspectTable'
 
 const FILTERS = [
@@ -36,6 +42,11 @@ export default function ProspectsPanel() {
   const [focus, setFocus] = useState(null)
   const [city, setCity] = useState(null) // { name, bounds } from a chosen city
   const [cityOnly, setCityOnly] = useState(false) // also narrow the table to it
+  // Per-column filters, one object rather than one useState per column so
+  // "Clear" is a single assignment — same shape as the Orders table.
+  const [colFilters, setColFilters] = useState(EMPTY_FILTERS)
+  // key = null means "server order"; clicking a header cycles asc -> desc -> off.
+  const [sort, setSort] = useState({ key: null, dir: 'asc' })
   const [busyId, setBusyId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -235,6 +246,27 @@ export default function ProspectsPanel() {
     setCityOnly(false)
   }
 
+  const setColField = (key, value) => setColFilters((f) => ({ ...f, [key]: value }))
+
+  // asc -> desc -> off. The third state matters: without it a rep can never
+  // get back to the order the server sent, which is distance-then-name and is
+  // often the one they actually wanted.
+  const onSort = (key) =>
+    setSort((s) =>
+      s.key !== key
+        ? { key, dir: 'asc' }
+        : s.dir === 'asc'
+          ? { key, dir: 'desc' }
+          : { key: null, dir: 'asc' },
+    )
+
+  // Column filters and sort apply on TOP of the chips and the city banner, so
+  // the table narrows the map's selection rather than fighting it.
+  const finalRows = useMemo(
+    () => sortProspects(filterProspects(tableRows, colFilters), sort.key, sort.dir),
+    [tableRows, colFilters, sort],
+  )
+
   const toggleMark = async (p) => {
     setBusyId(p.id)
     // Optimistic: the star flips immediately and reverts if the write fails.
@@ -273,6 +305,13 @@ export default function ProspectsPanel() {
             )}
           </button>
         ))}
+        {/* Only once a column filter is on: the chips already show what they
+            are narrowing, a column filter has no such marker. */}
+        {hasActiveFilters(colFilters) && (
+          <button type="button" className="chip" onClick={() => setColFilters(EMPTY_FILTERS)}>
+            Clear column filters
+          </button>
+        )}
         <button type="button" className="link-btn" onClick={load} disabled={loading}>
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>
@@ -382,13 +421,18 @@ export default function ProspectsPanel() {
       )}
 
       <p className="prospect-summary">
-        Showing <strong>{tableRows.length}</strong>
+        Showing <strong>{finalRows.length}</strong>
         {counts ? ` of ${counts.total}` : ''} prospects
         {counts?.noConflict != null && filter !== 'open' ? ` · ${counts.noConflict} with no stockist nearby` : ''}
       </p>
 
       <ProspectTable
-        rows={tableRows}
+        rows={finalRows}
+        allRows={prospects}
+        filters={colFilters}
+        onFilterChange={setColField}
+        sort={sort}
+        onSort={onSort}
         onFocus={setFocus}
         onToggleMark={toggleMark}
         busyId={busyId}
