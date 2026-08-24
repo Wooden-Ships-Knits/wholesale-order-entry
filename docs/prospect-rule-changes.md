@@ -102,6 +102,88 @@ the drift in `backend/app/prospects/README.md`. Do not do it silently.
 
 ---
 
+## 2b. Changing `extract.py` is a different, heavier job
+
+`scrapebot/extract.py` decides what a *product* is, what counts as *knitwear*,
+and what a price is. It does not persuade the model — it changes the numbers the
+model is given. Three consequences that a prompt change does not have.
+
+### It silently invalidates the `knit_share` band
+
+`analysis/llm_payload.py` imports `extract` (line 22) and builds
+`bands_p10_median_p90.knit_share` from the 242 account catalogues **through the
+same code** (line 310).
+
+So editing `KNIT_TERMS` here and re-judging compares prospects measured with the
+new vocabulary against a band of accounts measured with the old one. Nothing
+errors. Every prospect simply looks more (or less) knit-heavy than our own
+customers than it really is, and rules 2 and 3 both read that band.
+
+Measured 2026-08-24 on 60 cached catalogues: adding `"long sleeve"` raised mean
+`knitwear_share` by **+1.9 pp** on its own, with the account band unchanged.
+Against a band of p10 2.3% / median 11% / p90 22.4%, that is not a rounding
+difference.
+
+**So the order is inverted.** A prompt change starts here. An `extract.py`
+change starts in `scrapping-bot`:
+
+```bash
+cd ~/Automation/scrapping-bot
+# 1. make the edit THERE
+# 2. rebuild the pattern with the edited extractor
+PYTHONPATH=src python analysis/llm_payload.py data/accounts-l5y.csv data/raw data/llm
+# 3. vendor BOTH files back, together
+cp src/scrapebot/extract.py ~/Automation/wholesale-order-entry/backend/app/prospects/scrapebot/extract.py
+cp data/llm/pattern.json    ~/Automation/wholesale-order-entry/backend/app/prospects/pattern.json
+```
+
+Copying one without the other is the bug this section exists to prevent.
+
+### The re-judge is wider than a prompt change
+
+A prompt change can only move the 667 rows that reached the model. An
+`extract.py` change reaches further, and how far depends on what you touched:
+
+| edited | what moves | re-queue |
+|---|---|---|
+| `KNIT_TERMS`, `WEAK_KNIT_TERMS`, `NON_SWEATER_TERMS` | knit measurements, and the `skip_reason()` gate | everything except unreadable rows |
+| product / price / tag parsing | `catalogue_size`, `products`, prices — including **whether a shop counts as unreadable at all** | everything |
+
+Do not try to be clever. Re-queue all of it:
+
+```sql
+UPDATE prospects SET assessed_at = NULL WHERE assessed_at IS NOT NULL;
+```
+
+From cache that is ~35 minutes for 1,381 rows. The optimisation is not worth a
+silent mismatch.
+
+**No re-fetch is needed.** The cache stores raw HTTP bodies, and extraction runs
+fresh on every pass — so an `extract.py` change is re-measured from cache at
+full speed.
+
+### It is vendored code
+
+`extract.py` is byte-identical to `scrapping-bot`. Editing it here without going
+upstream first breaks `diff -r` as a sync check *and* leaves the pattern stale.
+Both, at once. This is the file where "edit here and record the drift" is the
+worst of the two options.
+
+### Check the vocabulary before trusting it
+
+`KNIT_RE` is `\b(term)(?:s|ted)?\b` — word-boundary anchored, not substring.
+So `cardi` does **not** match `cardigan`; both are needed. And a term that names
+a *feature* rather than a *garment* will over-qualify: the file's own opening
+comment records that `sweatshirt`, `crewneck`, `poncho`, `jumper` and `shawl`
+were each measured against 227k products and cut for exactly that reason.
+`"long sleeve"` is the same category of term.
+
+To measure a vocabulary change before adopting it, score cached catalogues under
+both lists and compare mean `knitwear_share` and `knit_evidence` flips — no
+network, no model calls. That is how the +1.9 pp above was obtained.
+
+---
+
 ## 3. The procedure
 
 ### Step 1 — change the rule
@@ -300,6 +382,9 @@ docker compose -f docker-compose.dev.yml --env-file .env.dev exec -T db \
 ## 6. Checklist
 
 - [ ] Rule changed in **both** `prompt.md` and `pattern.json` (§2)
+- [ ] If `extract.py` was touched: edited in `scrapping-bot` FIRST, pattern
+      rebuilt there, and **both files vendored back together** (§2b)
+- [ ] If `extract.py` was touched: **all** rows re-queued, not just the 667 (§2b)
 - [ ] Absolute rules in code, judgements in the prompt (§1)
 - [ ] Vendored drift decided and recorded (§2)
 - [ ] Tests pass: `pytest tests/test_prospect_assess.py`
