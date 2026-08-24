@@ -178,6 +178,21 @@ def _name_forms(name: str) -> list[str]:
     return [f for f in forms if f]
 
 
+def _place_id(row) -> str | None:
+    """A usable Google place_id from a row, or None.
+
+    NOT just `row.place_id`. An all-empty place_id column survives a CSV
+    round-trip as float64 NaN, and NaN is TRUTHY — so a plain `if pid:` decided
+    every row was already resolved, skipped the lookup, and posted "nan" to
+    Google as a place id. Empty strings arrive the same way.
+    """
+    v = getattr(row, "place_id", None)
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    v = str(v).strip()
+    return v or None
+
+
 def _metres(lat1, lng1, lat2, lng2) -> float:
     """Haversine. Good to a few metres at these distances."""
     r = 6371000.0
@@ -456,7 +471,7 @@ def add_details(cands: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
     sites, addrs, phones, states, reviews = [], [], [], [], []
     ratings, counts = [], []
     for row in cands.itertuples():
-        pid = getattr(row, "place_id", None)
+        pid = _place_id(row)
         # An OSM row that resolve_place_ids could not match has no place_id.
         # Skipped rather than sent to Google, which would 400 on every one.
         r = {}
@@ -930,8 +945,9 @@ def resolve_place_ids(cands: pd.DataFrame, *, max_metres: float = 300,
 
     ids, hit, miss, far = [], 0, 0, 0
     for c in cands.itertuples():
-        if getattr(c, "place_id", None):
-            ids.append(c.place_id)             # already resolved; do not re-bill
+        known = _place_id(c)
+        if known:
+            ids.append(known)                  # already resolved; do not re-bill
             continue
         query = " ".join(str(v) for v in (c.store_name, _first(c, "vicinity")) if v)
         try:

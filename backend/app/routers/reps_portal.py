@@ -362,6 +362,9 @@ def _prospect_row(p: Prospect, marked: bool) -> dict:
         "state": p.state,
         "website": p.website,
         "phone": p.phone,
+        # From the OSM email / contact:email tag. Often the only way to reach a
+        # small shop that has no website.
+        "email": p.email,
         "rating": float(p.rating) if p.rating is not None else None,
         "reviewCount": p.review_count,
         "womenswear": p.womenswear,

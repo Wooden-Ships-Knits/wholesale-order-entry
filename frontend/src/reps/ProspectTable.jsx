@@ -1,50 +1,146 @@
-// Prospect rows beneath the map. Read-only apart from the "mark" toggle, which
-// is the rep's own shortlist and the only thing on this page they can change.
+// Prospect rows beneath the map, with a per-column filter row and sortable
+// headers. Read-only apart from the "mark" toggle, which is the rep's own
+// shortlist and the only thing on this page they can change.
 //
 // Written separately from RepOrderTable for the same reason that one was split
 // from admin's OrderTable: shared table components accrete columns that only
 // one caller may show, and this page must never be able to render an order's
 // dollar value or card state by accident.
 
+import { VERDICTS } from './filterProspects'
+
 const DASH = <span className="unknown">—</span>
 
-// app/prospects/assess.py writes one of these four, or NULL when nobody has
-// looked yet. The label is spelled out because "insufficient_data" is a column
-// value, not a sentence a rep should have to read.
-const VERDICTS = {
-  strong: { label: 'Strong', className: 'verdict-strong' },
-  possible: { label: 'Possible', className: 'verdict-possible' },
-  weak: { label: 'Weak', className: 'verdict-weak' },
-  insufficient_data: { label: 'Couldn’t read site', className: 'verdict-unknown' },
+// Colour per verdict. The LABELS live in filterProspects.VERDICTS so the
+// filter dropdown and the badge below can never disagree about what a value
+// is called.
+const VERDICT_CLASS = {
+  strong: 'verdict-strong',
+  possible: 'verdict-possible',
+  weak: 'verdict-weak',
+  insufficient_data: 'verdict-unknown',
 }
 
-export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
-  if (rows.length === 0) {
-    return (
-      <table className="admin-table">
-        <tbody>
-          <tr>
-            <td className="admin-empty-row">No prospects match these filters.</td>
-          </tr>
-        </tbody>
-      </table>
-    )
-  }
+/** A header that sorts. Clicking cycles asc → desc → off, so a rep can always
+ *  get back to the server's own order without reloading. The arrow shows the
+ *  CURRENT direction rather than what a click would do — an arrow meaning
+ *  "what happens next" reads backwards to most people. */
+function SortHeader({ label, sortKey, sort, onSort }) {
+  const active = sort.key === sortKey
+  const arrow = !active ? '↕' : sort.dir === 'asc' ? '↑' : '↓'
+  return (
+    <th>
+      <button
+        type="button"
+        className={active ? 'sort-btn active' : 'sort-btn'}
+        onClick={() => onSort(sortKey)}
+        title={`Sort by ${label.toLowerCase()}`}
+      >
+        {label} <span className="sort-arrow">{arrow}</span>
+      </button>
+    </th>
+  )
+}
+
+export default function ProspectTable({
+  rows,
+  allRows, // unfiltered, so the dropdowns don't shrink as you filter
+  filters,
+  onFilterChange,
+  sort,
+  onSort,
+  onFocus,
+  onToggleMark,
+  busyId,
+}) {
+  // Towns come from the UNFILTERED rows: picking one must not remove the
+  // others from the list you picked it from.
+  const cities = [...new Set((allRows || []).map((p) => p.city).filter(Boolean))].sort()
 
   return (
     <table className="admin-table prospect-table">
       <thead>
         <tr>
           <th aria-label="Shortlist" />
-          <th>Store</th>
-          <th>Where</th>
-          <th className="num">Rating</th>
+          <SortHeader label="Store" sortKey="storeName" sort={sort} onSort={onSort} />
+          <SortHeader label="Where" sortKey="city" sort={sort} onSort={onSort} />
           <th>Contact</th>
-          <th>Assessment</th>
-          <th>Nearest stockist</th>
+          <SortHeader label="Assessment" sortKey="verdict" sort={sort} onSort={onSort} />
+          <SortHeader
+            label="Nearest stockist"
+            sortKey="distanceMiles"
+            sort={sort}
+            onSort={onSort}
+          />
+        </tr>
+        {/* Per-column filters. Every cell is bound to one key of the `filters`
+            object owned by ProspectsPanel; '' means "no filter on this
+            column". SIX cells for six header columns — a short row silently
+            shifts every control one column left. */}
+        <tr className="filter-row">
+          <th aria-hidden="true" />
+          <th>
+            <input
+              type="search"
+              placeholder="Store name"
+              aria-label="Filter by store name"
+              value={filters.storeName}
+              onChange={(e) => onFilterChange('storeName', e.target.value)}
+            />
+          </th>
+          <th>
+            <select
+              aria-label="Filter by town"
+              value={filters.city}
+              onChange={(e) => onFilterChange('city', e.target.value)}
+            >
+              <option value="">All</option>
+              {cities.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </th>
+          <th>
+            <select
+              aria-label="Filter by website"
+              value={filters.website}
+              onChange={(e) => onFilterChange('website', e.target.value)}
+            >
+              <option value="">All</option>
+              <option value="yes">Has a website</option>
+              <option value="no">No website</option>
+            </select>
+          </th>
+          <th>
+            {/* "Not assessed" is a real choice, not the absence of one — it is
+                the pile a rep works through, and blank already means "all". */}
+            <select
+              aria-label="Filter by assessment"
+              value={filters.verdict}
+              onChange={(e) => onFilterChange('verdict', e.target.value)}
+            >
+              <option value="">All</option>
+              {Object.entries(VERDICTS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+              <option value="none">Not assessed</option>
+            </select>
+          </th>
+          <th aria-hidden="true" />
         </tr>
       </thead>
       <tbody>
+        {rows.length === 0 && (
+          <tr>
+            <td className="admin-empty-row" colSpan={6}>
+              No prospects match these filters.
+            </td>
+          </tr>
+        )}
         {rows.map((p) => (
           // The whole row is the map control: clicking anywhere flies to the
           // store, so a rep reading the list never has to hunt for its dot.
@@ -81,16 +177,6 @@ export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
                 {p.address && <span className="sub">{p.address}</span>}
               </div>
             </td>
-            <td className="num">
-              {p.rating == null ? (
-                DASH
-              ) : (
-                <div className="cert-missing">
-                  <span>{p.rating}</span>
-                  {p.reviewCount != null && <span className="sub">{p.reviewCount} reviews</span>}
-                </div>
-              )}
-            </td>
             <td>
               <div className="cert-missing">
                 {p.website ? (
@@ -106,6 +192,17 @@ export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
                   DASH
                 )}
                 {p.phone && <span className="sub">{p.phone}</span>}
+                {/* mailto rather than plain text: a rep reading this on a
+                    phone should be one tap from writing to them. */}
+                {p.email && (
+                  <a
+                    className="sub"
+                    href={`mailto:${p.email}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {p.email}
+                  </a>
+                )}
               </div>
             </td>
             {/* Never blank when a row HAS been assessed and never a verdict
@@ -115,8 +212,8 @@ export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
             <td>
               {p.verdict ? (
                 <div className="cert-missing">
-                  <span className={VERDICTS[p.verdict]?.className}>
-                    {VERDICTS[p.verdict]?.label || p.verdict}
+                  <span className={VERDICT_CLASS[p.verdict]}>
+                    {VERDICTS[p.verdict] || p.verdict}
                   </span>
                   {/* The sentence written for exactly this decision. Truncated
                       by CSS, not by JS — the full text is the title. */}
