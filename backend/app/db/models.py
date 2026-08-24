@@ -330,6 +330,10 @@ class Prospect(Base):
     # of its knitwear where our product would sit, another at $250 carries none.
     knit_in_band_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
     signature_tags_carried: Mapped[str | None] = mapped_column(Text)
+    # The brands this shop actually stocks, deepest first, capped at the 20 the
+    # model was shown. A snapshot of the shelf on the day it was assessed --
+    # shops re-merchandise, and this is deliberately not refreshed by a sweep.
+    top_brands: Mapped[str | None] = mapped_column(Text)
     # The shop's own tags that name knitwear — its word for the thing we make.
     # NOT a subset of signature_tags_carried above: that one asks whether a shop
     # is merchandised like our customers, and only three of its 78 tags name

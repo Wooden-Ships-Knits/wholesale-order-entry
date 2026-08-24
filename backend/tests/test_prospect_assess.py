@@ -323,3 +323,25 @@ def test_the_payload_carries_knit_price_percentiles_not_just_a_median():
     lo, mid, hi = pay["knit_price_p25_p50_p75"]
     assert lo < mid < hi
     assert lo <= 150
+
+
+# --- the shelf, persisted -------------------------------------------------
+
+def test_the_brands_are_written_to_the_row_deepest_first():
+    """`top_brands` decided the gate and was thrown away, so the one column the
+    rule turns on could not be checked from the table. Order is the payload's --
+    deepest-stocked first -- because the FIRST entry is what the domain-echo
+    test reads."""
+    from app.prospects.analysis.llm_payload import store_payload
+    shop = _store([_product(f"S{i}", vendor=v) for i, v in enumerate(
+        ["RAILS"] * 9 + ["VELVET"] * 5 + ["FRAME"] * 2)])
+    pay = store_payload("boutique.com", shop, "", assess.tag_signature(PATTERN))
+    row = assess.to_columns(pay)
+    assert row["top_brands"] == "RAILS; VELVET; FRAME"
+
+
+def test_a_shelf_with_no_vendor_field_writes_null_not_an_empty_string():
+    from app.prospects.analysis.llm_payload import store_payload
+    shop = _store([_product(f"S{i}", vendor="") for i in range(60)])
+    pay = store_payload("boutique.com", shop, "", assess.tag_signature(PATTERN))
+    assert assess.to_columns(pay)["top_brands"] is None

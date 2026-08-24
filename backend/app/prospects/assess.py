@@ -45,7 +45,13 @@ UNREADABLE = ("blocked", "error", "js_required")
 
 # Answers that arrive as lists and live in one Text column. Joined the way
 # judge.verdict_rows joins them for its CSV, so a row reads the same in both.
-JOINED = ("reasons", "problems", "signature_tags_carried", "knit_tags_carried")
+JOINED = ("reasons", "problems", "signature_tags_carried", "knit_tags_carried",
+          # The shelf itself, deepest-stocked first. Written because the
+          # unreadable-shelf gate turns on its FIRST entry, and until now that
+          # was computed, used, and thrown away -- leaving the one rule nobody
+          # could check from the table. Order is the payload's, so the entry the
+          # gate read is the entry a reader sees first.
+          "top_brands")
 
 # Measurements copied onto the row as they are. Deliberately a whitelist: the
 # model is asked for free text and returns whatever it likes, so an answer
