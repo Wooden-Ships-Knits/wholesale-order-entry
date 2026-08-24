@@ -125,6 +125,17 @@ export default function ProspectTable({ rows, onFocus, onToggleMark, busyId }) {
                       {p.forTheRep}
                     </span>
                   )}
+                  {/* The number rule 3 turns on. Shown because a shop can be
+                      worth calling while its median price sits above our band —
+                      without this the verdict reads as arbitrary. */}
+                  {p.knitInBandShare != null && (
+                    <span
+                      className="sub"
+                      title="Share of this shop's knitwear already priced inside our $100–200 band"
+                    >
+                      {Math.round(p.knitInBandShare * 100)}% of its knitwear in our price band
+                    </span>
+                  )}
                   {/* judge.check() disagreed with the answer above it. Shown
                       LOUDLY: this is the only thing marking the verdict beside
                       it as one nobody has checked. */}

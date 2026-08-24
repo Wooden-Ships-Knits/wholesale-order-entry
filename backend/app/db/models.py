@@ -322,6 +322,13 @@ class Prospect(Base):
     price_range: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     knitwear_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
     knitwear_price_median: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    # The share of this shop's knitwear priced inside OUR retail band. Rule 3
+    # reads this, not the median beside it: half a shop's knitwear is cheaper
+    # than its own median by definition, so a median $18 over our band says the
+    # shop skews dear, never that it has no room for us. Persisted so the
+    # decision is auditable from the table -- one shop at $218 carries a third
+    # of its knitwear where our product would sit, another at $250 carries none.
+    knit_in_band_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
     signature_tags_carried: Mapped[str | None] = mapped_column(Text)
     # The shop's own tags that name knitwear — its word for the thing we make.
     # NOT a subset of signature_tags_carried above: that one asks whether a shop

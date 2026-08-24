@@ -16,6 +16,7 @@ Without it the threshold reported is a default, not a measurement.
 import hashlib
 import json
 import pathlib
+import re
 import statistics as st
 import sys
 from collections import Counter
@@ -72,9 +73,39 @@ def carries_own_brand(store):
 
 # A shelf this narrow, backed by a catalogue this full, is one label rather than
 # a shop: the store makes what it sells and buys from nobody.
+_ALNUM_RE = re.compile(r"[^a-z0-9]")
+
 MAX_HOUSE_BRANDS = 3
 MIN_HOUSE_CATALOGUE = 200
 MIN_CATALOGUE = 50           # below this we have not read enough to judge at all
+
+
+def brands_echo_domain(domain, top_brands, n=3):
+    """Whether this shop's leading "brands" are just its own name.
+
+    Deep catalogues arrive in two shapes that a catalogue cannot tell apart: a
+    label that makes everything it sells, and a boutique whose site never fills
+    the vendor field so every product carries the shop's name. Both read as one
+    brand stocked hundreds deep.
+
+    We do not know which one we are looking at, so the caller must answer
+    `insufficient_data` -- never `weak`. Nine of our own 242 accounts classify
+    as house_brand, and burlapranch.com lists all 2,000 of its products under
+    "BURLAP RANCH MERCANTILE". Calling that shape a bad prospect would libel
+    paying customers.
+
+    Compared on letters and digits only, both directions, because a vendor
+    string is typed by hand: "HILL HOUSE HOME" against hillhousehome.com is the
+    same shop, and "RAILS" against latreclothingca.com is not.
+    """
+    label = _ALNUM_RE.sub("", (domain or "").split(".")[0].lower())
+    if not label:
+        return False
+    for brand in list(top_brands or [])[:n]:
+        b = _ALNUM_RE.sub("", (brand or "").lower())
+        if b and (b in label or label in b):
+            return True
+    return False
 
 
 def store_type(store):
@@ -161,11 +192,28 @@ def lift(brands, signature):
     return round(len(signature & brands) / expected, 2)
 
 
-def profile(store):
-    """What this store sells, in the four terms a catalogue can answer.
+def _percentiles(vals):
+    """p25/p50/p75, index-truncated and rounded.
+
+    The same method as llm_payload._prices, deliberately: a candidate figure and
+    the account band it is read against have to be computed the same way, or the
+    comparison is between two different statistics wearing one name.
+    """
+    if not vals:
+        return None
+    at = lambda q: round(vals[int(q * (len(vals) - 1))])  # noqa: E731
+    return [at(0.25), at(0.50), at(0.75)]
+
+
+def profile(store, band=None):
+    """What this store sells, in the terms a catalogue can answer.
 
     Deliberately excludes revenue: a candidate has none, so any dimension built
     on it cannot be compared across the two sides.
+
+    `band` is (low, ..., high) — what OUR knitwear retails for. Given, the
+    profile also reports what share of the shop's knitwear falls inside it,
+    which is the question rule 3 actually wants answered.
     """
     products = [Product(title=p["title"], price=p.get("price"),
                         vendor=p.get("vendor") or "",
@@ -181,6 +229,15 @@ def profile(store):
         "knit_share": len(knits) / len(products) if products else 0.0,
         "price_median": st.median(prices) if prices else None,
         "knit_price_median": st.median(knit_prices) if knit_prices else None,
+        # The median alone decided rule 3, and a median is not a floor. A shop
+        # at $218 was rejected while a third of its knitwear sat inside our
+        # band; a shop $32 dearer had none there at all. One number cannot tell
+        # those apart, so the spread is carried too.
+        "knit_price_p25_p50_p75": _percentiles(knit_prices),
+        "knit_in_band_share": (
+            round(sum(1 for x in knit_prices if band[0] <= x <= band[-1])
+                  / len(knit_prices), 3)
+            if knit_prices and band else None),
     }
 
 

@@ -394,6 +394,11 @@ def _prospect_row(p: Prospect, marked: bool) -> dict:
         # nothing to mark it as one.
         "problems": p.problems,
         "assessedAt": p.assessed_at.isoformat() if p.assessed_at else None,
+        # What share of this shop's knitwear is priced where our product sits.
+        # Rule 3 turns on it, so a rep looking at a `possible` on a shop whose
+        # median is above our band can see why it is still worth a call.
+        "knitInBandShare": (float(p.knit_in_band_share)
+                            if p.knit_in_band_share is not None else None),
     }
 
 

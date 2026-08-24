@@ -44,12 +44,19 @@
    {
     "question": "Can it afford us, and can we afford it?",
     "reads": [
+     "knit_in_band_share",
+     "knit_price_p25_p50_p75",
      "price_p25_p50_p75",
      "price_range",
      "knitwear_price_median"
     ],
     "against": "bands_p10_median_p90.price_median, .price_range, .knit_price_median",
-    "why": "Price is the sharpest disqualifier. Our sweaters retail at $100\u2013$200, so read knitwear_price_median against that directly: a shop whose knitwear sits far below cannot carry our price, however well the rest fits. price_median and price_range stay account bands \u2014 where our customers sit, not targets.",
+    "why": "Our sweaters retail at $100\u2013$200, so the question is whether the shop already sells knitwear at that price. knit_in_band_share answers it directly: the share of its own knitwear inside our band. price_median and price_range stay account bands \u2014 where our customers sit, not targets.",
+    "disqualifies": {
+     "knit_in_band_share": 0,
+     "verdict": "weak"
+    },
+    "evidence": "Do NOT decide this on knitwear_price_median. It is a median, so half the shop's knitwear is cheaper than it by definition. Measured on real candidates: a shop at $218 carries 33% of its knitwear inside our band and belongs on the call list; a shop at $250 carries none and does not. Eight percent apart on the median, opposite answers.",
     "caution": "Name the band you cite. price_median is a shop's middle price, price_range the spread between its cheapest and dearest item, knit_price_median the middle price of its knitwear only. Comparing against the wrong one produces a sentence that reads correctly and is false."
    }
   ]
@@ -381,9 +388,9 @@
  ],
  "bands_p10_median_p90": {
   "knit_share": {
-   "p10": 0.022540983606557378,
-   "median": 0.10982658959537572,
-   "p90": 0.22388059701492538
+   "p10": 0.0136986301369863,
+   "median": 0.10824742268041238,
+   "p90": 0.21546052631578946
   },
   "price_median": {
    "p10": 38.0,
@@ -467,6 +474,12 @@
    "price_range": 380.0,
    "knitwear_share": 0.179,
    "knitwear_price_median": 59.0,
+   "knit_price_p25_p50_p75": [
+    42,
+    59,
+    84
+   ],
+   "knit_in_band_share": 0.07,
    "knit_tags_carried": [
     "SWEATERS"
    ],
@@ -532,8 +545,14 @@
     218
    ],
    "price_range": 1386.0,
-   "knitwear_share": 0.164,
-   "knitwear_price_median": 188.0,
+   "knitwear_share": 0.157,
+   "knitwear_price_median": 189.0,
+   "knit_price_p25_p50_p75": [
+    108,
+    189,
+    235
+   ],
+   "knit_in_band_share": 0.419,
    "knit_tags_carried": [
     "SWEATER"
    ],
@@ -601,6 +620,12 @@
    "price_range": 585.0,
    "knitwear_share": 0.191,
    "knitwear_price_median": 88.0,
+   "knit_price_p25_p50_p75": [
+    78,
+    88,
+    110
+   ],
+   "knit_in_band_share": 0.323,
    "knit_tags_carried": [
     "CARDIGAN",
     "SWEATERS"
@@ -675,7 +700,13 @@
    ],
    "price_range": 364.0,
    "knitwear_share": 0.083,
-   "knitwear_price_median": 93.5,
+   "knitwear_price_median": 89.0,
+   "knit_price_p25_p50_p75": [
+    69,
+    89,
+    128
+   ],
+   "knit_in_band_share": 0.307,
    "knit_tags_carried": [
     "SWEATERS"
    ],

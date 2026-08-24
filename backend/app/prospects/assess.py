@@ -32,7 +32,7 @@ from app.config import settings
 from app.db.models import Prospect
 
 from .analysis.judge import judge_one, system_message
-from .analysis.llm_payload import skip_reason, store_payload
+from .analysis.llm_payload import skip_reason, store_payload, unreadable_reason
 from .scrapebot.store import scrape_one
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ JOINED = ("reasons", "problems", "signature_tags_carried", "knit_tags_carried")
 # invented number, in a column a rep reads as fact.
 MEASURED = ("store_type", "brand_count", "products_per_brand", "tag_lift",
             "price_range", "knitwear_share", "knitwear_price_median",
-            "knit_evidence")
+            "knit_evidence", "knit_in_band_share")
 ANSWERED = ("verdict", "confidence", "for_the_rep", "against")
 
 # The five keys prompt.md asks the model for, plus judge_one's own `problems`.
@@ -160,6 +160,21 @@ def assess_website(website: str, pattern=None, complete=None, scrape=None,
         return _unreadable(f"site could not be read: {status}", payload)
     if not store.get("products"):
         return _unreadable("site was read but lists no products", payload)
+
+    # Rule 1, before rule 2 and before the model. A shelf whose every brand is
+    # the shop's own name cannot be read at all, and that is a DIFFERENT answer
+    # from the gate below: `insufficient_data`, never `weak`. Nine of our own
+    # 242 accounts have this shape -- burlapranch.com lists all 2,000 of its
+    # products under its own name -- so `weak` here would call paying customers
+    # bad prospects.
+    #
+    # The depth threshold comes from the accounts rather than a literal, so a
+    # rebuilt pattern carries a corrected one.
+    depth = (pattern.get("products_per_brand_p10_median_p90") or {}).get("p90")
+    reason = unreadable_reason(payload,
+                               min_products_per_brand=depth * 2 if depth else None)
+    if reason:
+        return _unreadable(reason, payload)
 
     reason = skip_reason(payload)
     if reason:

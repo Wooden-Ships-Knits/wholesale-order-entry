@@ -21,6 +21,7 @@ from collections import Counter
 
 from ..scrapebot import extract
 from .signature import (
+    brands_echo_domain,
     MAX_HOUSE_BRANDS, MIN_CATALOGUE, MIN_HOUSE_CATALOGUE,
     bands, build_tag_signature, load, lift, price_range, profile, store_type,
     tags_of, vendors,
@@ -39,6 +40,13 @@ SIGNATURE_SHARE = 0.15
 # accounts happen to sit. The two diverge: 57% of accounts price their own
 # knitwear below $100, against a median of $95.
 OUR_KNIT_RETAIL = (100.0, 150.0, 200.0)
+
+# Above this many products per brand, a shelf is too deep to be an ordinary
+# boutique's -- our accounts sit at a median of 9.2 and a p90 of 20.3. It is NOT
+# a disqualifier on its own: real accounts reach 2,000, and the tail is where
+# the unreadable vendor fields live. It only opens the question that
+# `brands_echo_domain` then answers.
+UNREADABLE_PRODUCTS_PER_BRAND = 40.0
 
 
 def _category_mix(store, limit=TOP_CATEGORIES):
@@ -99,7 +107,7 @@ def store_payload(domain, store, about, tag_signature=frozenset()):
     Three questions, in the order a buyer would ask them: does this shop buy
     from brands at all, does it sell our kind of thing, and can it afford us.
     """
-    pr = profile(store)
+    pr = profile(store, band=OUR_KNIT_RETAIL)
     brands = vendors(store)
     tags = tags_of(store)
     knit_tags = _knit_tags(tags)
@@ -124,6 +132,12 @@ def store_payload(domain, store, about, tag_signature=frozenset()):
         "price_range": price_range(store),
         "knitwear_share": round(pr["knit_share"], 3),
         "knitwear_price_median": pr["knit_price_median"],
+        "knit_price_p25_p50_p75": pr["knit_price_p25_p50_p75"],
+        # The share of this shop's knitwear priced inside OUR band. Rule 3 reads
+        # this, not the median: half a shop's knitwear is cheaper than its
+        # median by definition, so a median $18 over says the shop skews dear,
+        # never that it has no room for us.
+        "knit_in_band_share": pr["knit_in_band_share"],
         "knit_tags_carried": knit_tags,
         "knit_evidence": _knit_evidence(pr["knit_share"], knit_tags),
         "about_text": (about or "")[:ABOUT_CHARS],
@@ -243,17 +257,31 @@ def _rules(depth_band):
             },
             {
                 "question": "Can it afford us, and can we afford it?",
-                "reads": ["price_p25_p50_p75", "price_range",
+                "reads": ["knit_in_band_share", "knit_price_p25_p50_p75",
+                          "price_p25_p50_p75", "price_range",
                           "knitwear_price_median"],
                 "against": ("bands_p10_median_p90.price_median, .price_range, "
                             ".knit_price_median"),
                 "why": (
-                    "Price is the sharpest disqualifier. Our sweaters retail at "
-                    f"${OUR_KNIT_RETAIL[0]:.0f}–${OUR_KNIT_RETAIL[2]:.0f}, so read "
-                    "knitwear_price_median against that directly: a shop whose "
-                    "knitwear sits far below cannot carry our price, however well "
-                    "the rest fits. price_median and price_range stay account "
-                    "bands — where our customers sit, not targets."
+                    "Our sweaters retail at "
+                    f"${OUR_KNIT_RETAIL[0]:.0f}–${OUR_KNIT_RETAIL[2]:.0f}, so the "
+                    "question is whether the shop already sells knitwear at that "
+                    "price. knit_in_band_share answers it directly: the share of "
+                    "its own knitwear inside our band. price_median and "
+                    "price_range stay account bands — where our customers sit, "
+                    "not targets."
+                ),
+                "disqualifies": {
+                    "knit_in_band_share": 0,
+                    "verdict": "weak",
+                },
+                "evidence": (
+                    "Do NOT decide this on knitwear_price_median. It is a median, "
+                    "so half the shop's knitwear is cheaper than it by "
+                    "definition. Measured on real candidates: a shop at $218 "
+                    "carries 33% of its knitwear inside our band and belongs on "
+                    "the call list; a shop at $250 carries none and does not. "
+                    "Eight percent apart on the median, opposite answers."
                 ),
                 "caution": (
                     "Name the band you cite. price_median is a shop's middle "
@@ -321,6 +349,36 @@ def _write_jsonl(path, rows):
         for row in rows:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
     return path
+
+
+def unreadable_reason(payload, min_products_per_brand=None):
+    """Why this shop's shelf cannot be read, or None if it can.
+
+    Separate from `skip_reason` because the verdicts differ and must not be
+    confused: `skip_reason` means the shop answered rule 2 against itself and
+    reads `weak`; this means we could not see what the shop buys at all, and
+    reads `insufficient_data`.
+
+    A deep catalogue whose leading brands are the shop's own name is the case.
+    It is either a label or a site that never fills the vendor field, and a
+    catalogue cannot tell those apart -- so neither will we. Answering `weak`
+    here would have called nine of our own accounts bad prospects.
+
+    `min_products_per_brand` should be derived from the accounts rather than
+    passed as a literal, so a rebuilt pattern carries a corrected threshold.
+    The default is a fallback for callers without a pattern to hand.
+    """
+    floor = (UNREADABLE_PRODUCTS_PER_BRAND if min_products_per_brand is None
+             else min_products_per_brand)
+    ppb = payload.get("products_per_brand")
+    if not ppb or not payload.get("catalogue_size"):
+        return None
+    if ppb <= floor:
+        return None
+    if not brands_echo_domain(payload.get("domain"), payload.get("top_brands")):
+        return None
+    return ("every brand on the shelf is the shop's own name, so what it buys "
+            "cannot be seen")
 
 
 def skip_reason(payload):

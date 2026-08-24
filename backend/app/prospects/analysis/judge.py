@@ -130,11 +130,49 @@ def check(answer, candidate):
     # `== "none"` rather than a falsy test: a payload written before this field
     # existed has no answer to give, and treating its silence as "no knitwear"
     # would fail every row of it.
-    elif candidate.get("knit_evidence") == "none" and verdict != "weak":
+    #
+    # `insufficient_data` is exempt, and the exemption matters. skip_reason
+    # deliberately does NOT gate a shop whose catalogue is too thin to read --
+    # "filing it under no knitwear would state something about a shelf nobody
+    # managed to see" -- so such a shop reaches the model, honestly answers
+    # insufficient_data, and was then flagged for breaking a rule it obeyed.
+    # Measured on one run: 83 rows carried that false mark, every one of them a
+    # correct answer wearing a "do not trust this row" badge.
+    elif (candidate.get("knit_evidence") == "none"
+          and verdict not in ("weak", "insufficient_data")):
         problems.append("nothing in the catalogue names knitwear, so the verdict "
                         "must be weak")
 
     return problems
+
+
+# What each hard rule says the verdict must be. `check` names the rule in
+# prose; this is the same fact in a form code can act on.
+FORCED = {
+    "store is unreadable": "insufficient_data",
+    "store_type is house_brand": "weak",
+    "nothing in the catalogue names knitwear": "weak",
+}
+
+
+def enforce(answer, problems):
+    """Apply the verdict a hard rule names, rather than only complaining.
+
+    `check` used to record "store_type is house_brand, so the verdict must be
+    weak" and leave the model's `strong` standing. Nothing downstream read
+    `problems` -- it is not filtered, sorted or re-queued on -- so a flagged
+    `strong` still reached the top of a rep's call list. A rule that cannot
+    change an answer is a comment, and prompt.md's own guidance is that an
+    absolute rule belongs in code.
+
+    The hallucination and bad-verdict findings are NOT enforced: there is no
+    correct verdict to substitute for an invented brand, and the right response
+    to those is still to distrust the whole answer.
+    """
+    for prefix, verdict in FORCED.items():
+        if any(p.startswith(prefix) for p in problems):
+            return {**answer, "verdict": verdict, "confidence": "high"}
+    return answer
 
 
 # Worst first, so the top of the file is the work. A rep opening this reads
@@ -216,9 +254,10 @@ def judge_one(candidate, pattern, complete, system=None):
     if answer is None:
         return {"domain": candidate.get("domain"), "verdict": None,
                 "problems": ["answer was not JSON"], "raw": raw}
+    problems = check(answer, candidate)
     return {"domain": candidate.get("domain"),
-            **answer,
-            "problems": check(answer, candidate)}
+            **enforce(answer, problems),
+            "problems": problems}
 
 
 def judge(pattern, candidates, complete):

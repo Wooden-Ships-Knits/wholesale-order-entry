@@ -216,3 +216,110 @@ def test_assess_pending_passes_the_territory_through(monkeypatch):
     assess.assess_pending(object(), territory="Midwest - Aviva Landin",
                           complete=lambda s, u: "{}")
     assert got["territory"] == "Midwest - Aviva Landin"
+
+
+# --- the unreadable-shelf gate (rule 1) ------------------------------------
+#
+# A shop whose products all carry its OWN name as the vendor tells us nothing
+# about what it buys. Two very different shops look identical from here: a DTC
+# label, and a boutique whose site simply does not fill the vendor field.
+#
+# We cannot tell them apart from a catalogue, so the honest answer is
+# `insufficient_data` -- NEVER `weak`. This is not a nicety: nine of our own
+# 242 paying accounts classify as house_brand today, burlapranch.com lists all
+# 2,000 of its products under "BURLAP RANCH MERCANTILE", and prompt.md rule 1
+# already records that four accounts read exactly this way. A gate that
+# answered `weak` here would be calling our own customers bad prospects.
+
+def _own_label_shop(name="HILL HOUSE HOME", domain="hillhousehome.com", n=400):
+    """Deep catalogue, every product under the shop's own name."""
+    return _store([_product(f"Nap Dress {i}", vendor=name) for i in range(n)],
+                  domain=domain)
+
+
+# La Tre carries 45 brands at 44 products each and is a real `strong`. Nine
+# brands here, not three: at three the store is house_brand by the existing
+# MAX_HOUSE_BRANDS rule and would be weak for a different and correct reason,
+# which would leave this test passing without testing the gate at all.
+def _deep_multibrand_shop(domain="latreclothingca.com", n=450):
+    brands = ["RAILS", "VELVET", "XIRENA", "FRAME", "NILI LOTAN",
+              "ULLA JOHNSON", "VINCE", "AGOLDE", "MOTHER"]
+    return _store([_product(f"Sweater {i}", vendor=brands[i % len(brands)])
+                   for i in range(n)], domain=domain)
+
+
+def test_a_shop_that_only_names_itself_is_insufficient_data_not_weak():
+    complete, calls = _answers(GOOD)
+    out = assess.assess_website("https://hillhousehome.com", PATTERN, complete,
+                                scrape=lambda url: _own_label_shop(), system="sys")
+    assert out["verdict"] == "insufficient_data", "weak would libel our own accounts"
+    assert calls == [], "the gate must fire before the model is paid for"
+
+
+def test_the_gate_says_which_shelf_it_could_not_see():
+    """`reasons` is the only place a rep is ever told why."""
+    complete, _ = _answers(GOOD)
+    out = assess.assess_website("https://hillhousehome.com", PATTERN, complete,
+                                scrape=lambda url: _own_label_shop(), system="sys")
+    assert "brand" in out["reasons"][0].lower()
+
+
+def test_a_deep_catalogue_of_other_peoples_brands_still_reaches_the_model():
+    """La Tre carries RAILS at 44 products per brand and is a real `strong`.
+    Depth alone must never gate — only depth plus a shelf we cannot read."""
+    complete, calls = _answers(GOOD)
+    out = assess.assess_website("https://latreclothingca.com", PATTERN, complete,
+                                scrape=lambda url: _deep_multibrand_shop(), system="sys")
+    assert out["verdict"] == "strong"
+    assert len(calls) == 1
+
+
+def test_the_gate_needs_depth_as_well_as_a_self_named_shelf():
+    """The name alone must not gate. A shop with 12 products under its own name
+    is a thin scrape; only depth turns that into "we cannot see the shelf"."""
+    from app.prospects.analysis.llm_payload import unreadable_reason
+    shallow = {"domain": "tiny.com", "products_per_brand": 12.0,
+               "catalogue_size": 60, "top_brands": ["TINY"]}
+    assert unreadable_reason(shallow, min_products_per_brand=40.6) is None
+    assert unreadable_reason({**shallow, "products_per_brand": 138.0},
+                             min_products_per_brand=40.6) is not None
+
+
+# --- rule 3 asks whether the shop stocks knitwear in OUR band ---------------
+#
+# `knitwear_price_median` is a MEDIAN. Sandy's Boutique sits at $218 -- $18
+# over -- yet 33% of its knitwear is inside $100-$200 and its p25 is $125. It
+# was rejected anyway. Ypsilon Dresses sits at $250 with 0% in band and should
+# be rejected. One number cannot tell those two apart; a share can.
+
+def _priced_knit_shop(prices, domain="boutique.com"):
+    return _store([_product(f"Sweater {i}", price=p, vendor=f"BRAND{i % 9}")
+                   for i, p in enumerate(prices)], domain=domain)
+
+
+def test_knit_in_band_share_counts_knitwear_inside_our_retail_band():
+    from app.prospects.analysis.llm_payload import store_payload
+    # 4 of 8 inside $100-200.
+    shop = _priced_knit_shop([40, 60, 120, 150, 180, 195, 300, 400] * 8)
+    pay = store_payload("boutique.com", shop, shop["about_text"],
+                        assess.tag_signature(PATTERN))
+    assert pay["knit_in_band_share"] == pytest.approx(0.5, abs=0.01)
+
+
+def test_a_shop_priced_entirely_above_us_has_no_share_in_band():
+    from app.prospects.analysis.llm_payload import store_payload
+    shop = _priced_knit_shop([225, 250, 300, 450] * 16)
+    pay = store_payload("ypsilon.com", shop, shop["about_text"],
+                        assess.tag_signature(PATTERN))
+    assert pay["knit_in_band_share"] == 0.0
+
+
+def test_the_payload_carries_knit_price_percentiles_not_just_a_median():
+    """A median hides the spread that decides whether we fit on the shelf."""
+    from app.prospects.analysis.llm_payload import store_payload
+    shop = _priced_knit_shop([100, 125, 150, 218, 400] * 13)
+    pay = store_payload("boutique.com", shop, shop["about_text"],
+                        assess.tag_signature(PATTERN))
+    lo, mid, hi = pay["knit_price_p25_p50_p75"]
+    assert lo < mid < hi
+    assert lo <= 150
