@@ -49,6 +49,38 @@ absolute rule only in the prompt means the model will break it eventually.
 
 ---
 
+### A summary statistic hides the case it cannot see
+
+Both scoring defects found so far were the same mistake, in two different
+places: a rule read a **summary** of a distribution and the summary was blind
+to exactly the shape the rule existed to catch.
+
+| rule | read | blind to | the shop that walked through |
+|---|---|---|---|
+| 3 — price | knitwear **median** | where the knitwear actually sits | Sandy's: median $218, but 33% of its knitwear inside our band. Called `weak`. |
+| 1 — house brand | **mean** products per brand | how concentrated the shelf is | Phoebe Jon: 114 of its own 124 products behind nine one-item accessory labels. 92% of one name at a mean of 12.4. Called `strong`, high confidence. |
+
+In both cases the fix was to ask the question directly — `knit_in_band_share`,
+`top_brand_share` — rather than to move the threshold. **Moving the threshold
+would have been wrong both times:** a lower price bar lets in shops that carry
+nothing where we sell, and a lower mean bar gates real accounts, nine of which
+already classify as `house_brand` and one of which (burlapranch.com) lists all
+2,000 products under a single name.
+
+So when a rule misfires, ask which statistic it reads and what that statistic
+averages away, before touching any number.
+
+**A threshold is not automatically better for coming from the pattern.** The
+mean's floor is `products_per_brand_p90 × 2`, and a rebuild carries a corrected
+value — right, because the accounts are the reference. `top_brand_share` is the
+opposite case: the accounts' own p90 is **0.992**, because the accounts whose
+vendor fields are unreadable *are* the shape the gate catches. Deriving from
+them would set the bar above every case it should stop. It is measured against
+the accounts whose shelves can be read instead (p90 0.570). Check which of the
+two you have before reaching for a percentile.
+
+---
+
 ## 2. The trap: every rule is written twice
 
 The three core questions live in **both** places that reach the model, and they
