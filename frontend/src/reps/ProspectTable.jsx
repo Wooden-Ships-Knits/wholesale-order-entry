@@ -205,11 +205,23 @@ export default function ProspectTable({
                   </span>
                   {/* The sentence written for exactly this decision. Truncated
                       by CSS, not by JS — the full text is the title. */}
-                  {p.forTheRep && (
+                  {p.forTheRep ? (
                     <span className="sub verdict-note" title={p.forTheRep}>
                       {p.forTheRep}
                     </span>
-                  )}
+                  ) : p.reasons ? (
+                    /* A GATED row has no sentence written for a rep: the gates
+                       in assess.py answer before any model call, so
+                       `_unreadable` sets for_the_rep to "" and puts the finding
+                       in `reasons`. 196 of 226 insufficient_data rows rendered
+                       an empty cell because of it — the one verdict whose whole
+                       job is to say "we could not read this shop" said nothing
+                       at all, which reads as a broken page rather than an
+                       answer. */
+                    <span className="sub verdict-note" title={p.reasons}>
+                      {p.reasons}
+                    </span>
+                  ) : null}
                   {/* The number rule 3 turns on. Shown because a shop can be
                       worth calling while its median price sits above our band —
                       without this the verdict reads as arbitrary. */}
