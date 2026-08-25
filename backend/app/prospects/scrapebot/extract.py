@@ -15,7 +15,8 @@ from .models import Page, Product
 # neckline that tags tees, "poncho" is mostly rain capes, and "jumper" means a
 # pinafore dress in a US catalogue. "shawl" named a collar, not a garment.
 KNIT_TERMS = (
-    "knit", "knitwear", "sweater", "cardi", "cardigan", "pullover",
+    "knit", "knitwear", "sweater", "cardi", "cardigan", "pullover", "turtleneck",
+    "cashmere", "merino", "lambswool", "wool",
 )
 # "knitted" makes the same claim as "knit", and a bare `s?` matched neither it
 # nor "lambswool", so hand-knitted goods were missed by the list that exists to

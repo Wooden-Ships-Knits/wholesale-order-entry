@@ -389,9 +389,9 @@
  ],
  "bands_p10_median_p90": {
   "knit_share": {
-   "p10": 0.0136986301369863,
-   "median": 0.10824742268041238,
-   "p90": 0.21546052631578946
+   "p10": 0.022540983606557378,
+   "median": 0.11214953271028037,
+   "p90": 0.22388059701492538
   },
   "price_median": {
    "p10": 38.0,
@@ -548,14 +548,14 @@
     218
    ],
    "price_range": 1386.0,
-   "knitwear_share": 0.157,
-   "knitwear_price_median": 189.0,
+   "knitwear_share": 0.164,
+   "knitwear_price_median": 188.0,
    "knit_price_p25_p50_p75": [
     108,
-    189,
+    188,
     235
    ],
-   "knit_in_band_share": 0.419,
+   "knit_in_band_share": 0.422,
    "knit_tags_carried": [
     "SWEATER"
    ],
@@ -704,14 +704,14 @@
     145
    ],
    "price_range": 364.0,
-   "knitwear_share": 0.083,
+   "knitwear_share": 0.084,
    "knitwear_price_median": 89.0,
    "knit_price_p25_p50_p75": [
     69,
     89,
-    128
+    123
    ],
-   "knit_in_band_share": 0.307,
+   "knit_in_band_share": 0.304,
    "knit_tags_carried": [
     "SWEATERS"
    ],
