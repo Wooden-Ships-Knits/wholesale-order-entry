@@ -11,7 +11,9 @@
      "store_type",
      "brand_count",
      "products_per_brand",
-     "top_brand_share"
+     "top_brand_share",
+     "own_name_share",
+     "knit_own_name_share"
     ],
     "against": "store_type_mix, products_per_brand_p10_median_p90",
     "why": "A shop selling only its own label has no buyer and no budget for outside brands. It cannot become a wholesale account however well the rest fits \u2014 this is a harder fact than any similarity score.",
@@ -21,7 +23,7 @@
      "verdict": "weak"
     },
     "unreadable_below_catalogue": 50,
-    "evidence": "A boutique stocks about 9.2 products per brand; a label stocks hundreds. Two conditions decide it, not one, so a thin catalogue from a failed scrape is not mistaken for a label. Read top_brand_share beside the mean, never instead of it: a mean cannot see a label hiding behind accessories. A shop with 114 of its own 124 products, plus nine brands holding one glove, one belt and one scarf apiece, is 70%+ of one name on the shelf at a mean of 12.4 -- an ordinary boutique's number hiding a shop that buys from nobody. Concentration is only read on catalogues of 75+ products: 100% of twenty is a failed scrape, not a label."
+    "evidence": "A boutique stocks about 9.2 products per brand; a label stocks hundreds. Two conditions decide it, not one, so a thin catalogue from a failed scrape is not mistaken for a label. Read top_brand_share beside the mean, never instead of it: a mean cannot see a label hiding behind accessories. A shop with 114 of its own 124 products, plus nine brands holding one glove, one belt and one scarf apiece, is 70%+ of one name on the shelf at a mean of 12.4 -- an ordinary boutique's number hiding a shop that buys from nobody. own_name_share and knit_own_name_share answer the sharper version: how much of the shelf, then how much of the KNITWEAR, carries the shop's own name. A shop can name most of a catalogue and still buy its sweaters from twenty brands -- a retailer with a house line, and a customer. One whose CLOTHES are all its own while it buys candles from a dozen brands is a label, whatever the catalogue counts. Our accounts buy knitwear from a median of 21 outside brands. Concentration is only read on catalogues of 75+ products: 100% of twenty is a failed scrape, not a label."
    },
    {
     "question": "Does it sell our kind of thing?",
@@ -439,6 +441,8 @@
     "TOWN PRIDE"
    ],
    "top_brand_share": 0.279,
+   "own_name_share": 0.042,
+   "knit_own_name_share": 0.0,
    "category_mix": {
     "TOPS": 0.407,
     "ACCESSORIES": 0.233,
@@ -517,6 +521,8 @@
     "CABALLERO COLLECTION"
    ],
    "top_brand_share": 0.086,
+   "own_name_share": 0.011,
+   "knit_own_name_share": 0.0,
    "category_mix": {
     "TOP": 0.122,
     "DENIM": 0.11,
@@ -591,6 +597,8 @@
     "LEVEL 99"
    ],
    "top_brand_share": 0.198,
+   "own_name_share": 0.025,
+   "knit_own_name_share": 0.0,
    "category_mix": {
     "DRESSES": 0.286,
     "CLOTHING": 0.286,
@@ -666,6 +674,8 @@
     "KUT FROM THE KLOTH"
    ],
    "top_brand_share": 0.121,
+   "own_name_share": 0.0,
+   "knit_own_name_share": 0.0,
    "category_mix": {
     "SHOES": 0.278,
     "TOPS": 0.17,

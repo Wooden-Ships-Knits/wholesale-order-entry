@@ -429,3 +429,86 @@ def test_the_payload_carries_the_concentration_the_gate_reads():
     payload = store_payload("thephoebejon.com", _accessory_screened_label(),
                             "a boutique", set())
     assert round(payload["top_brand_share"], 2) == 0.93
+
+
+# --- whose name is on the CLOTHES ------------------------------------------
+#
+# Artemesia's apparel is 100% its own label at $325-$465, while it buys candles,
+# soap and greetings cards from thirteen brands. Those thirteen pad the
+# catalogue count, so concentration reads 66% -- under the bar -- and the mean
+# reads 5.8. Both gates above wave it through.
+#
+# The near miss that shapes the rule: tinademel.com sits at 62.3% own-name,
+# two points away, and stocks 23 Wooden Ships products. No threshold on that
+# axis separates them. Its KNIT shelf does: 48 third-party sweaters.
+
+def _own_label_apparel(domain="artemesiamade.com"):
+    """Clothes all its own; the outside brands are homeware and hosiery."""
+    ps = [_product(f"Cardigan {i}", vendor="ARTEMESIAMADE") for i in range(56)]
+    ps += [_product("Coat", vendor="ARTEMESIA", ptype="Coat", tags=("COATS",))]
+    ps += [_product(f"Candle {i}", vendor=b, ptype="Candle", tags=("HOME",))
+           for i, b in enumerate(["BROOKLYN CANDLE", "TATINE", "HIMALAYAN"] * 10)]
+    return _store(ps, domain=domain)
+
+
+def _house_line_retailer(domain="tinademel.com"):
+    """A retailer with its own line that still BUYS its knitwear."""
+    ps = [_product(f"House Tee {i}", vendor="TINA DEMEL", ptype="Tops",
+                   tags=("TOPS",)) for i in range(60)]
+    ps += [_product(f"Sweater {i}", vendor=b)
+           for i, b in enumerate(["LAUREN MOSHI", "MICHAEL LAUREN", "IN BLOOM",
+                                  "WOODEN SHIPS", "JOCELYN"] * 8)]
+    return _store(ps, domain=domain)
+
+
+def test_own_name_share_counts_every_spelling_of_the_shop():
+    """56 under ARTEMESIAMADE and one under ARTEMESIA is one shop, not two --
+    counting only the deepest entry dilutes a shop by its own second spelling."""
+    from app.prospects.analysis.signature import own_name_share, top_brand_share
+    store = _own_label_apparel()
+    assert own_name_share("artemesiamade.com", store) > top_brand_share(store)
+
+
+def test_the_knit_shelf_is_measured_apart_from_the_candles():
+    from app.prospects.analysis.signature import knit_own_name_share
+    assert knit_own_name_share("artemesiamade.com", _own_label_apparel()) == 1.0
+
+
+def test_a_short_knit_shelf_reports_none_rather_than_all_its_own():
+    """None is not 1.0. Two knit products under the shop's own name is not
+    evidence that it makes its own knitwear -- it is no evidence at all."""
+    from app.prospects.analysis.signature import knit_own_name_share
+    store = _store([_product("Sweater", vendor="TINY"),
+                    _product("Cardigan", vendor="TINY")], domain="tiny.com")
+    assert knit_own_name_share("tiny.com", store) is None
+
+
+def test_a_shop_whose_clothes_are_its_own_never_reaches_the_model():
+    complete, calls = _answers(GOOD)
+    out = assess.assess_website("https://artemesiamade.com", PATTERN, complete,
+                                scrape=lambda url: _own_label_apparel(), system="sys")
+    assert out["verdict"] == "insufficient_data"
+    assert calls == [], "the gate must fire before the model is paid for"
+
+
+def test_a_retailer_with_a_house_line_still_reaches_the_model():
+    """THE REGRESSION THAT PROTECTS A PAYING CUSTOMER. tinademel.com is two
+    points from Artemesia on catalogue own-name share and stocks 23 of our own
+    products. Only the knit shelf tells them apart."""
+    complete, calls = _answers(GOOD)
+    out = assess.assess_website("https://tinademel.com", PATTERN, complete,
+                                scrape=lambda url: _house_line_retailer(), system="sys")
+    assert out["verdict"] == "strong"
+    assert len(calls) == 1
+
+
+def test_the_gate_names_the_knit_shelf_not_the_catalogue():
+    """The catalogue figure is the unremarkable one; a reader checking the row
+    needs the number that actually decided it."""
+    from app.prospects.analysis.llm_payload import unreadable_reason
+    reason = unreadable_reason(
+        {"domain": "artemesiamade.com", "catalogue_size": 87,
+         "products_per_brand": 5.8, "top_brand_share": 0.64,
+         "own_name_share": 0.66, "knit_own_name_share": 0.55,
+         "top_brands": ["ARTEMESIAMADE"]}, min_products_per_brand=40.6)
+    assert reason is not None and "knitwear" in reason

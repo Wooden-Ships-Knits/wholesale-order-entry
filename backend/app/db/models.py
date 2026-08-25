@@ -340,6 +340,15 @@ class Prospect(Base):
     # labels reads 92% here and an unremarkable 12.4 there. Auditable from the
     # table on purpose -- the gate that reads it costs a rep a phone call.
     top_brand_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    # The shop's own name across the whole shelf, in any spelling, and then
+    # across its knitwear alone. Broader than top_brand_share above, which
+    # counts only the single deepest entry and so is diluted by a shop's own
+    # second spelling of itself. Both persisted because the gate reading them
+    # takes a shop off a rep's call list.
+    own_name_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    # NULL means the knit shelf was too short to carry a proportion -- a
+    # different fact from "all of it is their own". Never read it as 1.0.
+    knit_own_name_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
     # The shop's own tags that name knitwear — its word for the thing we make.
     # NOT a subset of signature_tags_carried above: that one asks whether a shop
     # is merchandised like our customers, and only three of its 78 tags name

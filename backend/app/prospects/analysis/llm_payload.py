@@ -22,6 +22,8 @@ from collections import Counter
 from ..scrapebot import extract
 from .signature import (
     brand_depths,
+    knit_own_name_share,
+    own_name_share,
     top_brand_share,
     brands_echo_domain,
     MAX_HOUSE_BRANDS, MIN_CATALOGUE, MIN_HOUSE_CATALOGUE,
@@ -70,6 +72,20 @@ UNREADABLE_TOP_BRAND_SHARE = 0.70
 # next echo-ing account is 76, so this floor sits in a real gap in the data
 # rather than on a round number.
 UNREADABLE_CONCENTRATION_CATALOGUE = 75
+
+# The third shape, and the one the two above cannot reach: a shop whose
+# CLOTHES are all its own label while it buys candles, soap and cards from a
+# dozen brands. Artemesia reads 66% own-name across its catalogue -- under the
+# concentration bar -- because thirteen apothecary and homeware brands sit in
+# the count. Its apparel is 100% its own.
+#
+# TWO SIGNALS MUST AGREE, and that is the whole design. tinademel.com, a paying
+# customer that stocks 23 of OUR products, sits at 62.3% own-name on its
+# catalogue -- two points from Artemesia, and there is no threshold on that
+# axis that separates them. It is spared here because its KNIT shelf is bought
+# from other people. One signal being wrong is not enough to hide a customer.
+UNREADABLE_OWN_NAME_SHARE = 0.65
+UNREADABLE_KNIT_OWN_SHARE = 0.50
 
 
 def _category_mix(store, limit=TOP_CATEGORIES):
@@ -151,6 +167,14 @@ def store_payload(domain, store, about, tag_signature=frozenset()):
         # and neither sees the other's shape.
         "top_brand_share": (round(tbs, 3)
                             if (tbs := top_brand_share(store)) is not None else None),
+        # The shop's own name across the whole shelf, in any spelling, and then
+        # across its knitwear alone. Read together: a shop can put its name on
+        # most of a catalogue and still buy its sweaters from twenty brands.
+        "own_name_share": (round(ons, 3)
+                           if (ons := own_name_share(domain, store)) is not None else None),
+        "knit_own_name_share": (round(kos, 3)
+                                if (kos := knit_own_name_share(domain, store)) is not None
+                                else None),
         "category_mix": _category_mix(store),
         "signature_tags_carried": sorted(tag_signature & tags),
         "tag_lift": lift(tags, tag_signature) if tag_signature else None,
@@ -236,7 +260,8 @@ def _rules(depth_band):
             {
                 "question": "Does this shop buy from brands at all?",
                 "reads": ["store_type", "brand_count", "products_per_brand",
-                          "top_brand_share"],
+                          "top_brand_share", "own_name_share",
+                          "knit_own_name_share"],
                 "against": "store_type_mix, products_per_brand_p10_median_p90",
                 "why": (
                     "A shop selling only its own label has no buyer and no budget "
@@ -258,7 +283,16 @@ def _rules(depth_band):
                     "one glove, one belt and one scarf apiece, is "
                     f"{UNREADABLE_TOP_BRAND_SHARE:.0%}+ of one name on the shelf "
                     "at a mean of 12.4 -- an ordinary boutique's number hiding a "
-                    "shop that buys from nobody. Concentration is only read "
+                    "shop that buys from nobody. own_name_share and "
+                    "knit_own_name_share answer the sharper version: how much "
+                    "of the shelf, then how much of the KNITWEAR, carries the "
+                    "shop's own name. A shop can name most of a catalogue and "
+                    "still buy its sweaters from twenty brands -- a retailer "
+                    "with a house line, and a customer. One whose CLOTHES are "
+                    "all its own while it buys candles from a dozen brands is "
+                    "a label, whatever the catalogue counts. Our accounts buy "
+                    "knitwear from a median of 21 outside brands. "
+                    "Concentration is only read "
                     f"on catalogues of {UNREADABLE_CONCENTRATION_CATALOGUE}+ "
                     "products: 100% of twenty is a failed scrape, not a label."
                 ),
@@ -428,10 +462,29 @@ def unreadable_reason(payload, min_products_per_brand=None):
     concentrated = (share is not None
                     and share >= UNREADABLE_TOP_BRAND_SHARE
                     and size >= UNREADABLE_CONCENTRATION_CATALOGUE)
-    if ppb <= floor and not concentrated:
+    # A shop whose CLOTHES are its own label while its candles are not. Neither
+    # measure above can see it: the catalogue count is padded by homeware
+    # brands, and the mean by the same. Both signals are required because
+    # neither alone separates Artemesia (66% / 55%) from tinademel.com (62% /
+    # buys its knitwear from others), a customer stocking 23 of our products.
+    own = payload.get("own_name_share")
+    knit_own = payload.get("knit_own_name_share")
+    own_label = (own is not None and knit_own is not None
+                 and own >= UNREADABLE_OWN_NAME_SHARE
+                 and knit_own >= UNREADABLE_KNIT_OWN_SHARE
+                 and size >= UNREADABLE_CONCENTRATION_CATALOGUE)
+
+    if ppb <= floor and not concentrated and not own_label:
         return None
     if not brands_echo_domain(payload.get("domain"), payload.get("top_brands")):
         return None
+    if ppb <= floor and not concentrated and own_label:
+        # Name the knit shelf, not the catalogue: the catalogue figure is the
+        # one that looks unremarkable, and a reader checking this row needs the
+        # number that actually decided it.
+        return (f"its clothes are its own label -- {knit_own:.0%} of the "
+                "knitwear on the shelf carries the shop's own name, so what it "
+                "buys cannot be seen")
     if ppb <= floor:
         # Worth saying which shape fired: the mean reads as ordinary here, so a
         # reader checking the row would otherwise find nothing that explains it.

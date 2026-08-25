@@ -56,6 +56,75 @@ def brand_depths(store):
                    for p in store["products"] if (p.get("vendor") or "").strip())
 
 
+def as_products(store):
+    """The store's product dicts as the Product objects the extract rules take.
+
+    Lifted out of `profile` so the knit rules are applied through one
+    conversion rather than a copy per caller -- a second copy drifts, and the
+    drift would be invisible: both sides would still return knitwear, just not
+    the same knitwear.
+    """
+    return [Product(title=p["title"], price=p.get("price"),
+                    vendor=p.get("vendor") or "",
+                    product_type=p.get("product_type") or "",
+                    tags=p.get("tags") or [],
+                    description=p.get("description") or "")
+            for p in store["products"]]
+
+
+MIN_KNIT_FOR_SHARE = 3   # below this the knit shelf cannot carry a proportion
+
+
+def own_name_share(domain, store):
+    """What share of the shelf carries the shop's OWN name, in ANY spelling.
+
+    Broader than `top_brand_share`, and for a reason found the hard way:
+    artemesiamade.com files 56 products under "ARTEMESIAMADE" and one under
+    "ARTEMESIA". Two entries, one shop -- and a deepest-brand measure counts
+    only the larger, so a shop's concentration is diluted by its own second
+    spelling.
+
+    None when no product names a brand at all.
+    """
+    depths = brand_depths(store)
+    total = sum(depths.values())
+    if not total:
+        return None
+    return sum(n for b, n in depths.items()
+               if brands_echo_domain(domain, [b])) / total
+
+
+def knit_own_name_share(domain, store):
+    """The same share, measured over the KNITWEAR alone.
+
+    The question a knitwear wholesaler is actually asking is not "does this
+    shop stock anybody else's goods" but "does it buy KNITWEAR from anybody
+    else". Artemesia buys candles, soap and greetings cards from thirteen
+    brands and its clothes from nobody: across the whole catalogue it reads
+    66%, across the knit shelf 55%, and only the second is about us.
+
+    Our own accounts answer this emphatically -- they buy knitwear from a
+    median of 21 outside brands, and the least diverse tenth still buy from 3.
+
+    None when the knit shelf is too short to carry a proportion at all, which
+    is a different fact from "it is all their own" and must not read as 1.0.
+    """
+    knits = extract.knit_products(as_products(store))
+    own = other = 0
+    for p in knits:
+        vendor = (p.vendor or "").strip().upper()
+        if not vendor:
+            continue
+        if brands_echo_domain(domain, [vendor]):
+            own += 1
+        else:
+            other += 1
+    total = own + other
+    if total < MIN_KNIT_FOR_SHARE:
+        return None
+    return own / total
+
+
 def top_brand_share(store):
     """What share of the catalogue its single deepest-stocked brand holds.
 
@@ -250,12 +319,7 @@ def profile(store, band=None):
     profile also reports what share of the shop's knitwear falls inside it,
     which is the question rule 3 actually wants answered.
     """
-    products = [Product(title=p["title"], price=p.get("price"),
-                        vendor=p.get("vendor") or "",
-                        product_type=p.get("product_type") or "",
-                        tags=p.get("tags") or [],
-                        description=p.get("description") or "")
-                for p in store["products"]]
+    products = as_products(store)
     knits = extract.knit_products(products)
     prices = sorted(p.price for p in products if p.price)
     knit_prices = sorted(p.price for p in knits if p.price)

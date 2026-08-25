@@ -53,6 +53,14 @@ Three questions decide it, in this order. A candidate must pass all three.
    trust — 100% of twenty products is a scrape that failed, not a label — and,
    like the mean, it opens the domain question below rather than answering on
    its own.
+   `own_name_share` and `knit_own_name_share` answer the sharper version: how
+   much of the shelf, and then how much of the KNITWEAR, carries the shop's own
+   name. Read them together and never apart. A shop can put its name on most of
+   a catalogue and still buy its sweaters from twenty brands — that is a
+   retailer with a house line, and a customer. A shop whose CLOTHES are all its
+   own while it buys candles and soap from a dozen brands is a label, however
+   many brands the catalogue counts. Our accounts buy knitwear from a median of
+   21 outside brands; the least diverse tenth still buy from 3.
    One exception, and it matters: compare `top_brands` against `domain` first.
    Some shops fill the brand field with their own shop name — burlapranch.com
    listing every product under "BURLAP RANCH MERCANTILE" is a site that does not
