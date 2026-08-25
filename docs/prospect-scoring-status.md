@@ -1,120 +1,125 @@
-# Prospect scoring — status, 2026-08-25
+# Prospect scoring — status, 2026-08-25 (second pass)
 
-Where the scoring pipeline stands after three full passes over the dev database.
-Supersedes the 2026-08-22 note, which described a 92-row first run and was two
-runs stale.
+Where the pipeline stands after restoring the knit vocabulary, testing the
+rubric against known customers for the first time, and adding a third gate.
 
 ## The run
 
 1,437 prospect rows; **1,381 have a website and have been judged**, 56 have none
-and can never be assessed by this path. Re-judged from the page cache — the
-cache holds raw HTTP bodies and extraction runs fresh on every pass, so a
-re-judge costs ~1.5 s/row against ~20 s/row for a fresh scrape. 0 exceptions,
-0 territories failed.
+and can never be assessed by this path. Re-judged from the page cache. 0
+exceptions, 0 territories failed.
 
-| verdict | count | flagged `problems` |
+| verdict | before | now |
 |---|---|---|
-| insufficient_data | 1,027 | 14 |
-| weak | 228 | 2 |
-| strong | 65 | 4 |
-| possible | 61 | 2 |
+| insufficient_data | 1,027 | 1,034 |
+| weak | 228 | 268 |
+| strong | 65 | 53 |
+| possible | 61 | 26 |
 
-**465 rows carry a sentence written for a rep.** The rest are gated or
-unreadable.
+**Worth a call: 126 → 79.** The list shrank by 37%, and the reason is the
+vocabulary, not the new gate.
 
-## The headline is still reach, not judgement
+**Flagged `problems`: 22 → 7.** Fewer answers the judge disagrees with.
 
-**1,027 of 1,381 rows say `insufficient_data`.** That is not the model being
-cautious — it is us being unable to see the shop:
+## Why the call list shrank
 
-| why | count |
+`turtleneck` and the four fibres had been removed from `KNIT_TERMS`.
+`WEAK_KNIT_TERMS` still listed those four and `names_knitwear` suppresses a
+product only when EVERY matched term is weak — but `knit_terms_in` reads
+`KNIT_RE`, built from `KNIT_TERMS`, so those terms could never come back. The
+suppression branch and `NON_SWEATER_RE` were unreachable. "Cashmere Crewneck"
+and "Turtleneck" stopped counting as knitwear; "Wool Coat", the case the
+suppression exists for, was never being suppressed because it was never
+matching.
+
+Three independent confirmations that this was a regression:
+
+- 14 assertions in `test_extract_knit.py` go green on restoring it — the
+  `scrapping-bot` suite drops from **20 failures to 2** (both missing local data)
+- the comment above `WEAK_KNIT_TERMS` only parses if the fibres are in `KNIT_TERMS`
+- the rebuilt band returns to **p10 2.3% / median 11% / p90 22.4%** — the
+  figures `docs/prospect-rule-changes.md` §2b already quotes as ours
+
+Our accounts are knitwear retailers, so restoring the vocabulary raised their
+measured knit share more than it raised a general boutique's. Prospects are now
+compared against a correctly-measured band and compare worse. **That is more
+honest, not more pessimistic.**
+
+Of 71 verdict changes: **48 carried a moved knit measurement**, 7 were the new
+gate, and 16 moved with no measurement behind them.
+
+## The rubric was tested against real customers — the first time
+
+`prompt.md` prescribes this and it had never been run.
+
+| group | result |
 |---|---|
-| no vendor field on any product | 736 |
-| shelf readable | 645 |
+| 25 real accounts | 13 `strong`, 7 `possible`, 4 `weak`, 1 `insufficient_data` → **80% recognised** |
+| 10 planted known-bad shops | **0** `strong`, **0** `possible` |
 
-More than half of all shops never record who made what they sell. Every rule in
-`prompt.md` reads the shelf, so for those shops there is nothing to read. **The
-largest available win is scrape reach, not rule tuning.**
+The failure `prompt.md` warns about — "if everything comes back `strong`, the
+model is agreeing with you rather than judging" — does not occur. It called 4
+real customers `weak` and 3 luxury shops `weak`.
 
-## Fixed in this pass — the concentration gate
+**Three limits, stated because the result is otherwise easy to over-read:**
 
-`products_per_brand` is a MEAN, and a mean is diluted by exactly the thing that
-disguises a house brand.
+1. **7 of the 10 planted controls never reached the model** — they were gated
+   first. Only 3 actually tested the rubric.
+2. **The accounts are not held out.** `data/raw` covers only the l5y set, so the
+   17 accounts genuinely outside the pattern have no catalogue. The pattern is
+   aggregate statistics rather than per-shop data, so the leakage is weak — but
+   it is there.
+3. **4 real customers were called `weak`** — 16% of paying customers a rep
+   would never be told to call.
 
-**Phoebe Jon** carried 114 of its own 124 products, plus nine "brands" holding
-one glove, one belt and one scarf apiece. 92% of the shelf under one name — at
-a mean of 12.4, an ordinary boutique's number. It scored **`strong` at high
-confidence** and topped a rep's call list. Its own $148–$228 sweaters read as a
-perfect price match *precisely because they compete with ours*: the better the
-price fit, the worse the prospect.
+## The three gates
 
-The domain-echo test was right and never ran — `unreadable_reason` returned at
-`ppb <= floor` before reaching it.
+All answer `insufficient_data`, never `weak`: a catalogue cannot tell a label
+from a shop that never fills its vendor field, so neither do we.
 
-`top_brand_share` now gates alongside the mean. Both shapes still require
-`brands_echo_domain`, and both still answer `insufficient_data`, never `weak`:
-a catalogue cannot tell a label from a site that never fills its vendor field,
-so neither will we.
+| gate | catches | reads |
+|---|---|---|
+| mean | 183 | `products_per_brand` above the account band |
+| concentration | 23 | one brand holding most of the shelf |
+| **whose name is on the clothes** | **7** | own name across the catalogue AND across the knitwear |
 
-**23 rows caught**, mean products-per-brand 10.8 to 38.5 — every one of them
-below the 40.6 floor, so the mean gate caught **none**:
+The third exists because the first two ran out of room. Artemesia is a label at
+**64%** own-name across its catalogue — it buys candles, soap and greetings
+cards from thirteen brands and its clothes from nobody. `tinademel.com` is a
+customer stocking **23 Wooden Ships products**, at **62.3%**. Two points apart,
+and no threshold on that axis separates them.
 
-| | |
-|---|---|
-| off the call list | Phoebe Jon (92%), Rebelie Wear (91%), Sara Campbell ×3 (80%), Kulua Studio Shop (79%) |
-| already `weak`, now honest | 17 rows — Uncle Kyle's Sweater Emporium (95%), Kealopiko, Minnow, Frankie Shop, Robindira Unsworth, … |
+Their knit shelves are nothing alike, and that is the whole design: **one signal
+being wrong is not enough to hide a customer.** Measured across all 242
+accounts, the gate costs **zero** additional accounts at every threshold from
+60% to 70%.
 
-Those 17 matter as much as the 6. `weak` was a claim about their shelf we had no
-right to make.
+Caught: East Magnolia (70/80), Alicia Peru (69/85), Meg (69/100), Sage Boutique
+(68/58), American Drifter (68/100), Harvest Moon Home (67/83), Artemesia
+(66/55). Sandy's Boutique, Society Beach and À-Tout-Àge carry none of their own
+name on any knitwear and stay ungated.
 
-**Cost to real accounts: zero.** Measured across all 242 accounts with a
-readable vendor field, the gate catches exactly the 13 the mean gate already
-caught. The catalogue floor of 75 is what buys that: seven of our own accounts
-hold 1–34 products under a single name, and 100% of twenty products is a failed
-scrape, not a label.
+## The headline is still reach
 
-## Reading the diff honestly
-
-68 verdicts moved out of 1,381.
-
-| cause | count |
-|---|---|
-| the new gate | 23 |
-| no pre-existing measurement moved | 45 |
-
-All 23 gated rows moved, and nothing else moved into `insufficient_data`. The
-gate is fully attributable.
-
-**The other 45 are not simply noise, and should not be reported as such.** Their
-direction is asymmetric — 34 up, 11 down — which a coin flip does not produce.
-Every row also gained a measurement it did not have before: `top_brand_share` is
-now in the payload for every shop, and rule 1 tells the model to read it. For a
-shop with LOW concentration that is a new *positive* signal.
-
-Tested rather than assumed: among shops that were `weak`, the ones that moved up
-average **0.146** concentration against **0.324** for the ones that stayed, at
-practically the same brand count (82.4 vs 80.6). That supports the mechanism but
-does not prove it row by row — 28 rows against 225.
-
-So: the gate did what it was measured to do, and the same run drifted 23 shops
-upward for a reason that is plausible and unproven.
+**1,034 of 1,381 rows are `insufficient_data`**, and 736 shops record no vendor
+on any product. Every rule reads the shelf; for those shops there is nothing to
+read. **The largest available win is scrape reach, not rule tuning** — this is
+the fourth patch to rule 1, and each has moved single figures.
 
 ## Open
 
-1. **Scrape reach.** 736 of 1,381 shops record no vendor at all. This is the
-   ceiling on everything else.
-2. **`strong` has never been validated against known customers.** `prompt.md`
-   prescribes the test — score accounts that already buy from us; a good judge
-   calls most of them `strong` or `possible`, a flattering one calls everybody
-   `strong`. It has not been run. ~$0.05 and five minutes.
-3. **Verdicts near a boundary are unstable run to run**, and nothing records how
-   stable one is: a shop scoring 5/5 `weak` and one scoring 3/5 `weak` are
-   written identically. Fixing it costs N model calls per shop.
-4. **53 duplicate store-name groups** (Reformation ×5, Alo ×4). Not a bug —
-   different OSM elements sharing one website — but we pay the model once per
-   element for the same catalogue.
-5. **`scrapping-bot`'s own test suite is red**: 20 failures, none touching the
-   concentration gate. 14 come from the `KNIT_TERMS` edits, 4 from the rule-3
-   change, 2 are environmental. It is the source of truth for everything
-   vendored here, and its tests currently guard nothing.
-6. **The VM is behind** — it still holds the older 225-row CA/HI restore.
+1. **Scrape reach.** 736 of 1,381 shops name no brand at all. The ceiling on
+   everything else.
+2. **Hosiery still counts as knitwear.** Merino tights and wool socks inflate a
+   short knit shelf — five of Artemesia's eleven knit products are one hosiery
+   brand's. Suppressing them costs 61 of 27,076 account knit products (0.23%),
+   but it fails `test_knit_products_keeps_wool_socks`, and commit `f6781b1`
+   ("stop guard deleting knit accessories") shows that outcome was deliberate.
+   Needs its own decision, not a side effect.
+3. **6 of 664 price medians are absurd** (thereformation.com reads $7,282,000).
+   A price-parsing bug, and rule 3 reads that field.
+4. **Verdicts near a boundary are unstable run to run**, and nothing records how
+   stable one is.
+5. **53 duplicate store-name groups** — different OSM elements sharing one
+   website. Not a bug, but the model is paid once per element.
+6. **The VM is behind** — still the older 225-row CA/HI restore.
