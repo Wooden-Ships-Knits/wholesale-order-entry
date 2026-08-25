@@ -21,7 +21,7 @@
      "verdict": "weak"
     },
     "unreadable_below_catalogue": 50,
-    "evidence": "A boutique stocks about 9.2 products per brand; a label stocks hundreds. Two conditions decide it, not one, so a thin catalogue from a failed scrape is not mistaken for a label. Read top_brand_share beside the mean, never instead of it: a mean cannot see a label hiding behind accessories. A shop with 114 of its own 124 products, plus nine brands holding one glove, one belt and one scarf apiece, is 70%+ of one name on the shelf at a mean of 12.4 -- an ordinary boutique's number hiding a shop that buys from nobody."
+    "evidence": "A boutique stocks about 9.2 products per brand; a label stocks hundreds. Two conditions decide it, not one, so a thin catalogue from a failed scrape is not mistaken for a label. Read top_brand_share beside the mean, never instead of it: a mean cannot see a label hiding behind accessories. A shop with 114 of its own 124 products, plus nine brands holding one glove, one belt and one scarf apiece, is 70%+ of one name on the shelf at a mean of 12.4 -- an ordinary boutique's number hiding a shop that buys from nobody. Concentration is only read on catalogues of 75+ products: 100% of twenty is a failed scrape, not a label."
    },
    {
     "question": "Does it sell our kind of thing?",

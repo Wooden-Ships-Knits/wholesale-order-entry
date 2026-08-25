@@ -258,7 +258,9 @@ def _rules(depth_band):
                     "one glove, one belt and one scarf apiece, is "
                     f"{UNREADABLE_TOP_BRAND_SHARE:.0%}+ of one name on the shelf "
                     "at a mean of 12.4 -- an ordinary boutique's number hiding a "
-                    "shop that buys from nobody."
+                    "shop that buys from nobody. Concentration is only read "
+                    f"on catalogues of {UNREADABLE_CONCENTRATION_CATALOGUE}+ "
+                    "products: 100% of twenty is a failed scrape, not a label."
                 ),
             },
             {

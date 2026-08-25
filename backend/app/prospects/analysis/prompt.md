@@ -49,8 +49,10 @@ Three questions decide it, in this order. A candidate must pass all three.
    label hiding behind accessories: a shop with 114 of its own 124 products
    and nine brands holding one glove, one belt and one scarf apiece has 92%
    of its shelf under one name, and a mean of 12.4 that looks like any
-   boutique. High concentration on a catalogue of any size is the same fact
-   the mean is missing.
+   boutique. Concentration only counts on a catalogue big enough to
+   trust — 100% of twenty products is a scrape that failed, not a label — and,
+   like the mean, it opens the domain question below rather than answering on
+   its own.
    One exception, and it matters: compare `top_brands` against `domain` first.
    Some shops fill the brand field with their own shop name — burlapranch.com
    listing every product under "BURLAP RANCH MERCANTILE" is a site that does not
