@@ -1,87 +1,98 @@
 """Fill `city` on prospects that have a coordinate but no place name.
 
-431 of 1,437 rows draw on the map and read "—" in the rep table's Where
-column. OSM located them without an `addr:city` tag, and their `address` is a
-street line with no town in it ("7601 Windrose Avenue", "80 West 40th Street"),
-so there is nothing to parse. The coordinate is the only thing left to ask.
+431 of 1,437 rows draw on the map and read "—" in the rep table's Where column.
+OSM located them without an `addr:city` tag, and their `address` is a street
+line with no town in it ("7601 Windrose Avenue", "80 West 40th Street"), so
+there is nothing to parse. The coordinate is the only thing left to ask.
 
-NOT part of the sweep, and deliberately separate from it. A sweep re-fetches
+ANSWERED BY THE US CENSUS GEOCODER: free, no API key, no quota to exhaust, and
+authoritative for the only country this data covers — all 431 rows carry a US
+state, across 44 of them. Google's Geocoding API answers the same question and
+costs about $5 per 1,000; it is also refused by the key this project currently
+holds, which is a browser key with referrer restrictions.
+
+NOT part of the sweep and deliberately separate from it. A sweep re-fetches
 OSM; this asks a different service about rows OSM has already failed to name,
-so re-running the sweep would not fix them and running this does not need one.
+so re-running the sweep would not fix them.
 
     docker compose ... exec backend python -m app.maps.backfill_cities --dry-run
     docker compose ... exec backend python -m app.maps.backfill_cities --limit 20
     docker compose ... exec backend python -m app.maps.backfill_cities
 
-Costs one Google Geocoding call per row (~$5 per 1,000). Safe to stop and
-re-run: only rows still lacking a city are asked, and it commits in batches.
+Safe to stop and re-run: only rows still lacking a city are asked, and it
+commits in batches.
 """
 import argparse
 import json
 import logging
+import time
 import urllib.parse
 import urllib.request
 
 from sqlalchemy import select
 
-from app.config import settings
 from app.db.models import Prospect
 
 logger = logging.getLogger(__name__)
 
-GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
+CENSUS_URL = "https://geocoding.geo.census.gov/geocoder/geographies/coordinates"
 BATCH = 25
+PAUSE = 0.2   # courtesy to a free public service, not a documented limit
 
-# In preference order. `locality` is the ordinary answer; Google files some
-# places under `postal_town` instead, and an unincorporated place may only have
-# a sublocality or a neighbourhood.
-#
-# administrative_area_level_2 is DELIBERATELY ABSENT: it is a county. Writing
-# "San Diego County" into a column a rep reads as a town is worse than leaving
-# it empty, because a wrong answer is not retried and an empty one is.
-CITY_TYPES = ("locality", "postal_town", "sublocality_level_1", "sublocality",
-              "neighborhood")
+# In preference order. An incorporated place is a real city or town with limits;
+# a CDP is the Census's name for a populated place that has none — Paradise CDP
+# holds the Las Vegas Strip, so refusing to read it would leave a shop there
+# looking lost rather than merely unincorporated.
+PLACE_LAYERS = ("Incorporated Places", "Census Designated Places")
+
+# Census writes the TYPE after the name, in lower case: "Carmel city",
+# "Chapel Hill town", "Paradise CDP". Case matters and is the whole trick --
+# "Kansas City city" must become "Kansas City", not "Kansas".
+SUFFIXES = (" city", " town", " village", " borough", " municipality",
+            " CDP", " zona urbana", " comunidad")
 
 
 class LookupRefused(Exception):
-    """Google refused the request itself — a key, quota or billing problem.
+    """The service refused the request rather than answering it.
 
-    Separate from "this coordinate has no town" because the answers are
-    opposite: one is a fact about the shop and the run should continue, the
-    other is a fact about our configuration and every remaining row will fail
-    the same way. Reporting "filled 0, still unnamed 431" for the second is the
-    silent failure this class exists to prevent.
+    Separate from "this coordinate lies inside no place", because the two
+    demand opposite responses: one is a fact about the shop and the run should
+    continue, the other is a fact about the service and every remaining row
+    will fail identically. Reporting "filled 0, still unnamed 431" for the
+    second is the silent failure this class exists to prevent.
     """
 
 
-# Statuses that mean the request never ran, as opposed to running and finding
-# nothing. ZERO_RESULTS is a real answer and is NOT here.
-FATAL = ("REQUEST_DENIED", "OVER_QUERY_LIMIT", "OVER_DAILY_LIMIT", "INVALID_REQUEST")
+def clean_place(name: str) -> str:
+    """"Carmel city" -> "Carmel". Case-sensitive, deliberately."""
+    for suffix in SUFFIXES:
+        if name.endswith(suffix):
+            return name[: -len(suffix)].strip()
+    return name.strip()
 
 
 def check_status(payload) -> None:
     """Raise if the response says the request was refused rather than answered."""
-    status = payload.get("status")
-    if status in FATAL:
-        raise LookupRefused(
-            f"{status}: {payload.get('error_message') or 'no detail given'}")
+    errors = payload.get("errors")
+    if errors:
+        raise LookupRefused("; ".join(str(e) for e in errors))
+    if "result" not in payload:
+        raise LookupRefused(f"unrecognised response: {list(payload)[:5]}")
 
 
 def city_from(payload) -> str | None:
-    """The town name in a Geocoding response, or None if it names none.
+    """The town this coordinate sits in, or None if it sits in none.
 
     None rather than "": None reads as "still unanswered" and a later run asks
     again, where an empty string looks like a lookup that succeeded and found
-    nothing.
+    nothing. Rural addresses genuinely fall outside every place.
     """
-    for result in (payload.get("results") or []):
-        components = result.get("address_components") or []
-        for want in CITY_TYPES:
-            for component in components:
-                if want in (component.get("types") or []):
-                    name = (component.get("long_name") or "").strip()
-                    if name:
-                        return name
+    geographies = (payload.get("result") or {}).get("geographies") or {}
+    for layer in PLACE_LAYERS:
+        for item in geographies.get(layer) or []:
+            name = clean_place((item.get("NAME") or "").strip())
+            if name:
+                return name
     return None
 
 
@@ -106,14 +117,15 @@ def pending(db) -> list:
 
 
 def _lookup(lat, lng) -> dict:
-    params = {"latlng": f"{lat},{lng}", "result_type": "|".join(CITY_TYPES),
-              "key": settings.google_maps_server_api_key}
-    url = f"{GEOCODE_URL}?{urllib.parse.urlencode(params)}"
+    params = {"x": lng, "y": lat, "benchmark": "Public_AR_Current",
+              "vintage": "Current_Current", "layers": ",".join(PLACE_LAYERS),
+              "format": "json"}
+    url = f"{CENSUS_URL}?{urllib.parse.urlencode(params)}"
     with urllib.request.urlopen(url, timeout=25) as fh:
         return json.load(fh)
 
 
-def run(db, limit=None, dry_run=False, lookup=_lookup) -> int:
+def run(db, limit=None, dry_run=False, lookup=_lookup, pause=0.0) -> int:
     rows = pending(db)
     if limit:
         rows = rows[:limit]
@@ -123,35 +135,36 @@ def run(db, limit=None, dry_run=False, lookup=_lookup) -> int:
             print(f"  would ask  {r.store_name[:38]:38} {r.latitude},{r.longitude}")
         return 0
 
-    filled = missed = 0
+    filled = unplaced = failed = 0
     for i, r in enumerate(rows, 1):
         try:
             payload = lookup(r.latitude, r.longitude)
-            check_status(payload)       # a refusal stops the run, see below
+            check_status(payload)
             city = city_from(payload)
         except LookupRefused as exc:
-            # Every remaining row would fail identically, so stopping here is
-            # the honest answer -- and it costs nothing further.
             db.commit()
             print(f"\nSTOPPED after {i - 1} row(s): {exc}", flush=True)
             print("Nothing is wrong with the data; the request was refused.",
                   flush=True)
             return filled
         except Exception:
-            # One bad lookup must not throw away the rows already paid for.
+            # One bad lookup must not throw away the rows already written.
             logger.exception("lookup failed for %s", r.store_name)
-            missed += 1
+            failed += 1
             continue
-        if not city:
-            missed += 1
-            continue
-        r.city = city
-        filled += 1
+        if city:
+            r.city = city
+            filled += 1
+        else:
+            unplaced += 1
         if i % BATCH == 0:
             db.commit()
             print(f"  {i}/{len(rows)}  filled {filled}", flush=True)
+        if pause:
+            time.sleep(pause)
     db.commit()
-    print(f"filled {filled}, still unnamed {missed}", flush=True)
+    print(f"filled {filled}, inside no place {unplaced}, lookup failed {failed}",
+          flush=True)
     return filled
 
 
@@ -159,16 +172,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--limit", type=int, help="only the first N rows")
     ap.add_argument("--dry-run", action="store_true",
-                    help="list what would be asked, spend nothing")
+                    help="list what would be asked, ask nothing")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    if not args.dry_run and not settings.google_maps_server_api_key:
-        raise SystemExit("GOOGLE_MAPS_SERVER_API_KEY is not set; nothing to ask.")
-
     from app.db.session import SessionLocal
     with SessionLocal() as db:
-        run(db, limit=args.limit, dry_run=args.dry_run)
+        run(db, limit=args.limit, dry_run=args.dry_run, pause=PAUSE)
 
 
 if __name__ == "__main__":
