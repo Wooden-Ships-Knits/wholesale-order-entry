@@ -16,6 +16,7 @@ this shows it in one screen.
 """
 import argparse
 from collections import Counter
+from types import SimpleNamespace
 
 from sqlalchemy import select
 
@@ -23,8 +24,10 @@ from app.db.models import Prospect
 
 from . import assess
 from .analysis.llm_payload import store_payload, unreadable_reason
+from .scrapebot.extract import names_knitwear, parse_price, product_blob
 
 TOP = 25
+GOODS = 40
 
 
 def shelf(store):
@@ -33,7 +36,49 @@ def shelf(store):
                    for p in store["products"] if (p.get("vendor") or "").strip())
 
 
-def report(db, name=None, domain=None, top=TOP):
+def _as_product(p):
+    """A cached product dict in the shape the extract rules read.
+
+    They take attributes; the cache holds dicts. Converting here rather than
+    re-implementing the rules is the point -- `names_knitwear` warns that a
+    second copy of itself would drift silently, and a knit mark that disagreed
+    with `knitwear_share` would make this tool worse than no tool.
+    """
+    return SimpleNamespace(title=p.get("title"), product_type=p.get("product_type"),
+                           tags=p.get("tags"), description=p.get("description"))
+
+
+def goods(store, brand=None):
+    """The products themselves, dearest first, optionally one brand only.
+
+    `shelf` answers whose brands are stocked, which is what the house-brand
+    gate turns on. It cannot answer what the shop actually SELLS, and that is
+    the question asked of a verdict that looks wrong: Phoebe Jon reads as a
+    10-brand boutique until you see 114 of its 124 products carry its own name
+    and the other nine brands are gloves, belts and scarves.
+
+    Ordered by price because the doubt is nearly always "does this shop sell
+    where we sell", which a priced list answers at a glance. An unpriced item
+    is unknown rather than free, so it sorts last instead of first.
+    """
+    want = (brand or "").strip().upper()
+    out = []
+    for p in store["products"]:
+        vendor = (p.get("vendor") or "").strip().upper()
+        if want and vendor != want:
+            continue
+        out.append({
+            "title": (p.get("title") or "").strip(),
+            "vendor": vendor,
+            "price": parse_price(p.get("price")),
+            "knit": names_knitwear(product_blob(_as_product(p)), p.get("title") or ""),
+        })
+    out.sort(key=lambda g: (g["price"] is None, -(g["price"] or 0)))
+    return out
+
+
+def report(db, name=None, domain=None, top=TOP, products=False, brand=None,
+           goods_n=GOODS):
     q = select(Prospect)
     q = q.where(Prospect.website.ilike(f"%{domain}%") if domain
                 else Prospect.store_name.ilike(f"%{name}%"))
@@ -59,10 +104,26 @@ def report(db, name=None, domain=None, top=TOP):
         print(f"  {payload['knit_in_band_share']:.0%} of its knitwear priced in our band")
     print(f"  gate: {'GATED — ' + gate if gate else 'not gated'}")
     print("\n  brands, deepest-stocked first:")
-    for brand, n in counts.most_common(top):
-        print(f"    {n:>5}  {brand}")
+    # NOT `brand`: a Python loop variable outlives its loop, and this function
+    # takes a `brand` argument. Naming them alike silently rebound the caller's
+    # brand to the last one printed, so `--brand "PHOEBE JON"` listed J SOCIETY.
+    for label, n in counts.most_common(top):
+        print(f"    {n:>5}  {label}")
     if len(counts) > top:
         print(f"    ... and {len(counts) - top} more")
+
+    if products or brand:
+        items = goods(store, brand=brand)
+        who = f" by {brand.upper()}" if brand else ""
+        print(f"\n  goods{who}, dearest first "
+              f"({len(items)} items; ~ marks what the knitwear rules count):")
+        for g in items[:goods_n]:
+            shown = f"${g['price']:,.0f}" if g["price"] else "-"
+            mark = "~" if g["knit"] else " "
+            tail = "" if brand else f"   [{g['vendor'] or 'no brand'}]"
+            print(f"    {mark} {shown:>9}  {g['title'][:50]}{tail}")
+        if len(items) > goods_n:
+            print(f"    ... and {len(items) - goods_n} more")
 
 
 def main() -> None:
@@ -70,11 +131,17 @@ def main() -> None:
     ap.add_argument("name", nargs="*", help="store name, partial match")
     ap.add_argument("--domain", help="match on website instead")
     ap.add_argument("--top", type=int, default=TOP)
+    ap.add_argument("--products", action="store_true",
+                    help="also list the goods themselves, dearest first")
+    ap.add_argument("--brand", help="list only this brand's goods (implies --products)")
+    ap.add_argument("--goods", type=int, default=GOODS, dest="goods_n",
+                    help=f"how many goods to print (default {GOODS})")
     args = ap.parse_args()
 
     from app.db.session import SessionLocal
     with SessionLocal() as db:
-        report(db, name=" ".join(args.name), domain=args.domain, top=args.top)
+        report(db, name=" ".join(args.name), domain=args.domain, top=args.top,
+               products=args.products, brand=args.brand, goods_n=args.goods_n)
 
 
 if __name__ == "__main__":
