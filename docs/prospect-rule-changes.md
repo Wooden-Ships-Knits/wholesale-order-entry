@@ -70,6 +70,36 @@ already classify as `house_brand` and one of which (burlapranch.com) lists all
 So when a rule misfires, ask which statistic it reads and what that statistic
 averages away, before touching any number.
 
+### When one axis cannot separate, stop moving the threshold
+
+Rule 1 has now been patched three times — `store_type`, then the mean, then
+concentration — and the third patch ran out of room. Artemesia is a label at
+**64%** own-name across its catalogue. `tinademel.com` is a paying customer
+that stocks **23 Wooden Ships products**, at **62.3%**. Two points apart, and
+no threshold on that axis separates them: catching the label means standing two
+points from hiding the customer.
+
+The exit is not a better number, it is a **second, independent signal that has
+to agree**. Artemesia buys candles, soap and greetings cards from thirteen
+brands and its clothes from nobody; tinademel buys 48 third-party sweaters. On
+the knit shelf they are nothing alike.
+
+| | catalogue own-name | knit-shelf own-name | |
+|---|---|---|---|
+| Artemesia | 66% | 55% | gated |
+| tinademel.com | 62% | buys its knitwear out | spared |
+
+So: **when two populations overlap on your axis, one of them is being measured
+by the wrong thing.** Find the axis on which they do not overlap, and require
+both. A single signal that is wrong then costs nothing, which is the property
+a threshold move can never buy.
+
+The account-cost table is what tells you which case you are in. If lowering the
+threshold by one step changes the number of accounts caught, you are inside the
+account population and no threshold there is safe.
+
+---
+
 **A threshold is not automatically better for coming from the pattern.** The
 mean's floor is `products_per_brand_p90 × 2`, and a rebuild carries a corrected
 value — right, because the accounts are the reference. `top_brand_share` is the
