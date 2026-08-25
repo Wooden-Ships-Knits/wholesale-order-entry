@@ -695,6 +695,10 @@ PROSPECT_ROW_KEYS = {
     # The measurement rule 3 now turns on. A rep phoning a shop the assessment
     # called `possible` on price deserves to see the number that decided it.
     "knitInBandShare",
+    # The shelf we judged. A rep opening a call wants to know whose brands the
+    # shop already buys, and it is also the plainest explanation of an
+    # insufficient_data row: 736 of 1,381 shops name no brand on any product.
+    "topBrands",
 }
 
 
@@ -710,6 +714,7 @@ def _prospect(**over):
         distance_miles=Decimal("24.3"), drive_minutes=None,
         verdict=None, confidence=None, for_the_rep=None, reasons=None,
         against=None, problems=None, assessed_at=None, knit_in_band_share=None,
+        top_brands="RAILS; VELVET; FRAME",
     )
     base.update(over)
     return SimpleNamespace(**base)
@@ -819,3 +824,18 @@ def test_the_share_that_decides_rule_3_reaches_the_rep():
                                   knit_in_band_share=Decimal("0.3300")), False)
     assert row["knitInBandShare"] == 0.33
     assert _prospect_row(_prospect(), False)["knitInBandShare"] is None
+
+
+def test_the_brands_reach_the_rep_deepest_stocked_first():
+    """Order is the point and it survives the trip: the column is written
+    deepest-stocked first, and re-sorting it would destroy the evidence that
+    a shop's leading brand is its own name."""
+    row = _prospect_row(_prospect(top_brands="RAILS; VELVET; FRAME"), False)
+    assert row["topBrands"] == ["RAILS", "VELVET", "FRAME"]
+
+
+def test_a_shop_that_names_no_brand_sends_null_not_an_empty_list():
+    """736 of 1,381 shops fill no vendor field at all. That is "we could not
+    see the shelf", not "the shelf is empty", and the two must not render the
+    same -- the first is the reason the row reads insufficient_data."""
+    assert _prospect_row(_prospect(top_brands=None), False)["topBrands"] is None

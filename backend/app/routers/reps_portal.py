@@ -402,6 +402,18 @@ def _prospect_row(p: Prospect, marked: bool) -> dict:
         # median is above our band can see why it is still worth a call.
         "knitInBandShare": (float(p.knit_in_band_share)
                             if p.knit_in_band_share is not None else None),
+        # The shelf this shop actually stocks, DEEPEST-STOCKED FIRST. Order is
+        # the evidence -- a shop whose leading brand is its own name is the one
+        # case a rep must not spend a call on -- so it is never re-sorted here.
+        #
+        # A list rather than the stored "; "-joined text: the join exists only
+        # because the table's other list columns are text, and splitting it
+        # belongs on the side that joined it, not in the browser.
+        #
+        # NULL when the shop fills no vendor field on any product, which is a
+        # different fact from stocking nothing and is the plainest explanation
+        # of an insufficient_data row -- 736 of 1,381 shops are in that state.
+        "topBrands": (p.top_brands.split("; ") if p.top_brands else None),
     }
 
 

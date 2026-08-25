@@ -62,6 +62,10 @@ export default function ProspectTable({
           <SortHeader label="Where" sortKey="city" sort={sort} onSort={onSort} />
           <th>Contact</th>
           <SortHeader label="Assessment" sortKey="verdict" sort={sort} onSort={onSort} />
+          {/* Sits beside the assessment because it is the evidence behind it:
+              a shop whose leading brand is its own name is the one a rep must
+              not spend a call on. */}
+          <th>Brands</th>
           <SortHeader
             label="Nearest stockist"
             sortKey="distanceMiles"
@@ -119,12 +123,13 @@ export default function ProspectTable({
             </select>
           </th>
           <th aria-hidden="true" />
+          <th aria-hidden="true" />
         </tr>
       </thead>
       <tbody>
         {rows.length === 0 && (
           <tr>
-            <td className="admin-empty-row" colSpan={6}>
+            <td className="admin-empty-row" colSpan={7}>
               No prospects match these filters.
             </td>
           </tr>
@@ -244,6 +249,26 @@ export default function ProspectTable({
                 </div>
               ) : (
                 <span className="unknown">not assessed</span>
+              )}
+            </td>
+            {/* The shelf, DEEPEST-STOCKED FIRST — never re-sorted, because the
+                order is the evidence. Three fit; the rest are counted, and the
+                whole list is the title. */}
+            <td>
+              {p.topBrands ? (
+                <div className="cert-missing">
+                  <span title={p.topBrands.join(', ')}>
+                    {p.topBrands.slice(0, 3).join(', ')}
+                  </span>
+                  {p.topBrands.length > 3 && (
+                    <span className="sub">+{p.topBrands.length - 3} more</span>
+                  )}
+                </div>
+              ) : (
+                /* NOT "none". The shop fills no vendor field on any product,
+                   which is a different fact from stocking nothing — and it is
+                   why the assessment beside this reads insufficient_data. */
+                <span className="unknown">no brands recorded</span>
               )}
             </td>
             <td>
