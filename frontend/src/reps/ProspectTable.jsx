@@ -7,6 +7,8 @@
 // one caller may show, and this page must never be able to render an order's
 // dollar value or card state by accident.
 
+import { useState } from 'react'
+
 import { VERDICTS } from './filterProspects'
 
 const DASH = <span className="unknown">—</span>
@@ -39,6 +41,46 @@ function SortHeader({ label, sortKey, sort, onSort }) {
         {label} <span className="sort-arrow">{arrow}</span>
       </button>
     </th>
+  )
+}
+
+const VISIBLE_BRANDS = 3
+
+/** The shelf a shop stocks, DEEPEST-STOCKED FIRST and never re-sorted: the
+ *  order is the evidence, since a shop whose leading brand is its own name is
+ *  exactly the one a rep must not spend a call on.
+ *
+ *  The rest are behind a toggle rather than a `title` tooltip. A tooltip never
+ *  appears on a touch screen, cannot be selected or copied, and vanishes while
+ *  you read it — so the list it held was, in practice, unreachable. A real
+ *  <button> so it is reachable by keyboard too, styled as the hint text it
+ *  replaces because a cell full of buttons reads as a form. */
+function BrandList({ brands }) {
+  const [open, setOpen] = useState(false)
+  if (!brands) {
+    // NOT "none": the shop fills no vendor field on any product, which is a
+    // different fact from stocking nothing — and it is why the assessment
+    // beside this reads insufficient_data.
+    return <span className="unknown">no brands recorded</span>
+  }
+  const hidden = brands.length - VISIBLE_BRANDS
+  return (
+    <div className="cert-missing">
+      <span>{(open ? brands : brands.slice(0, VISIBLE_BRANDS)).join(', ')}</span>
+      {hidden > 0 && (
+        <button
+          type="button"
+          className="brand-more"
+          aria-expanded={open}
+          onClick={(e) => {
+            e.stopPropagation() // the whole row flies the map; this must not
+            setOpen(!open)
+          }}
+        >
+          {open ? 'show fewer' : `+${hidden} more`}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -255,21 +297,7 @@ export default function ProspectTable({
                 order is the evidence. Three fit; the rest are counted, and the
                 whole list is the title. */}
             <td>
-              {p.topBrands ? (
-                <div className="cert-missing">
-                  <span title={p.topBrands.join(', ')}>
-                    {p.topBrands.slice(0, 3).join(', ')}
-                  </span>
-                  {p.topBrands.length > 3 && (
-                    <span className="sub">+{p.topBrands.length - 3} more</span>
-                  )}
-                </div>
-              ) : (
-                /* NOT "none". The shop fills no vendor field on any product,
-                   which is a different fact from stocking nothing — and it is
-                   why the assessment beside this reads insufficient_data. */
-                <span className="unknown">no brands recorded</span>
-              )}
+              <BrandList brands={p.topBrands} />
             </td>
             <td>
               {p.nearestStockist ? (

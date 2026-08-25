@@ -1127,6 +1127,27 @@ button:hover {
   font-size: 0.75rem;
   margin-top: 0.15rem;
 }
+/* "+4 more" in the Brands cell. Styled as the .sub hint it sits among rather
+   than as a button: a table cell full of buttons reads as a form. It IS a
+   real button underneath, so it is reachable by keyboard and announces its
+   state. */
+.admin-table .brand-more {
+  color: #888;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.admin-table .brand-more:hover {
+  color: #1a1a1a;
+}
+
 /* Totals row. Sticks to the bottom of the viewport for the same reason the
    header sticks to the top: with a long list the figure you want is otherwise
    a full scroll away from the rows you are reading. */
