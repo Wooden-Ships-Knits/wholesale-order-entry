@@ -689,6 +689,9 @@ PROSPECT_ROW_KEYS = {
     # unassessed, which is the same as not having paid for it.
     "verdict", "confidence", "forTheRep", "reasons", "against", "problems",
     "assessedAt",
+    # The measurement rule 3 now turns on. A rep phoning a shop the assessment
+    # called `possible` on price deserves to see the number that decided it.
+    "knitInBandShare",
 }
 
 
@@ -702,7 +705,7 @@ def _prospect(**over):
         potential_conflict=False, nearest_stockist="BELLE BOUTIQUE (CA)",
         distance_miles=Decimal("24.3"), drive_minutes=None,
         verdict=None, confidence=None, for_the_rep=None, reasons=None,
-        against=None, problems=None, assessed_at=None,
+        against=None, problems=None, assessed_at=None, knit_in_band_share=None,
     )
     base.update(over)
     return SimpleNamespace(**base)
@@ -801,3 +804,13 @@ def test_a_rep_with_prospects_gets_no_message(monkeypatch):
                          rows=[_prospect(id=uuid.UUID("3c2f0a1e-0000-0000-0000-000000000001"))])
     assert out["counts"]["total"] == 1
     assert out["message"] is None
+
+
+def test_the_share_that_decides_rule_3_reaches_the_rep():
+    """A shop can be `possible` at a $218 median because a third of its knitwear
+    sits in our band. Without the share the verdict looks arbitrary."""
+    from decimal import Decimal
+    row = _prospect_row(_prospect(verdict="possible",
+                                  knit_in_band_share=Decimal("0.3300")), False)
+    assert row["knitInBandShare"] == 0.33
+    assert _prospect_row(_prospect(), False)["knitInBandShare"] is None

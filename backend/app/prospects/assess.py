@@ -32,7 +32,7 @@ from app.config import settings
 from app.db.models import Prospect
 
 from .analysis.judge import judge_one, system_message
-from .analysis.llm_payload import skip_reason, store_payload
+from .analysis.llm_payload import skip_reason, store_payload, unreadable_reason
 from .scrapebot.store import scrape_one
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,13 @@ UNREADABLE = ("blocked", "error", "js_required")
 
 # Answers that arrive as lists and live in one Text column. Joined the way
 # judge.verdict_rows joins them for its CSV, so a row reads the same in both.
-JOINED = ("reasons", "problems", "signature_tags_carried", "knit_tags_carried")
+JOINED = ("reasons", "problems", "signature_tags_carried", "knit_tags_carried",
+          # The shelf itself, deepest-stocked first. Written because the
+          # unreadable-shelf gate turns on its FIRST entry, and until now that
+          # was computed, used, and thrown away -- leaving the one rule nobody
+          # could check from the table. Order is the payload's, so the entry the
+          # gate read is the entry a reader sees first.
+          "top_brands")
 
 # Measurements copied onto the row as they are. Deliberately a whitelist: the
 # model is asked for free text and returns whatever it likes, so an answer
@@ -53,7 +59,7 @@ JOINED = ("reasons", "problems", "signature_tags_carried", "knit_tags_carried")
 # invented number, in a column a rep reads as fact.
 MEASURED = ("store_type", "brand_count", "products_per_brand", "tag_lift",
             "price_range", "knitwear_share", "knitwear_price_median",
-            "knit_evidence")
+            "knit_evidence", "knit_in_band_share")
 ANSWERED = ("verdict", "confidence", "for_the_rep", "against")
 
 # The five keys prompt.md asks the model for, plus judge_one's own `problems`.
@@ -161,6 +167,21 @@ def assess_website(website: str, pattern=None, complete=None, scrape=None,
     if not store.get("products"):
         return _unreadable("site was read but lists no products", payload)
 
+    # Rule 1, before rule 2 and before the model. A shelf whose every brand is
+    # the shop's own name cannot be read at all, and that is a DIFFERENT answer
+    # from the gate below: `insufficient_data`, never `weak`. Nine of our own
+    # 242 accounts have this shape -- burlapranch.com lists all 2,000 of its
+    # products under its own name -- so `weak` here would call paying customers
+    # bad prospects.
+    #
+    # The depth threshold comes from the accounts rather than a literal, so a
+    # rebuilt pattern carries a corrected one.
+    depth = (pattern.get("products_per_brand_p10_median_p90") or {}).get("p90")
+    reason = unreadable_reason(payload,
+                               min_products_per_brand=depth * 2 if depth else None)
+    if reason:
+        return _unreadable(reason, payload)
+
     reason = skip_reason(payload)
     if reason:
         return _gated(reason, payload)
@@ -203,23 +224,31 @@ def to_columns(result: dict) -> dict:
     return row
 
 
-def pending(db, limit=None):
+def pending(db, limit=None, territory=None):
     """Prospects with a website that nobody has assessed yet.
 
     Filtered on `website` because the assessment reads a shop's own catalogue
     and there is nothing to read without one -- of 225 real sweep rows, 92 have
     the tag. Sending the other 133 would buy a scrape each to be told so.
+
+    `territory` scopes a run to one rep's book. A whole-book sweep is ~1,300
+    shops and six hours; run in store_name order that leaves every territory
+    half-assessed for the entire run, and a batch stopped halfway helps nobody.
+    One territory at a time finishes each book complete and usable.
     """
     q = (select(Prospect)
          .where(Prospect.website.isnot(None), Prospect.website != "",
-                Prospect.assessed_at.is_(None))
-         .order_by(Prospect.store_name))
+                Prospect.assessed_at.is_(None)))
+    if territory:
+        q = q.where(Prospect.territory == territory)
+    q = q.order_by(Prospect.store_name)
     if limit:
         q = q.limit(limit)
     return db.execute(q).scalars().all()
 
 
-def assess_pending(db, limit=None, complete=None, scrape=None) -> int:
+def assess_pending(db, limit=None, complete=None, scrape=None,
+                   territory=None) -> int:
     """Assess every unassessed prospect with a website. Returns how many were
     written. No-op when OpenAI is not configured, matching run_classify.
 
@@ -235,8 +264,9 @@ def assess_pending(db, limit=None, complete=None, scrape=None) -> int:
 
     pattern = load_pattern()
     system = system_message(pattern)          # ~5,200 tokens, built once
-    rows = pending(db, limit)
-    logger.info("Assessing %d prospect(s)", len(rows))
+    rows = pending(db, limit, territory)
+    logger.info("Assessing %d prospect(s)%s", len(rows),
+                f" in {territory}" if territory else "")
 
     written = 0
     for p in rows:

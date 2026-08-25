@@ -1,6 +1,14 @@
 # Prospect scoring — vendored from `scrapping-bot`
 
-Copied from the `scrapping-bot` repository at commit **fc0cee1**, 2026-08-22.
+Vendored from the `scrapping-bot` repository. **Synced against its WORKING TREE,
+not a commit** — as of 2026-08-24 that repo has ~25 modified files and its last
+commit is `fc0cee1`, so `git show fc0cee1:...` is NOT what is here and diffing
+against it reports drift that does not exist.
+
+    diff -r ~/Automation/scrapping-bot/src/scrapebot backend/app/prospects/scrapebot
+    diff    ~/Automation/scrapping-bot/analysis/judge.py backend/app/prospects/analysis/judge.py
+
+Those are the checks that mean anything until scrapping-bot commits.
 
 The sweep in `app/maps/prospecting.py` finds shops that EXIST. This answers
 whether one is worth a rep's time, by reading the shop's own catalogue.
@@ -17,8 +25,11 @@ whether one is worth a rep's time, by reading the shop's own catalogue.
 | `pattern.json` | `data/llm/pattern.json` | **byte-identical** |
 | `assess.py` | — | **new here** |
 
-The only edits to copied code were three `sys.path.insert` hacks removed and
-five imports made relative. Nothing else was touched, so `diff` against
+The only edits to copied code are three `sys.path.insert` hacks removed and
+five imports made relative — `signature.py` (3) and `llm_payload.py` (2). Every
+behaviour change is made upstream first and vendored back, so a `diff` against
+the working tree shows exactly those lines and nothing else. Verified after the
+2026-08-24 rule change. Nothing else was touched, so `diff` against
 upstream still reads cleanly — which is the whole reason to keep the filenames
 and the module layout identical.
 

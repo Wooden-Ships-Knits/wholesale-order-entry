@@ -98,8 +98,20 @@ def sweep_values(row: dict, territory=None) -> dict:
     # A shop with no name is still a real element; "" would read as one called
     # nothing, and store_name is NOT NULL.
     out["store_name"] = out.get("store_name") or osm_id
-    if territory:
-        out["territory"] = territory
+
+    # Territory comes from the ROW first, and the caller's argument overrides it.
+    #
+    # A single-territory sweep is loaded with `territory=...` and has no such
+    # column; a whole-book sweep carries one per row -- to_scrap_all.csv held 12
+    # territories in one file. Reading only the argument would have stamped all
+    # 1,381 rows with a single label, which is worse than leaving them NULL: it
+    # files another rep's shops in somebody's book, and /reps trusts the column.
+    #
+    # The argument still wins, so an operator loading one territory deliberately
+    # is not overruled by whatever a stale CSV column happens to say.
+    row_territory = _clean(row.get("territory"))
+    if territory or row_territory:
+        out["territory"] = territory or row_territory
     return out
 
 

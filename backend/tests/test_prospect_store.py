@@ -91,6 +91,27 @@ def test_territory_is_stamped_when_given():
     assert "territory" not in ps.sweep_values(ROW)
 
 
+def test_a_sweep_that_carries_its_own_territory_keeps_it():
+    """A whole-book sweep spans many territories -- to_scrap_all.csv held 12 in
+    one file. Taking it only from the caller's argument would stamp all 1,381
+    rows with one label, which is worse than leaving it NULL: it would put
+    another rep's shops in somebody's book."""
+    row = {**ROW, "territory": "Midwest - Aviva Landin"}
+    assert ps.sweep_values(row)["territory"] == "Midwest - Aviva Landin"
+
+
+def test_the_caller_overrides_the_row():
+    """A single-territory sweep is loaded with territory=..., and that has to
+    win -- otherwise a stale column in the CSV silently outranks the operator."""
+    row = {**ROW, "territory": "Midwest - Aviva Landin"}
+    assert ps.sweep_values(row, territory="FL - Jason")["territory"] == "FL - Jason"
+
+
+def test_a_blank_territory_column_does_not_become_a_column_called_nothing():
+    row = {**ROW, "territory": "  "}
+    assert ps.sweep_values(row).get("territory") is None
+
+
 def test_state_is_carried_through():
     """The rep page reads `state`, and the sweep is the only thing that knows
     it: discover_osm queries one state at a time and stamps the code it asked

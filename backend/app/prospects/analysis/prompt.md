@@ -72,12 +72,22 @@ Three questions decide it, in this order. A candidate must pass all three.
    whatever else is uncertain: it has a knitwear buyer and a place on the shelf
    to put us.
 
-3. **Can it afford us, and can we afford it?** Price is the sharpest
-   disqualifier. Read `price_p25_p50_p75` against our band, and `price_range`
-   beside it — two shops can share a median and still be different shops, one
-   spanning $2–$545 and the other $39–$698. A shop whose prices sit far below
-   or far above our knitwear band cannot shelve our product whatever else
-   matches.
+3. **Can it afford us, and can we afford it?** Read `knit_in_band_share`
+   first: the share of this shop's own knitwear already priced inside our
+   $100–$200. That is the question — not where its median sits.
+
+   `knitwear_price_median` is a MEDIAN, so half the shop's knitwear is cheaper
+   than it by definition. A shop at $218 with a third of its knitwear inside
+   our band has room for us on the shelf; a shop at $250 with none there does
+   not. Those two are eight percent apart on the median and opposite answers,
+   so do not decide this on the median. Cite `knit_in_band_share`, and read
+   `knit_price_p25_p50_p75` beside it when you need the shape.
+
+   `knit_in_band_share` of 0 is the disqualifier: nothing this shop sells sits
+   where our product would. Answer "weak". A shop far BELOW our band cannot
+   carry our price either — read `price_p25_p50_p75` and `price_range` for
+   that, since a shop spanning $2–$545 is a different shop from one spanning
+   $39–$698.
 
 Two rules that override all three:
 
