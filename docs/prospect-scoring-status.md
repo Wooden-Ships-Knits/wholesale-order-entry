@@ -1,140 +1,120 @@
-# Prospect scoring — status, 2026-08-22
+# Prospect scoring — status, 2026-08-25
 
-The scrapebot integration, and the first end-to-end run of it. Nothing below is
-committed yet; branch `feat/dev-environment`.
+Where the scoring pipeline stands after three full passes over the dev database.
+Supersedes the 2026-08-22 note, which described a 92-row first run and was two
+runs stale.
 
 ## The run
 
-All 92 prospects with a website were scraped, scored and judged against the dev
-database. 92 written, 0 failures, 0 left pending. Two passes: the first built
-the page cache, the second re-judged everything after `pattern.json` was
-replaced (see "Pattern" below).
+1,437 prospect rows; **1,381 have a website and have been judged**, 56 have none
+and can never be assessed by this path. Re-judged from the page cache — the
+cache holds raw HTTP bodies and extraction runs fresh on every pass, so a
+re-judge costs ~1.5 s/row against ~20 s/row for a fresh scrape. 0 exceptions,
+0 territories failed.
 
 | verdict | count | flagged `problems` |
 |---|---|---|
-| insufficient_data | 54 | 7 |
-| weak | 35 | 0 |
-| possible | 3 | 0 |
-| strong | 0 | — |
+| insufficient_data | 1,027 | 14 |
+| weak | 228 | 2 |
+| strong | 65 | 4 |
+| possible | 61 | 2 |
 
-The three `possible` shops, all `multi_brand` with knitwear in both tags and
-products: **Coast By Driftwood** (HI, 176 brands, $90 median), **Loveworn** (CA,
-42 brands, $32), **LSpace** (CA, 14 brands, $114). All three came back
-`confidence: medium`, so all three want a human eye before a rep spends a call.
+**465 rows carry a sentence written for a rep.** The rest are gated or
+unreadable.
 
-### 33% of the run was lost to the scraper, not to the shops
+## The headline is still reach, not judgement
 
-This is the headline finding and it is invisible unless the two failure modes
-are told apart:
+**1,027 of 1,381 rows say `insufficient_data`.** That is not the model being
+cautious — it is us being unable to see the shop:
 
-| why `insufficient_data` | count |
+| why | count |
 |---|---|
-| scraper got an `error` | 14 |
-| site read fine, catalogue empty | 14 |
-| `js_required` — SPA storefront | 12 |
-| model judged the catalogue too small | 10 |
-| scraper `blocked` | 4 |
+| no vendor field on any product | 736 |
+| shelf readable | 645 |
 
-**30 of 92 (33%) failed on fetching, not on merit.** Those shops are recorded as
-"not enough data" when what was missing was the scraper's reach. A third of the
-scrape budget bought nothing, and a third of Rande's shortlist has not actually
-been assessed. `js_required` is the tractable one — twelve Shopify/Squarespace
-storefronts that render their catalogue client-side.
+More than half of all shops never record who made what they sell. Every rule in
+`prompt.md` reads the shelf, so for those shops there is nothing to read. **The
+largest available win is scrape reach, not rule tuning.**
 
-Cost is not the constraint: ~18s per shop (1.5s/host throttle x up to 25 pages)
-against roughly $0.10 of `gpt-4o-mini`. Scrape reach is.
+## Fixed in this pass — the concentration gate
 
-## What is here
+`products_per_brand` is a MEAN, and a mean is diluted by exactly the thing that
+disguises a house brand.
 
-| path | what |
+**Phoebe Jon** carried 114 of its own 124 products, plus nine "brands" holding
+one glove, one belt and one scarf apiece. 92% of the shelf under one name — at
+a mean of 12.4, an ordinary boutique's number. It scored **`strong` at high
+confidence** and topped a rep's call list. Its own $148–$228 sweaters read as a
+perfect price match *precisely because they compete with ours*: the better the
+price fit, the worse the prospect.
+
+The domain-echo test was right and never ran — `unreadable_reason` returned at
+`ppb <= floor` before reaching it.
+
+`top_brand_share` now gates alongside the mean. Both shapes still require
+`brands_echo_domain`, and both still answer `insufficient_data`, never `weak`:
+a catalogue cannot tell a label from a site that never fills its vendor field,
+so neither will we.
+
+**23 rows caught**, mean products-per-brand 10.8 to 38.5 — every one of them
+below the 40.6 floor, so the mean gate caught **none**:
+
+| | |
 |---|---|
-| `backend/app/prospects/` | the scrapebot, vendored — see its README.md |
-| `backend/app/prospects/assess.py` | scrape → score → judge → write the row |
-| `backend/app/maps/prospect_store.py` | sweep output → `prospects` (upsert) |
-| `backend/app/db/migrations/.../0023_prospect_assessment.py` | applied to dev |
-| `docker-compose.tools.yml` | Adminer overlay, `127.0.0.1:8081` |
-| `backend/tests/test_prospect_assess.py` | 13 tests |
-| `backend/tests/test_prospect_store.py` | 14 tests |
-| `prospects_stale_pattern_snapshot` (dev db) | verdicts from before the pattern
-swap, kept for comparison. Safe to drop. |
+| off the call list | Phoebe Jon (92%), Rebelie Wear (91%), Sara Campbell ×3 (80%), Kulua Studio Shop (79%) |
+| already `weak`, now honest | 17 rows — Uncle Kyle's Sweater Emporium (95%), Kealopiko, Minnow, Frankie Shop, Robindira Unsworth, … |
 
-## Fixed in this pass
+Those 17 matter as much as the 6. `weak` was a claim about their shelf we had no
+right to make.
 
-**The data was never all California.** 29 of the 225 rows are Hawaii — Honolulu,
-Hilo, Lahaina, Kailua-Kona. The territory is `CA/HI - Rande Cohen` and
-`states_for_territory` returns `['CA', 'HI']`; an earlier version of this file
-said "the data is California", and backfilling on that would have mislabelled 29
-shops in the column that exists to filter a territory that straddles a border.
-Backfilled from longitude instead: 1,300 miles of open Pacific separates the two
-groups and no row sits in between. One of the three `possible` shops is Hawaiian.
+**Cost to real accounts: zero.** Measured across all 242 accounts with a
+readable vendor field, the gate catches exactly the 13 the mean gate already
+caught. The catalogue floor of 75 is what buys that: seven of our own accounts
+hold 1–34 products under a single name, and 100% of twenty products is a failed
+scrape, not a label.
 
-**`state` was dropped silently, at both ends.** `discover_osm` never wrote it
-(it queries one state at a time and knew it all along) and `prospect_store.FIELDS`
-never mapped it. Both fixed, so the next sweep carries it without a backfill.
+## Reading the diff honestly
 
-**`territory` was NULL on all 225 rows**, and `/reps/prospects` filters on it,
-so every one of them was invisible to every rep. Set to `CA/HI - Rande Cohen`,
-which is spelled identically in Salesforce and in the REGION sheet — checked,
-because the filter matches Salesforce's spelling and the sheet's independently.
+68 verdicts moved out of 1,381.
 
-**`_prospect_row` swallowed the whole assessment.** It now passes `verdict`,
-`confidence`, `for_the_rep`, `reasons`, `against`, `problems` and `assessed_at`,
-always present and null rather than absent, so the page can tell "nobody has
-looked yet" from "looked, and weak". `ProspectTable` grew an **Assessment**
-column. Key set pinned by `test_prospect_row_serializes_exactly_the_allowed_keys`.
+| cause | count |
+|---|---|
+| the new gate | 23 |
+| no pre-existing measurement moved | 45 |
 
-**"site could not be read: ok"** — `assess.py` collapsed two different findings
-into one message, and `reasons` is the only place either is explained to a rep.
-Split into "could not be read: {status}" and "was read but lists no products".
-The whole failure table above is only legible because of this.
+All 23 gated rows moved, and nothing else moved into `insufficient_data`. The
+gate is fully attributable.
 
-**`prospect_store.py` was invisible to git** (`.gitignore:32` is `maps/`, which
-protects nothing and hid source). Force-added; consider deleting the line.
+**The other 45 are not simply noise, and should not be reported as such.** Their
+direction is asymmetric — 34 up, 11 down — which a coin flip does not produce.
+Every row also gained a measurement it did not have before: `top_brand_share` is
+now in the payload for every shop, and rule 1 tells the model to read it. For a
+shop with LOW concentration that is a new *positive* signal.
 
-**The image was rebuilt from source.** It previously held a `docker cp` of
-`prospect_store.py`.
+Tested rather than assumed: among shops that were `weak`, the ones that moved up
+average **0.146** concentration against **0.324** for the ones that stayed, at
+practically the same brand count (82.4 vs 80.6). That supports the mechanism but
+does not prove it row by row — 28 rows against 225.
 
-## Pattern
-
-`pattern.json` was stale — its rule 2 never mentioned `knit_evidence`, so the
-model was not told the rule `judge.check()` holds it to. **No rebuild was
-needed:** `scrapping-bot/data/llm-rande/pattern.json` (built 2026-08-21) already
-carries the gate. Copied over; provenance recorded in the prospects README.
-
-The 78 `signature_tags` are byte-identical between the two, so the swap changes
-what the model is TOLD, never what is MEASURED. Re-judging all 92 from the cache
-moved 2 verdicts, both `possible` → `weak`.
-
-**That delta is not clean evidence of the swap, and an earlier version of this
-file claimed it was.** The model is not deterministic at `temperature=0`:
-lspace.com, scored five times over the same cached catalogue and the same
-pattern, came back `possible` four times and `weak` once — and lspace.com is one
-of the three shops the swap supposedly moved. A 2-of-92 delta is inside the
-noise. To measure a prompt change, score the same shop N times before and after
-and compare the spread; `notebooks/assess-one-website.ipynb` §6 does this.
+So: the gate did what it was measured to do, and the same run drifted 23 shops
+upward for a reason that is plausible and unproven.
 
 ## Open
 
-1. **`judge.py:133` flags 7 honest answers.** `skip_reason`
-   (`llm_payload.py:338`) deliberately does NOT gate a shop whose catalogue is
-   empty or unreadable — "filing it under 'no knitwear' would state something
-   about a shelf nobody managed to see" — so it goes to the model, which
-   correctly answers `insufficient_data`. `check()` then flags every non-`weak`
-   verdict with `knit_evidence == "none"`, with no matching carve-out, so all 7
-   read as "do not trust this row" when they are right. The pattern swap cannot
-   fix this; it is code. **`judge.py` is byte-identical to upstream, so fixing
-   it here creates drift** — fix it in `scrapping-bot` and re-vendor, or patch
-   here and record the drift in the README.
-2. **Scrape reach**, per the 33% above. `js_required` (12 shops) is the
-   tractable slice.
-3. OSM duplicates: "Barefoot Boutique" is two elements sharing one website. Both
-   were scraped, but the cache made the second free — the real cost is one extra
-   model call, which is not worth dedup code.
-4. 133 of the 225 rows have no website and can never be assessed by this path.
-5. **Verdicts near a rule boundary are unstable run to run** (see Pattern above).
-   `_openai_complete` sets `temperature=0` with the comment "the same shop must
-   not get two answers"; that is not what temperature 0 buys, and the comment has
-   been corrected. Nothing currently records how confident a verdict is in this
-   sense — a shop that scores 5/5 `weak` and one that scores 3/5 `weak` are
-   written to the row identically. Scoring N times and storing the spread, or
-   taking a majority, would fix it and would cost N model calls per shop.
+1. **Scrape reach.** 736 of 1,381 shops record no vendor at all. This is the
+   ceiling on everything else.
+2. **`strong` has never been validated against known customers.** `prompt.md`
+   prescribes the test — score accounts that already buy from us; a good judge
+   calls most of them `strong` or `possible`, a flattering one calls everybody
+   `strong`. It has not been run. ~$0.05 and five minutes.
+3. **Verdicts near a boundary are unstable run to run**, and nothing records how
+   stable one is: a shop scoring 5/5 `weak` and one scoring 3/5 `weak` are
+   written identically. Fixing it costs N model calls per shop.
+4. **53 duplicate store-name groups** (Reformation ×5, Alo ×4). Not a bug —
+   different OSM elements sharing one website — but we pay the model once per
+   element for the same catalogue.
+5. **`scrapping-bot`'s own test suite is red**: 20 failures, none touching the
+   concentration gate. 14 come from the `KNIT_TERMS` edits, 4 from the rule-3
+   change, 2 are environmental. It is the source of truth for everything
+   vendored here, and its tests currently guard nothing.
+6. **The VM is behind** — it still holds the older 225-row CA/HI restore.
