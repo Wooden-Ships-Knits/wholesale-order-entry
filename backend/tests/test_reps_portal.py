@@ -682,7 +682,10 @@ def test_every_roster_name_resolves_to_an_address(monkeypatch):
 
 PROSPECT_ROW_KEYS = {
     "id", "storeName", "latitude", "longitude", "city", "address", "state",
-    "website", "phone", "rating", "reviewCount", "womenswear",
+    # The shop's own contact address from the OSM email / contact:email tag --
+    # often the only way to reach a store with no website. A business's public
+    # contact detail, not a person's, and the reason a rep can act on the row.
+    "website", "phone", "email", "rating", "reviewCount", "womenswear",
     "potentialConflict", "nearestStockist", "distanceMiles", "driveMinutes",
     "marked",
     # The assessment. A row that has one and does not say so reads as
@@ -701,6 +704,7 @@ def _prospect(**over):
         latitude=Decimal("33.818432"), longitude=Decimal("-117.2295092"),
         city="Perris", address="2560 N Perris Boulevard", state="CA",
         website="allureglamour.com", phone="+1-951-216-3110",
+        email="hello@allureglamour.com",
         rating=None, review_count=None, womenswear=True,
         potential_conflict=False, nearest_stockist="BELLE BOUTIQUE (CA)",
         distance_miles=Decimal("24.3"), drive_minutes=None,
@@ -763,7 +767,8 @@ def _prospects_for(monkeypatch, rep, *, email, territories, rows=()):
                         lambda: list(territories))
     monkeypatch.setattr(reps_portal.sheets_client, "rep_email_for_territory",
                         lambda t: email)
-    monkeypatch.setattr(reps_portal, "_stockists", lambda: [])
+    # _stockists is scoped by the rep's territory label, so it takes the name.
+    monkeypatch.setattr(reps_portal, "_stockists", lambda rep_name: [])
 
     # Two queries in order: the prospects (read with .all()) and then the
     # rep's marks (iterated directly). One stub has to serve both shapes.
