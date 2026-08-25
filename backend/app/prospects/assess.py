@@ -59,7 +59,7 @@ JOINED = ("reasons", "problems", "signature_tags_carried", "knit_tags_carried",
 # invented number, in a column a rep reads as fact.
 MEASURED = ("store_type", "brand_count", "products_per_brand", "tag_lift",
             "price_range", "knitwear_share", "knitwear_price_median",
-            "knit_evidence", "knit_in_band_share")
+            "knit_evidence", "knit_in_band_share", "top_brand_share")
 ANSWERED = ("verdict", "confidence", "for_the_rep", "against")
 
 # The five keys prompt.md asks the model for, plus judge_one's own `problems`.

@@ -21,6 +21,8 @@ from collections import Counter
 
 from ..scrapebot import extract
 from .signature import (
+    brand_depths,
+    top_brand_share,
     brands_echo_domain,
     MAX_HOUSE_BRANDS, MIN_CATALOGUE, MIN_HOUSE_CATALOGUE,
     bands, build_tag_signature, load, lift, price_range, profile, store_type,
@@ -47,6 +49,27 @@ OUR_KNIT_RETAIL = (100.0, 150.0, 200.0)
 # the unreadable vendor fields live. It only opens the question that
 # `brands_echo_domain` then answers.
 UNREADABLE_PRODUCTS_PER_BRAND = 40.0
+
+# The second shape of the same fact, which the mean above cannot see: one brand
+# holding nearly the whole catalogue while a handful of one-product accessory
+# labels keep the mean ordinary. Phoebe Jon is 92% its own name over 124
+# products at a mean of 12.4, and passed as `strong` at high confidence.
+#
+# NOT DERIVED FROM THE PATTERN, deliberately, unlike the threshold above. The
+# accounts' own top-brand-share p90 is 0.992, because the accounts whose vendor
+# fields are unreadable are the very shops this gate exists to catch -- deriving
+# from that would set the bar above every case it should stop. Measured instead
+# against the accounts whose shelves CAN be read (they do not echo their
+# domain): their p90 is 0.570, so 0.70 clears them, while the shops caught here
+# sit at 0.79-0.92.
+UNREADABLE_TOP_BRAND_SHARE = 0.70
+
+# Concentration is meaningless on a catalogue we barely read: 100% of one
+# product is our failure to scrape, not a label. Seven of our own accounts hold
+# 1-34 products under a single name. Their catalogue sizes stop at 59 and the
+# next echo-ing account is 76, so this floor sits in a real gap in the data
+# rather than on a round number.
+UNREADABLE_CONCENTRATION_CATALOGUE = 75
 
 
 def _category_mix(store, limit=TOP_CATEGORIES):
@@ -121,10 +144,13 @@ def store_payload(domain, store, about, tag_signature=frozenset()):
         "products_per_brand": (round(pr["catalogue"] / len(brands), 1)
                                if brands else None),
         "store_type": store_type(store),
-        "top_brands": [b for b, _ in Counter(
-            (p.get("vendor") or "").strip().upper()
-            for p in store["products"] if (p.get("vendor") or "").strip()
-        ).most_common(TOP_BRANDS)],
+        "top_brands": [b for b, _ in brand_depths(store).most_common(TOP_BRANDS)],
+        # How much of the shelf its single deepest brand holds. Read WITH
+        # products_per_brand, never instead of it: the mean catches a label
+        # with a deep catalogue, this catches one hiding behind accessories,
+        # and neither sees the other's shape.
+        "top_brand_share": (round(tbs, 3)
+                            if (tbs := top_brand_share(store)) is not None else None),
         "category_mix": _category_mix(store),
         "signature_tags_carried": sorted(tag_signature & tags),
         "tag_lift": lift(tags, tag_signature) if tag_signature else None,
@@ -209,7 +235,8 @@ def _rules(depth_band):
         "rules": [
             {
                 "question": "Does this shop buy from brands at all?",
-                "reads": ["store_type", "brand_count", "products_per_brand"],
+                "reads": ["store_type", "brand_count", "products_per_brand",
+                          "top_brand_share"],
                 "against": "store_type_mix, products_per_brand_p10_median_p90",
                 "why": (
                     "A shop selling only its own label has no buyer and no budget "
@@ -224,7 +251,14 @@ def _rules(depth_band):
                 "evidence": (
                     f"A boutique stocks about {median} products per brand; a label "
                     "stocks hundreds. Two conditions decide it, not one, so a thin "
-                    "catalogue from a failed scrape is not mistaken for a label."
+                    "catalogue from a failed scrape is not mistaken for a label. "
+                    "Read top_brand_share beside the mean, never instead of it: a "
+                    "mean cannot see a label hiding behind accessories. A shop "
+                    "with 114 of its own 124 products, plus nine brands holding "
+                    "one glove, one belt and one scarf apiece, is "
+                    f"{UNREADABLE_TOP_BRAND_SHARE:.0%}+ of one name on the shelf "
+                    "at a mean of 12.4 -- an ordinary boutique's number hiding a "
+                    "shop that buys from nobody."
                 ),
             },
             {
@@ -364,19 +398,43 @@ def unreadable_reason(payload, min_products_per_brand=None):
     catalogue cannot tell those apart -- so neither will we. Answering `weak`
     here would have called nine of our own accounts bad prospects.
 
+    Depth is measured two ways because one of them is blind. A mean catches a
+    label with a deep catalogue; CONCENTRATION catches one whose mean is held
+    down by a few one-product accessory labels. Phoebe Jon -- 114 of 124
+    products its own name, mean 12.4 -- passed the mean and scored `strong` at
+    high confidence, its own $148-$228 sweaters reading as a perfect price
+    match because they compete with ours.
+
     `min_products_per_brand` should be derived from the accounts rather than
     passed as a literal, so a rebuilt pattern carries a corrected threshold.
     The default is a fallback for callers without a pattern to hand.
     """
     floor = (UNREADABLE_PRODUCTS_PER_BRAND if min_products_per_brand is None
              else min_products_per_brand)
+    size = payload.get("catalogue_size")
     ppb = payload.get("products_per_brand")
-    if not ppb or not payload.get("catalogue_size"):
+    if not ppb or not size:
         return None
-    if ppb <= floor:
+
+    # TWO SHAPES OF THE SAME FACT, and each is blind to the other. A deep mean
+    # catches a label whose whole catalogue is its own name. Concentration
+    # catches one hiding behind accessory labels, whose mean looks ordinary.
+    # Neither is a disqualifier alone -- `brands_echo_domain` below is what
+    # separates a label from a boutique that never fills its vendor field, and
+    # both answers are `insufficient_data`, never `weak`.
+    share = payload.get("top_brand_share")
+    concentrated = (share is not None
+                    and share >= UNREADABLE_TOP_BRAND_SHARE
+                    and size >= UNREADABLE_CONCENTRATION_CATALOGUE)
+    if ppb <= floor and not concentrated:
         return None
     if not brands_echo_domain(payload.get("domain"), payload.get("top_brands")):
         return None
+    if ppb <= floor:
+        # Worth saying which shape fired: the mean reads as ordinary here, so a
+        # reader checking the row would otherwise find nothing that explains it.
+        return (f"the shop's own name holds {share:.0%} of the shelf, so what "
+                "it buys cannot be seen")
     return ("every brand on the shelf is the shop's own name, so what it buys "
             "cannot be seen")
 

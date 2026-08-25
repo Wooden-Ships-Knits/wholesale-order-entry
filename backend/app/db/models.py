@@ -334,6 +334,12 @@ class Prospect(Base):
     # model was shown. A snapshot of the shelf on the day it was assessed --
     # shops re-merchandise, and this is deliberately not refreshed by a sweep.
     top_brands: Mapped[str | None] = mapped_column(Text)
+    # What share of the catalogue the deepest brand in `top_brands` holds.
+    # Persisted beside products_per_brand because it is the half the mean
+    # cannot see: a shop with 114 of its own 124 products and nine accessory
+    # labels reads 92% here and an unremarkable 12.4 there. Auditable from the
+    # table on purpose -- the gate that reads it costs a rep a phone call.
+    top_brand_share: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
     # The shop's own tags that name knitwear — its word for the thing we make.
     # NOT a subset of signature_tags_carried above: that one asks whether a shop
     # is merchandised like our customers, and only three of its 78 tags name

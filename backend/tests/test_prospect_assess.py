@@ -345,3 +345,87 @@ def test_a_shelf_with_no_vendor_field_writes_null_not_an_empty_string():
     shop = _store([_product(f"S{i}", vendor="") for i in range(60)])
     pay = store_payload("boutique.com", shop, "", assess.tag_signature(PATTERN))
     assert assess.to_columns(pay)["top_brands"] is None
+
+
+# --- a mean cannot see a label hiding behind accessories --------------------
+#
+# Phoebe Jon carries 114 of its own 124 products, plus nine "brands" holding one
+# glove, one belt and one scarf apiece. 92% of the shelf under one name -- at a
+# mean of 12.4, which is an ordinary boutique's number. It scored `strong` at
+# HIGH confidence and topped a rep's call list, its own $148-$228 sweaters
+# reading as a perfect price match precisely because they compete with ours.
+#
+# Same error already fixed once on price: there a median hid the distribution,
+# here a mean hides the concentration.
+
+FILLERS = ["PORTOLANO", "LINEN WAY", "ELMNTL", "MACHETE", "FURBISH STUDIO",
+           "B-LOW THE BELT", "SOMERVILLE SCARVES", "HAKNE", "J SOCIETY"]
+
+
+def _accessory_screened_label(own=114, domain="thephoebejon.com"):
+    products = [_product(f"Cardigan {i}", vendor="PHOEBE JON") for i in range(own)]
+    products += [_product(f"Glove {i}", vendor=b) for i, b in enumerate(FILLERS)]
+    return _store(products, domain=domain)
+
+
+def test_top_brand_share_is_not_diluted_by_one_product_labels():
+    from app.prospects.analysis.signature import top_brand_share
+    store = _accessory_screened_label()
+    assert round(top_brand_share(store), 2) == 0.93
+    # ...while the mean the gate used to trust reads like any boutique.
+    assert round(len(store["products"]) / 10, 1) == 12.3
+
+
+def test_top_brand_share_is_none_when_nothing_names_a_brand():
+    """None is not zero. A shelf with no vendor field at all is a different
+    fact from one brand holding everything, and 0 would say the opposite."""
+    from app.prospects.analysis.signature import top_brand_share
+    assert top_brand_share(_store([_product("X", vendor="")])) is None
+
+
+def test_a_label_hiding_behind_accessory_brands_never_reaches_the_model():
+    complete, calls = _answers(GOOD)
+    out = assess.assess_website("https://thephoebejon.com", PATTERN, complete,
+                                scrape=lambda url: _accessory_screened_label(),
+                                system="sys")
+    assert out["verdict"] == "insufficient_data", "strong put a rival top of the list"
+    assert calls == [], "the gate must fire before the model is paid for"
+
+
+def test_the_gate_names_the_share_when_the_mean_looks_ordinary():
+    """A reader checking this row finds nothing in products_per_brand that
+    explains it, so the reason has to carry the number that did."""
+    from app.prospects.analysis.llm_payload import unreadable_reason
+    reason = unreadable_reason(
+        {"domain": "thephoebejon.com", "catalogue_size": 124,
+         "products_per_brand": 12.4, "top_brand_share": 0.919,
+         "top_brands": ["PHOEBE JON"]}, min_products_per_brand=40.6)
+    assert "92%" in reason
+
+
+def test_a_thin_self_named_catalogue_is_a_failed_scrape_not_a_label():
+    """THE REGRESSION THAT PROTECTS PAYING CUSTOMERS. Seven of our own accounts
+    hold 1-34 products under a single name. 100% of 22 products is our failure
+    to read the site; gating it would have hidden a real customer from a rep."""
+    from app.prospects.analysis.llm_payload import unreadable_reason
+    thin = {"domain": "hulamoonboutique.com", "catalogue_size": 22,
+            "products_per_brand": 22.0, "top_brand_share": 1.0,
+            "top_brands": ["HULA MOON BOUTIQUE"]}
+    assert unreadable_reason(thin, min_products_per_brand=40.6) is None
+
+
+def test_backing_one_outside_brand_heavily_is_a_buying_decision_not_a_gate():
+    """Society Beach carries 76% under one label that is NOT its own. That is a
+    shelf we can read perfectly well -- it just has a favourite."""
+    from app.prospects.analysis.llm_payload import unreadable_reason
+    p = {"domain": "societybeach.com", "catalogue_size": 200,
+         "products_per_brand": 15.0, "top_brand_share": 0.76,
+         "top_brands": ["VELVET", "RAILS"]}
+    assert unreadable_reason(p, min_products_per_brand=40.6) is None
+
+
+def test_the_payload_carries_the_concentration_the_gate_reads():
+    from app.prospects.analysis.llm_payload import store_payload
+    payload = store_payload("thephoebejon.com", _accessory_screened_label(),
+                            "a boutique", set())
+    assert round(payload["top_brand_share"], 2) == 0.93

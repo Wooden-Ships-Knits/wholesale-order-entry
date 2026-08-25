@@ -45,6 +45,41 @@ def vendors(store):
             for p in store["products"] if (p.get("vendor") or "").strip()}
 
 
+def brand_depths(store):
+    """How many products each brand on this shelf carries, deepest first.
+
+    `vendors` answers WHICH brands are stocked; this answers how deeply each
+    one is backed, which is the difference between a boutique and a label
+    wearing a boutique's brand count.
+    """
+    return Counter((p.get("vendor") or "").strip().upper()
+                   for p in store["products"] if (p.get("vendor") or "").strip())
+
+
+def top_brand_share(store):
+    """What share of the catalogue its single deepest-stocked brand holds.
+
+    THE MEAN CANNOT SEE A HOUSE BRAND HIDING BEHIND ACCESSORIES. Phoebe Jon
+    carries 114 of its own 124 products, and nine further "brands" holding one
+    glove, one belt and one scarf apiece. That is 92% concentration -- but a
+    mean of 12.4 products per brand, which is an ordinary boutique's number,
+    so `products_per_brand` waved it through as `strong` at high confidence.
+    Nine one-product labels are enough to dilute any mean; they cannot dilute
+    a share.
+
+    This is the same error already fixed once on price, where a median hid the
+    distribution. A mean hides concentration.
+
+    None when no product names a brand at all -- a different fact from "one
+    brand holds everything", and one the caller must not read as 100%.
+    """
+    depths = brand_depths(store)
+    total = sum(depths.values())
+    if not total:
+        return None
+    return depths.most_common(1)[0][1] / total
+
+
 def tags_of(store):
     """Distinct tags on this store's shelf, upper-cased.
 

@@ -10,7 +10,8 @@
     "reads": [
      "store_type",
      "brand_count",
-     "products_per_brand"
+     "products_per_brand",
+     "top_brand_share"
     ],
     "against": "store_type_mix, products_per_brand_p10_median_p90",
     "why": "A shop selling only its own label has no buyer and no budget for outside brands. It cannot become a wholesale account however well the rest fits \u2014 this is a harder fact than any similarity score.",
@@ -20,7 +21,7 @@
      "verdict": "weak"
     },
     "unreadable_below_catalogue": 50,
-    "evidence": "A boutique stocks about 9.2 products per brand; a label stocks hundreds. Two conditions decide it, not one, so a thin catalogue from a failed scrape is not mistaken for a label."
+    "evidence": "A boutique stocks about 9.2 products per brand; a label stocks hundreds. Two conditions decide it, not one, so a thin catalogue from a failed scrape is not mistaken for a label. Read top_brand_share beside the mean, never instead of it: a mean cannot see a label hiding behind accessories. A shop with 114 of its own 124 products, plus nine brands holding one glove, one belt and one scarf apiece, is 70%+ of one name on the shelf at a mean of 12.4 -- an ordinary boutique's number hiding a shop that buys from nobody."
    },
    {
     "question": "Does it sell our kind of thing?",
@@ -437,6 +438,7 @@
     "PEOPLE OF LEISURE",
     "TOWN PRIDE"
    ],
+   "top_brand_share": 0.279,
    "category_mix": {
     "TOPS": 0.407,
     "ACCESSORIES": 0.233,
@@ -514,6 +516,7 @@
     "MAREA",
     "CABALLERO COLLECTION"
    ],
+   "top_brand_share": 0.086,
    "category_mix": {
     "TOP": 0.122,
     "DENIM": 0.11,
@@ -587,6 +590,7 @@
     "PJ SALVAGE",
     "LEVEL 99"
    ],
+   "top_brand_share": 0.198,
    "category_mix": {
     "DRESSES": 0.286,
     "CLOTHING": 0.286,
@@ -661,6 +665,7 @@
     "FREE PEOPLE MOVEMENT",
     "KUT FROM THE KLOTH"
    ],
+   "top_brand_share": 0.121,
    "category_mix": {
     "SHOES": 0.278,
     "TOPS": 0.17,

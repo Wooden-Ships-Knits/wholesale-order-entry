@@ -45,6 +45,12 @@ Three questions decide it, in this order. A candidate must pass all three.
    so it cannot become a wholesale account however well the rest fits. Answer
    "weak" with high confidence. `products_per_brand` is the evidence: our
    accounts stock around 9 products per brand, a label stocks hundreds.
+   Read `top_brand_share` beside it, never instead of it. A mean cannot see a
+   label hiding behind accessories: a shop with 114 of its own 124 products
+   and nine brands holding one glove, one belt and one scarf apiece has 92%
+   of its shelf under one name, and a mean of 12.4 that looks like any
+   boutique. High concentration on a catalogue of any size is the same fact
+   the mean is missing.
    One exception, and it matters: compare `top_brands` against `domain` first.
    Some shops fill the brand field with their own shop name — burlapranch.com
    listing every product under "BURLAP RANCH MERCANTILE" is a site that does not
