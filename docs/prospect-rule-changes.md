@@ -326,6 +326,25 @@ unusable halves. Rows commit one at a time, so nothing already paid for is lost.
 
 Safe to re-run: anything with `assessed_at` is skipped.
 
+**Do not run `docker compose up` on ANY service while a run is in flight —
+not even an unrelated one.** `exec -d` survives a closed terminal; it does not
+survive its container being replaced. Compose recreates a service whose running
+container has drifted from its image, and rebuilding earlier in the session is
+enough to cause that. Measured 2026-08-25: a run writing since 01:32:17 died at
+343/1,381 the instant `up -d --build nginx` recreated the *backend* container
+at 01:39:33. `RestartCount` stayed 0, because nothing crashed — it was replaced.
+
+Two things make this hard to notice. Compose prints only the service you named,
+so the output says `nginx Started` and nothing about backend. And the run dies
+silently: with `exec -d` there is no terminal to print to, which is the whole
+reason Step 5 redirects to a log. Diagnose it by comparing
+`docker inspect <backend> --format '{{.State.StartedAt}}'` against
+`SELECT min(assessed_at) FROM prospects WHERE assessed_at IS NOT NULL`.
+
+Nothing is lost when it happens — rows commit one at a time and `pending()`
+skips them — so the fix is simply to start it again. But queue every rebuild
+until the run finishes.
+
 ### Step 6 — compare
 
 ```sql
