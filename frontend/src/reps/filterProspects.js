@@ -25,7 +25,7 @@ export const EMPTY_FILTERS = {
   storeName: '',
   city: '', // free text — matches the town OR the street address
   verdict: '', // '' | one of VERDICTS | 'none' for not-yet-assessed
-  brands: '', // free text — matches ANY brand on the shelf
+  brands: '', // free text — matches ANY brand in topBrands
 }
 
 const has = (value, needle) =>
@@ -46,7 +46,7 @@ export function filterProspects(rows, f) {
     // shop stocking "Free" and "People Tree", which is the wrong answer to the
     // question a rep is asking. Matches partially so "madewell" finds
     // "Madewell" without anyone typing the case correctly.
-    if (f.brands && !(p.brands || []).some((b) => has(b, f.brands))) return false
+    if (f.brands && !(p.topBrands || []).some((b) => has(b, f.brands))) return false
     return true
   })
 }
