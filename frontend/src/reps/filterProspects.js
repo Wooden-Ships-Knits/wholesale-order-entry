@@ -25,6 +25,7 @@ export const EMPTY_FILTERS = {
   storeName: '',
   city: '', // free text — matches the town OR the street address
   verdict: '', // '' | one of VERDICTS | 'none' for not-yet-assessed
+  brands: '', // free text — matches ANY brand on the shelf
 }
 
 const has = (value, needle) =>
@@ -41,6 +42,11 @@ export function filterProspects(rows, f) {
     // leaving the dropdown blank because blank means "all".
     if (f.verdict === 'none' && p.verdict) return false
     if (f.verdict && f.verdict !== 'none' && p.verdict !== f.verdict) return false
+    // ANY brand, not the joined string: joining would let "free people" match a
+    // shop stocking "Free" and "People Tree", which is the wrong answer to the
+    // question a rep is asking. Matches partially so "madewell" finds
+    // "Madewell" without anyone typing the case correctly.
+    if (f.brands && !(p.brands || []).some((b) => has(b, f.brands))) return false
     return true
   })
 }
