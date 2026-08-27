@@ -1,0 +1,107 @@
+/* The FAQ page. Kept in its own file rather than index.css: nothing else on
+   the site uses these, and index.css is already long enough that finding
+   anything in it is a chore. */
+
+.faq-page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+.faq-head {
+  margin-bottom: 2.5rem;
+}
+.faq-head h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: 0.02em;
+}
+.faq-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #77736c;
+}
+
+.faq-section {
+  margin-bottom: 2.25rem;
+}
+.faq-section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #77736c;
+  border-bottom: 1px solid #e2ded6;
+  padding-bottom: 0.4rem;
+}
+
+.faq-item {
+  border-bottom: 1px solid #eceae4;
+}
+/* The whole row is the control, so it spans the column and aligns its marker
+   right — a question that only responds on its text reads as broken. */
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.85rem 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+  font-size: 0.98rem;
+  color: #1d1d1b;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+  /* 44px is the smallest comfortably tappable target on iOS. */
+  min-height: 44px;
+}
+.faq-question:hover {
+  background: none;
+  color: #000;
+}
+.faq-item.open .faq-question {
+  font-weight: 650;
+}
+.faq-marker {
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  color: #8b8780;
+  line-height: 1;
+}
+
+.faq-answer {
+  padding: 0 0 1rem;
+  max-width: 40rem; /* ~65 characters — past that, lines get hard to track */
+}
+.faq-answer p {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #3a3833;
+}
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+.faq-empty,
+.faq-foot {
+  font-size: 0.9rem;
+  color: #77736c;
+}
+.faq-foot {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2ded6;
+}
+
+@media (max-width: 640px) {
+  .faq-page {
+    padding: 2rem 1rem 4rem;
+  }
+}
