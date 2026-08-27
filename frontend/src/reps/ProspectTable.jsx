@@ -117,8 +117,8 @@ export default function ProspectTable({
         </tr>
         {/* Per-column filters. Every cell is bound to one key of the `filters`
             object owned by ProspectsPanel; '' means "no filter on this
-            column". SIX cells for six header columns — a short row silently
-            shifts every control one column left. */}
+            column". SEVEN cells for seven header columns — a short row
+            silently shifts every control one column left. */}
         <tr className="filter-row">
           <th aria-hidden="true" />
           <th>
@@ -164,7 +164,19 @@ export default function ProspectTable({
               <option value="none">Not assessed</option>
             </select>
           </th>
-          <th aria-hidden="true" />
+          <th>
+            {/* Free text over the whole shelf: a rep hunting for shops that
+                already stock a label like ours does not know which position it
+                holds, so a dropdown of every brand seen anywhere would be
+                thousands long and useless. */}
+            <input
+              type="search"
+              placeholder="Brand"
+              aria-label="Filter by brand carried"
+              value={filters.brands}
+              onChange={(e) => onFilterChange('brands', e.target.value)}
+            />
+          </th>
           <th aria-hidden="true" />
         </tr>
       </thead>

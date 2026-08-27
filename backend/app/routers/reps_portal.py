@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -193,6 +193,11 @@ def _rep_row(o: Order) -> dict:
             o.signature_signed_at.isoformat() if o.signature_signed_at else None
         ),
         "signatureName": o.signature_name,
+        # The date typed on the FORM, for an order signed on the spot rather
+        # than through an emailed link. Those orders have no
+        # signature_signed_at — nothing was ever sent — but they are signed,
+        # and a column that showed them blank read as "still waiting".
+        "signatureDate": o.signature_date.isoformat() if o.signature_date else None,
         "signatureEdited": _signature_edited(o),
         "origTotalQty": o.orig_total_qty,
     }
@@ -341,6 +346,18 @@ def download_pdf(
 
 
 # ----------------------------------------------------------------- prospects
+
+# A "prospect" whose nearest stockist is closer than this is almost certainly
+# THAT stockist — the same shop under a name classify_existing could not match,
+# with no phone or website to match on either. Half a mile is past any plausible
+# separate storefront, so hiding them is a dedupe of last resort rather than a
+# rule about proximity: a genuinely different shop two doors down sits at 20 m,
+# and would already have been caught as `existing` if we could tell.
+#
+# Filtered server-side so the map, the table and the counts can never disagree,
+# and so a rep is never handed a lead that is one of their own stores.
+SAME_STORE_MILES = 0.5
+
 
 def _prospect_row(p: Prospect, marked: bool) -> dict:
     """One prospect, as the rep page needs it.
@@ -512,7 +529,17 @@ def list_prospects(rep_name: str = RepRequired, db: Session = Depends(get_db)) -
     rows = (
         db.execute(
             select(Prospect)
-            .where(Prospect.territory.in_(mine), Prospect.status == "prospect")
+            .where(
+                Prospect.territory.in_(mine),
+                Prospect.status == "prospect",
+                # NULL means no stockist anywhere near, which is the best kind
+                # of lead — it must survive this filter, and a bare `>=` would
+                # drop it.
+                or_(
+                    Prospect.distance_miles.is_(None),
+                    Prospect.distance_miles >= SAME_STORE_MILES,
+                ),
+            )
             .order_by(Prospect.store_name)
         )
         .scalars()

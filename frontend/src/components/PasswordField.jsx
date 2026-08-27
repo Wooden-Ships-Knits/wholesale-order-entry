@@ -16,6 +16,12 @@ export default function PasswordField({
   label = 'Password',
   autoFocus = false,
   autoComplete = 'current-password',
+  // Optional, because a browser's "save this password?" heuristic wants a named
+  // field and `autocomplete` alone is often not enough to trigger it. Left
+  // undefined by default so the callers that haven't opted in are unchanged —
+  // an offer to save is a convenience with a cost, and it's per-page.
+  name,
+  id,
 }) {
   const [shown, setShown] = useState(false)
 
@@ -29,6 +35,8 @@ export default function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           autoComplete={autoComplete}
           autoFocus={autoFocus}
+          name={name}
+          id={id}
         />
         {/* tabIndex -1: Tab should go from the password straight to Sign in,
             not detour through a button nobody reaches by keyboard. The label

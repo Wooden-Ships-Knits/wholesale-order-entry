@@ -24,6 +24,12 @@ export const EMPTY_FILTERS = {
   certificate: '', // '' | 'yes' | 'no'
   notes: '',
   specialInstructions: '',
+  // WHEN the order was accepted or declined — a different question from
+  // dateFrom/dateTo above, which filter when it was PLACED. Setting either of
+  // these necessarily drops orders still awaiting review: they have no
+  // decision date, so "decided in August" cannot include them.
+  decidedFrom: '',
+  decidedTo: '',
 }
 
 /** Local-calendar 'YYYY-MM-DD' for an ISO timestamp.
@@ -91,6 +97,14 @@ export function filterOrders(orders, f) {
       if (!day) return false
       if (f.dateFrom && day < f.dateFrom) return false
       if (f.dateTo && day > f.dateTo) return false
+    }
+
+    if (f.decidedFrom || f.decidedTo) {
+      const day = toDayString(o.statusAt)
+      // No decision date = not decided yet, which cannot fall inside a range.
+      if (!day) return false
+      if (f.decidedFrom && day < f.decidedFrom) return false
+      if (f.decidedTo && day > f.decidedTo) return false
     }
 
     // Match the full uuid too, so an id pasted from an email finds its row.
