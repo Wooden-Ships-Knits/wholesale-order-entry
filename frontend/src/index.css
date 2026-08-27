@@ -1046,6 +1046,12 @@ button:hover {
   color: #1d1d1b;
   border-bottom-color: #1a1a1a;
 }
+/* A tab that is a link rather than a panel switch (DOF → the order form). The
+   colour above already wins over the UA default; only the underline needs
+   removing so it sits level with the buttons beside it. */
+a.admin-tab {
+  text-decoration: none;
+}
 .chip {
   padding: 0.3rem 0.75rem;
   font-size: 0.85rem;
