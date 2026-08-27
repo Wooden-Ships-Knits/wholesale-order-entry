@@ -71,6 +71,14 @@ export default function RepLogin({ onSignedIn }) {
       <button type="submit" disabled={busy || !name.trim() || !password}>
         {busy ? 'Signing in…' : 'Sign in'}
       </button>
+      {/* Below the button and deliberately quiet: a rep who came here to sign
+          in should not be pulled away from the form, but one who is stuck
+          needs somewhere to go. The FAQ is public, so it opens without a
+          session — which is the point, since being unable to sign in is one of
+          the things it answers. */}
+      <a className="faq-link" href="/faq">
+        FAQ&rsquo;s
+      </a>
     </form>
   )
 }
