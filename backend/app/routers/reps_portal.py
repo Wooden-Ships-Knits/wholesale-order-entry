@@ -193,6 +193,11 @@ def _rep_row(o: Order) -> dict:
             o.signature_signed_at.isoformat() if o.signature_signed_at else None
         ),
         "signatureName": o.signature_name,
+        # The date typed on the FORM, for an order signed on the spot rather
+        # than through an emailed link. Those orders have no
+        # signature_signed_at — nothing was ever sent — but they are signed,
+        # and a column that showed them blank read as "still waiting".
+        "signatureDate": o.signature_date.isoformat() if o.signature_date else None,
         "signatureEdited": _signature_edited(o),
         "origTotalQty": o.orig_total_qty,
     }

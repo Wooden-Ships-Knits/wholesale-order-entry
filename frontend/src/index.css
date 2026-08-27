@@ -2222,3 +2222,18 @@ button:hover {
   opacity: 0.45;
   text-decoration: line-through;
 }
+
+/* ---- Decision column (/admin) ------------------------------------------ */
+/* Wider than the rest: it now carries the status, the date it was decided, a
+   decline reason in the team's own words, and the Salesforce order link. At
+   the default width those wrapped to one word per line. */
+.admin-table th.decision-col,
+.admin-table td.decision-col {
+  min-width: 11rem;
+}
+/* A reason is a sentence someone typed, so let it wrap rather than stretching
+   the column to fit the longest one on the page. */
+.admin-table td.decision-col .sub {
+  white-space: normal;
+  line-height: 1.4;
+}
