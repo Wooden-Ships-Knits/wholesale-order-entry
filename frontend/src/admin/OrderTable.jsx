@@ -339,9 +339,34 @@ function PaymentCell({ order: o }) {
 // The email now goes out automatically at submit (orders._send_signature_request);
 // this column confirms it happened and is where a resend or cancel is done.
 function SignatureCell({ order: o, sent, drafting, cancelling, onDraft, onCancel }) {
-  // Signed on the form, so there is nothing outstanding. Deliberately empty:
-  // a "—" here would read as missing data rather than "not applicable".
-  if (!o.signatureRequested) return <td className="flag-green" />
+  // Signed on the form itself — a customer-filled order, where the buyer typed
+  // their name at submit and no link was ever sent. It IS signed, so it says
+  // so: the cell used to be blank here, which read as "still waiting" for the
+  // one case that needs no chasing at all.
+  //
+  // "on the form" stays because the two are not the same evidence: one is a
+  // name typed into a page anyone could open, the other is a name typed behind
+  // a single-use emailed token. The team should be able to tell them apart.
+  if (!o.signatureRequested) {
+    if (!o.signatureName) return <td className="flag-green" />
+    return (
+      <td className="flag-green">
+        <div className="cert-missing">
+          <span className="sf-created">Signed ✓</span>
+          <span className="sub">{o.signatureName}</span>
+          {o.signatureDate && (
+            <span className="sub">
+              {new Date(o.signatureDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })}
+            </span>
+          )}
+          <span className="sub">on the form</span>
+        </div>
+      </td>
+    )
+  }
 
   if (o.signatureSignedAt) {
     // The buyer may have changed quantities before signing. Say so — otherwise
@@ -700,7 +725,7 @@ export default function OrderTable({
             <th>Payment</th>
             <th>Notes</th>
             <th>Special Instruction</th>
-            <th>Decision</th>
+            <th className="decision-col">Decision</th>
           </tr>
           {/* Per-column filters. Every cell is controlled by one key of the
               `filters` object owned by AdminApp; '' means "no filter". The
@@ -890,9 +915,31 @@ export default function OrderTable({
                 onChange={(e) => onFilterChange('specialInstructions', e.target.value)}
               />
             </th>
-            {/* Decision: no filter here — the toolbar chips above already
-                filter by status, server-side. */}
-            <th aria-hidden="true" />
+            {/* Status itself is filtered by the toolbar chips, server-side —
+                one control per question. This range answers the OTHER one:
+                when was it decided, as opposed to when it was placed. */}
+            <th>
+              <div className="filter-range">
+                <label>
+                  <span>Decided from</span>
+                  <input
+                    type="date"
+                    value={filters.decidedFrom}
+                    max={filters.decidedTo || undefined}
+                    onChange={(e) => onFilterChange('decidedFrom', e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>To</span>
+                  <input
+                    type="date"
+                    value={filters.decidedTo}
+                    min={filters.decidedFrom || undefined}
+                    onChange={(e) => onFilterChange('decidedTo', e.target.value)}
+                  />
+                </label>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1092,7 +1139,7 @@ export default function OrderTable({
               <td className="notes-cell" title={o.specialInstructions || ''}>
                 {o.specialInstructions || <span className="unknown">—</span>}
               </td>
-              <td>
+              <td className="decision-col">
                 {o.status === 'submitted' ? (
                   <div className="decide">
                     <button type="button" className="accept" onClick={() => decide(o, 'accepted')}>
@@ -1104,9 +1151,24 @@ export default function OrderTable({
                   </div>
                 ) : (
                   <div className="cert-missing">
-                    <span className={`status ${o.status}`} title={o.statusReason || ''}>
-                      {o.status}
-                    </span>
+                    <span className={`status ${o.status}`}>{o.status}</span>
+                    {/* WHEN it was decided. /reps has shown this all along and
+                        /admin has not, so the rep could see when an order was
+                        accepted and the office could not. */}
+                    {o.statusAt && (
+                      <span className="sub">
+                        {new Date(o.statusAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    )}
+                    {/* Visible, not a `title`. A tooltip never appears on a
+                        touch screen, cannot be copied, and vanishes while you
+                        read it — and a decline reason is the one thing anyone
+                        revisiting this row wants. */}
+                    {o.statusReason && <span className="sub">{o.statusReason}</span>}
                     {o.sfOrderNumber && (
                       <a
                         className="sf-created"

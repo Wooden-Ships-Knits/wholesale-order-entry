@@ -171,6 +171,11 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
             o.signature_signed_at.isoformat() if o.signature_signed_at else None
         ),
         "signatureName": o.signature_name,
+        # The date typed on the FORM, for an order signed on the spot rather
+        # than through an emailed link. Those orders have no
+        # signature_signed_at — nothing was ever sent — but they are signed,
+        # and a column that showed them blank read as "still waiting".
+        "signatureDate": o.signature_date.isoformat() if o.signature_date else None,
         # Non-null only once a buyer edited the order through the sign link —
         # the pre-edit totals, so the change is visible instead of silent.
         "origTotalQty": o.orig_total_qty,
@@ -282,11 +287,17 @@ def _purge_expired_card_copies(db: Session) -> None:
 def list_orders(
     db: Session = Depends(get_db),
     status_filter: str | None = None,
-    limit: int = 100,
+    # 0 = every order, and the default. NOT a convenience: the page's column
+    # filters run in the BROWSER, so a server-side cap made "show me every F26
+    # order" quietly mean "every F26 order among the last 100" — a filter that
+    # looks exhaustive and is not. Same limit=0 convention as /api/seasons.
+    limit: int = 0,
 ) -> dict:
     _purge_expired_card_copies(db)
 
-    stmt = select(Order).order_by(Order.created_at.desc()).limit(min(limit, 500))
+    stmt = select(Order).order_by(Order.created_at.desc())
+    if limit:
+        stmt = stmt.limit(limit)
     if status_filter:
         stmt = stmt.where(Order.status == status_filter)
     orders = list(db.execute(stmt).scalars())
