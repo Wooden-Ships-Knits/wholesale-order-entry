@@ -20,6 +20,15 @@ import 'leaflet/dist/leaflet.css'
 const US_CENTER = [39.5, -98.35]
 const US_ZOOM = 4
 
+// CARTO's raster basemaps stopped serving keyless requests unwatermarked, so
+// the tile URL now carries a key. It is a browser key like the Google Maps one
+// — baked into the bundle at build time, visible to anyone who opens devtools,
+// and restricted at CARTO's end by the domain it was issued for. Not a secret,
+// but it still lives in frontend/.env rather than here, because it differs
+// between the dev VM and production.
+const CARTO_TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+const CARTO_KEY = import.meta.env.VITE_CARTO_API_KEY || ''
+
 const ACCOUNT = { color: '#6b7280', fillColor: '#9aa0a6', fillOpacity: 0.85, weight: 1, radius: 5 }
 // Midway between the folium map's acid '#f2ff01' and the softer '#f2c14e'
 // this page started with: bright enough to carry against Positron's pale grey,
@@ -147,7 +156,13 @@ export default function Map({
     // tiles with a CSS filter: Positron removes road and label clutter by
     // design rather than just desaturating it, which is what lets the markers
     // carry the page.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    //
+    // The key is appended only when one is configured. Without it CARTO still
+    // serves the tiles, but stamps "API KEY REQUIRED" across every one of them
+    // — so a missing key degrades to a watermarked map rather than a blank one,
+    // and `?key=undefined` (which would be a request for a key that isn't ours)
+    // never gets sent.
+    L.tileLayer(`${CARTO_TILES}${CARTO_KEY ? `?key=${CARTO_KEY}` : ''}`, {
       maxZoom: 19,
       // Both attributions are required — OSM for the data, CARTO for the tiles.
       attribution:
