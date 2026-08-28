@@ -561,11 +561,17 @@ export default function OrderTable({
   // Record how a conflict inquiry ended (cleared / real conflict) so the row
   // closes. A note is optional (prefilled when confirming an AI suggestion);
   // cancelling the prompt aborts without saving.
-  async function resolveConflict(order, outcome, defaultNote = '') {
+  async function resolveConflict(order, outcome, defaultNote = '', { noEmail = false } = {}) {
     const note = window.prompt(
-      outcome === 'cleared'
-        ? 'Mark CLEARED — safe to proceed. Optional note (e.g. what the rep said):'
-        : 'Mark REAL CONFLICT. Optional note (e.g. what the rep said):',
+      noEmail
+        ? // A different question from the two below: nobody has asked the rep
+          // anything, so "what the rep said" would be inviting a lie. The note
+          // is where the ACTUAL basis goes — which order this was settled on.
+          'Mark CLEARED without emailing the rep — use when this account was ' +
+            'already settled on another order.\n\nNote (e.g. "cleared on order 60d641b8"):'
+        : outcome === 'cleared'
+          ? 'Mark CLEARED — safe to proceed. Optional note (e.g. what the rep said):'
+          : 'Mark REAL CONFLICT. Optional note (e.g. what the rep said):',
       defaultNote,
     )
     if (note === null) return // cancelled
@@ -1096,14 +1102,35 @@ export default function OrderTable({
                           </div>
                         </>
                       ) : (
-                        <button
-                          type="button"
-                          className="chip"
-                          disabled={drafting === o.id}
-                          onClick={() => draftEmail(o)}
-                        >
-                          {drafting === o.id ? 'Generating…' : 'Generate email'}
-                        </button>
+                        /* Nothing asked of the rep yet. Two ways out, because a
+                           rep who submits four orders for one new account
+                           produces four identical conflicts — mailing them
+                           about each is noise, so once ONE is settled the rest
+                           are cleared here without a second inquiry.
+                           No "Real conflict" beside it on purpose: declaring a
+                           conflict real is the answer to a question nobody has
+                           asked yet, and it is the outcome that stops an order.
+                           Clearing in batch is undoing duplicate work; blocking
+                           in batch would be deciding without the rep. */
+                        <div className="decide">
+                          <button
+                            type="button"
+                            className="chip"
+                            disabled={drafting === o.id}
+                            onClick={() => draftEmail(o)}
+                          >
+                            {drafting === o.id ? 'Generating…' : 'Generate email'}
+                          </button>
+                          <button
+                            type="button"
+                            className="chip"
+                            disabled={resolving === o.id}
+                            title="Already settled on another order for this account — clear without emailing the rep"
+                            onClick={() => resolveConflict(o, 'cleared', '', { noEmail: true })}
+                          >
+                            Cleared
+                          </button>
+                        </div>
                       )}
                     </div>
                   )
