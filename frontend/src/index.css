@@ -2229,6 +2229,27 @@ a.admin-tab {
   text-decoration: line-through;
 }
 
+/* ---- FAQ link under the rep sign-in ------------------------------------ */
+/* Deliberately low contrast: it is a way out for someone stuck, not a second
+   call to action competing with Sign in. Still a real link — underlined on
+   hover and focus, and it darkens on both, so it never becomes something you
+   can see but cannot tell is clickable.
+   #a3968a on the #f2f0eb page ground is ~2.6:1 — under the WCAG minimum, so
+   this is a considered exception for a secondary link, not an oversight. */
+.admin-login .faq-link {
+  display: block;
+  margin-top: 1.1rem;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a3968a;
+  text-decoration: none;
+}
+.admin-login .faq-link:hover,
+.admin-login .faq-link:focus-visible {
+  color: #6f635a;
+  text-decoration: underline;
 /* ---- Decision column (/admin) ------------------------------------------ */
 /* Wider than the rest: it now carries the status, the date it was decided, a
    decline reason in the team's own words, and the Salesforce order link. At

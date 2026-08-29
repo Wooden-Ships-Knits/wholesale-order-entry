@@ -8,9 +8,12 @@ import SignPage from './sign/SignPage.jsx'
 import DevBanner from './components/DevBanner.jsx'
 import './index.css'
 import './conflict/conflict.css'
+import './faq/faq.css'
 
-// Four pages, no router dependency:
+// Five pages, no router dependency:
 //   /order_form   — the buyer order form
+//   /faq          — public FAQ; no sign-in, because the people who need it are
+//                   usually buyers stuck part-way through an order
 //   /admin        — internal monitoring + the stockist conflict-check tab
 //                   (asks for the admin password first)
 //   /reps         — a sales rep's read-only view of their own orders
