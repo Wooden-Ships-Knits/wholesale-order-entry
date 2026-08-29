@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import AdminApp from './admin/AdminApp.jsx'
+import FaqPage from './faq/FaqPage.jsx'
 import RepsApp from './reps/RepsApp.jsx'
 import SignPage from './sign/SignPage.jsx'
 import DevBanner from './components/DevBanner.jsx'
@@ -23,6 +24,9 @@ const PAGES = {
   '/order_form': App,
   '/admin': AdminApp,
   '/reps': RepsApp,
+  // Public — no sign-in, which is the point: "I can't sign in" is one of the
+  // things it answers.
+  '/faq': FaqPage,
 }
 
 const CONFLICT_LEGACY = ['/check-conflict', '/conflict.html']

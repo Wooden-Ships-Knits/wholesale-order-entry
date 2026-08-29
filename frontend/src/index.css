@@ -2287,3 +2287,21 @@ a.admin-tab {
   padding: 0.1rem 0.3rem;
   font-size: 0.9em;
 }
+
+/* FAQ link under the rep sign-in. Low-contrast on purpose: a rep signing in
+   fine should not be pulled towards it, but one who is stuck needs a way out. */
+.admin-login .faq-link {
+  display: block;
+  margin-top: 1.1rem;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a3968a;
+  text-decoration: none;
+}
+.admin-login .faq-link:hover,
+.admin-login .faq-link:focus-visible {
+  color: #6f635a;
+  text-decoration: underline;
+}
