@@ -1,5 +1,6 @@
 """POST /api/send-email — admin-only send of a drafted email via SMTP."""
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import PropertyMock, patch
 
@@ -122,6 +123,70 @@ def test_send_email_stamps_tax_cert_order_on_success():
     assert resp.status_code == 200
     assert order.tax_cert_email_sent_at is not None
     assert order.conflict_email_sent_at is None
+    assert session.committed
+
+
+def test_signature_send_stamps_a_first_request():
+    order = SimpleNamespace(
+        signature_requested_at=None,
+        signature_email=None,
+        signature_bounced_at=None,
+        signature_bounce_reason=None,
+    )
+    with _fake_db(order) as session, mail_configured(True), patch(
+        "app.routers.send_email.mailer.send_email", return_value=True
+    ), patch("app.routers.send_email._order_pdf_attachment", return_value=None):
+        resp = client.post(
+            "/api/send-email", json={**PAYLOAD, "orderId": "abc", "kind": "signature"}
+        )
+    assert resp.status_code == 200
+    assert order.signature_requested_at is not None
+    assert session.committed
+
+
+def test_signature_resend_does_not_move_the_reminder_anchor():
+    """A manual resend must NOT re-stamp signature_requested_at.
+
+    That column anchors the reminder ladder, and the cursor
+    (signature_reminders_sent) is not reset alongside it — so moving the anchor
+    measured the NEXT rung from the resend instead of the first request. Chasing
+    a buyer by hand on day 13 pushed the automatic follow-up from day 16 out to
+    day 29, i.e. every manual nudge made the automatic ones rarer.
+
+    Pinned because nothing in the endpoint hints at the coupling: the stamp
+    reads as a UI flag for the "Sent ✓" button, and the ladder lives in another
+    module entirely.
+    """
+    first = datetime.now(timezone.utc) - timedelta(days=13)
+    order = SimpleNamespace(
+        signature_requested_at=first,
+        signature_reminders_sent=2,
+        rep_followups_sent=1,
+        signature_email=None,
+        signature_bounced_at=datetime(2026, 8, 6, tzinfo=timezone.utc),
+        signature_bounce_reason="mailbox full",
+    )
+    with _fake_db(order) as session, mail_configured(True), patch(
+        "app.routers.send_email.mailer.send_email", return_value=True
+    ), patch("app.routers.send_email._order_pdf_attachment", return_value=None):
+        resp = client.post(
+            "/api/send-email", json={**PAYLOAD, "orderId": "abc", "kind": "signature"}
+        )
+    assert resp.status_code == 200
+    assert order.signature_requested_at == first, "resend moved the reminder anchor"
+    # THE BACKLOG MUST BE SKIPPED, not left to fire. The sweep sends one rung per
+    # order per HOUR, so leaving rungs 2 and 3 (264h and 384h, both inside 13
+    # days) overdue would mail this buyer twice in two hours right after a person
+    # wrote to them by hand. 13 days clears 48/120/264h → cursor 3.
+    assert order.signature_reminders_sent == 3
+    # Same for the rep ladder: 144h has elapsed, 384h has not → cursor 1, i.e.
+    # unchanged here, and never rewound below what was already sent.
+    assert order.rep_followups_sent == 1
+    # The rest of the resend bookkeeping must still happen: a corrected address
+    # is recorded and the stale bounce cleared, or the chasers stay switched off.
+    assert order.signature_email == PAYLOAD["to"]
+    assert order.signature_bounced_at is None
+    assert order.signature_bounce_reason is None
     assert session.committed
 
 

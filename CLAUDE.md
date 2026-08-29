@@ -99,10 +99,18 @@ CONFLICT_MAX_MINUTES=20
 REPS_PASSWORD_HASHES=
 ```
 
-Frontend env (`frontend/.env`, see `frontend/.env.example`):
+Frontend env (`frontend/.env`, see `frontend/.env.example`). Both are BUILD-time
+values baked into the bundle — after changing either you must
+`docker compose build frontend`, not just restart it:
 ```
 VITE_GOOGLE_MAPS_API_KEY=        # browser key, referrer-restricted (Places autocomplete)
+VITE_CARTO_API_KEY=              # basemap tiles for the /reps prospects map
 ```
+`VITE_CARTO_API_KEY` is issued per domain at https://carto.com/basemaps/apikey/.
+Leave it blank and the map still works, but CARTO stamps "API KEY REQUIRED"
+across every tile. Note their free tier is written for non-commercial use, and
+the raster endpoints Leaflet uses are being retired — so this is a stopgap, not
+a settled dependency.
 
 ## Coding conventions
 - Use SQLAlchemy with bound parameters — never build SQL by string concatenation.

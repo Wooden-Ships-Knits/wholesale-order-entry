@@ -31,6 +31,7 @@ from app.db.session import get_db
 from app.email import mailer, reply_address
 from app.pdf import context as pdf_context
 from app.pdf import render as pdf_render
+from app.services import signature_reminders
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +129,33 @@ def send_drafted_email(payload: SendEmailRequest, db: Session = Depends(get_db))
         try:
             order = db.get(Order, payload.orderId)
             if order is not None:
-                setattr(order, _SENT_COLUMN[payload.kind], datetime.now(timezone.utc))
+                column = _SENT_COLUMN[payload.kind]
+                # FIRST send only for "signature" (fixed 2026-08-28).
+                # signature_requested_at does two jobs: it is the "the buyer has
+                # been told at all" flag this stamp is for, AND the anchor the
+                # reminder ladder counts from. Re-stamping it on a resend moved
+                # the anchor forward while signature_reminders_sent kept
+                # climbing, so services/signature_reminders._due measured the
+                # NEXT rung from the resend: chase a buyer by hand on day 13 and
+                # the automatic follow-up slipped from day 16 to day 29. Every
+                # manual nudge made the automatic ones rarer, which is backwards.
+                #
+                # Not overwriting costs nothing here: the admin button reads
+                # `signatureEmailSent`, a bool over "is this null", and a resend
+                # only happens when it is already set. Expiry is unaffected —
+                # that lives in signature_token_expires_at, re-minted by
+                # routers/signature_email when the token is missing or dead, so
+                # re-sending an expired link still works.
+                if payload.kind != "signature" or getattr(order, column) is None:
+                    setattr(order, column, datetime.now(timezone.utc))
+                elif payload.kind == "signature":
+                    # A RESEND. The anchor stays put (above), which leaves every
+                    # threshold crossed since the last send overdue — and the
+                    # sweep fires one rung per order per HOUR, so that backlog
+                    # becomes an email an hour rather than one email. Skip them:
+                    # a person has just written to this buyer by hand, and
+                    # "you haven't replied" is false the minute after they did.
+                    signature_reminders.skip_elapsed_stages(order)
                 # Remember where a signing link went, so it can be re-sent
                 # without the admin retyping the address.
                 if payload.kind == "signature":
