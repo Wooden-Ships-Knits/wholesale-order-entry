@@ -187,6 +187,21 @@ class Order(Base):
     conflict_resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     conflict_resolution_note: Mapped[str | None] = mapped_column(Text)
 
+    # "Stop chasing this one" for the tax certificate. A rep who writes four
+    # orders for one new store produces four identical cert requests, and the
+    # buyer only has to send the document once -- so once it arrives (or is
+    # established as not needed) the other rows are closed here.
+    #
+    # NOT a second copy of the certificate, and never a substitute for one: the
+    # file itself still lives against whichever order it was uploaded to, and
+    # `hasCertificate` still answers "is there a document here". This only
+    # records that a person decided this row needs no further chasing, and the
+    # note is where they say on what basis. One outcome, so no `resolution`
+    # enum -- unlike a conflict, there is no answer the buyer can give that
+    # stops the order.
+    tax_cert_cleared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    tax_cert_cleared_note: Mapped[str | None] = mapped_column(Text)
+
     # AI-suggested outcome from a captured rep reply (see app/ai/conflict_reply).
     # A suggestion only — surfaced in /admin for a human to confirm; confirming
     # sets conflict_resolution above. outcome: cleared | real_conflict | unclear.

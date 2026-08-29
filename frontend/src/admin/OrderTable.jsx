@@ -12,6 +12,7 @@ import {
   setOrderAccount,
   setOrderShipWindow,
   setOrderStatus,
+  setTaxCertCleared,
   suggestAccounts,
 } from './api'
 import { distinctValues, rankCode } from './filterOrders'
@@ -477,6 +478,7 @@ export default function OrderTable({
   const [resolving, setResolving] = useState(null) // id of the order whose conflict is being resolved
   const [sentConflict, setSentConflict] = useState(() => new Set()) // orders whose conflict email was sent
   const [sentTaxCert, setSentTaxCert] = useState(() => new Set()) // orders whose tax-cert email was sent
+  const [clearingCert, setClearingCert] = useState(null) // id of the order whose cert chase is being closed
   const [sentSignature, setSentSignature] = useState(() => new Set()) // orders whose signature link was sent
   const [draftingSignature, setDraftingSignature] = useState(null)
   const [cancellingSignature, setCancellingSignature] = useState(null)
@@ -634,6 +636,30 @@ export default function OrderTable({
     }
     if (draft?.signatureOrderId) {
       setSentSignature((prev) => new Set(prev).add(draft.signatureOrderId))
+    }
+  }
+
+  // Stop chasing the certificate on this order. For a batch from one new store,
+  // where the buyer sends the document once and the other rows would otherwise
+  // sit yellow for ever. The note is REQUIRED in practice, not decoration: it is
+  // the only thing linking this row to the order that holds the real document,
+  // which is exactly what anyone auditing the exemption will ask for.
+  async function clearTaxCert(order) {
+    const note = window.prompt(
+      'Stop chasing the tax certificate for this order — use when the same ' +
+        'account already sent one on another order.\n\n' +
+        'Note (e.g. "certificate on order 60d641b8"):',
+      '',
+    )
+    if (note === null) return // cancelled
+    setClearingCert(order.id)
+    try {
+      await setTaxCertCleared(order.id, note)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setClearingCert(null)
     }
   }
 
@@ -1111,22 +1137,57 @@ export default function OrderTable({
                   'No'
                 )}
               </td>
-              <td className={o.hasCertificate ? 'flag-green' : o.isNewAccount ? 'flag-yellow' : undefined}>
+              <td
+                className={
+                  o.hasCertificate || o.taxCertCleared
+                    ? 'flag-green'
+                    : o.isNewAccount
+                      ? 'flag-yellow'
+                      : undefined
+                }
+              >
                 {o.hasCertificate ? (
                   <a href={certUrl(o.id)} target="_blank" rel="noreferrer">
                     Open
                   </a>
+                ) : o.taxCertCleared ? (
+                  /* Chase closed by hand. Says "No" FIRST and keeps it: there
+                     is still no certificate against this order, and a green
+                     cell that hid that would be the one thing an auditor is
+                     looking for. The note — which order does hold it — is the
+                     hover, same as a resolved conflict. */
+                  <div className="cert-missing">
+                    <span>No</span>
+                    <span className="sf-created" title={o.taxCertClearedNote || ''}>
+                      Cleared ✓ not chasing
+                    </span>
+                  </div>
                 ) : o.isNewAccount ? (
                   /* new account, no cert uploaded → show No + offer to request one */
                   <div className="cert-missing">
                     <span>No</span>
                     {o.taxCertEmailSent || sentTaxCert.has(o.id) ? (
                       <span className="sf-created">Email Sent ✓ waiting for the response</span>
-                    ) : (
-                      <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
-                        Generate email
+                    ) : null}
+                    {/* Both actions in both states: the certificate can arrive
+                        on a sibling order whether or not this row was mailed,
+                        and once it has, chasing this one is noise. */}
+                    <div className="decide">
+                      {!(o.taxCertEmailSent || sentTaxCert.has(o.id)) && (
+                        <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
+                          Generate email
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="chip"
+                        disabled={clearingCert === o.id}
+                        title="Already received on another order for this account — stop chasing this one"
+                        onClick={() => clearTaxCert(o)}
+                      >
+                        Cleared
                       </button>
-                    )}
+                    </div>
                   </div>
                 ) : (
                   <span className="unknown">—</span>

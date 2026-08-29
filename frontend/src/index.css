@@ -2243,3 +2243,47 @@ a.admin-tab {
   white-space: normal;
   line-height: 1.4;
 }
+
+/* "What's new" tab — the changelog rendered from version.md. Narrow measure:
+   it is prose, and prose set to the width of a 15-column order table is
+   unreadable. Everything else inherits the page. */
+.version-panel {
+  max-width: 46rem;
+  padding: 0.5rem 0 2rem;
+  line-height: 1.6;
+}
+.version-panel h1 {
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+}
+.version-panel h2 {
+  font-size: 1.05rem;
+  margin: 2rem 0 0.75rem;
+}
+.version-panel h3 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b6862;
+  margin: 1.5rem 0 0.5rem;
+}
+.version-panel p {
+  margin: 0 0 0.75rem;
+}
+.version-panel ul {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+}
+.version-panel li {
+  margin-bottom: 0.6rem;
+}
+.version-panel hr {
+  border: 0;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+.version-panel code {
+  background: #efece6;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.9em;
+}
