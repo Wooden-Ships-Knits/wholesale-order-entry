@@ -27,6 +27,8 @@ const PAGES = {
   '/order_form': App,
   '/admin': AdminApp,
   '/reps': RepsApp,
+  // Public — no sign-in, which is the point: "I can't sign in" is one of the
+  // things it answers.
   '/faq': FaqPage,
 }
 

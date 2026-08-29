@@ -6,6 +6,12 @@
 
 import { useState } from 'react'
 import { FAQ_SECTIONS } from './faqContent'
+// Imported HERE, not from main.jsx. It used to be a line three directories
+// away, and the component reached a deployed build without it — every question
+// fell back to the global `button` rule (black uppercase pills), the page lost
+// its centred column, and it looked broken rather than unstyled. Styles that
+// belong to one component travel with it.
+import './faq.css'
 
 /** One question. Open state lives here rather than in the page so that opening
  *  one answer never re-renders the others — and so a half-read answer does not
