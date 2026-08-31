@@ -43,6 +43,38 @@ def _due(order: Order, now: datetime) -> bool:
     return now - order.signature_requested_at >= timedelta(hours=schedule[sent])
 
 
+def skip_elapsed_stages(order: Order, now: datetime | None = None) -> None:
+    """Move both cursors past every threshold this order has already outlived.
+
+    Called on a MANUAL resend. The anchor deliberately does not move (chasing is
+    spaced from the first request, not from whoever last intervened), which
+    leaves every threshold between the last send and now sitting overdue. The
+    sweep fires ONE rung per order per tick, so a backlog does not collapse into
+    a single email -- it becomes one an hour until the cursor catches up. An
+    order that spent three weeks on an expired link would mail the buyer four
+    times in four hours, immediately after a person had just written to them.
+
+    Skipping is the right answer rather than sending: the buyer has this moment
+    been emailed by hand, so a reminder that they have not replied is both false
+    and annoying. Reminders are a schedule, not a debt -- a missed one is missed,
+    not owed.
+
+    Never rewinds: max() against the stored value, so a cursor already ahead of
+    the elapsed count (a schedule that was shortened underneath in-flight orders,
+    which is exactly what the 2026-08-21 rewrite did) keeps its place.
+    """
+    if order.signature_requested_at is None:
+        return
+    now = now or datetime.now(timezone.utc)
+    age = now - order.signature_requested_at
+
+    elapsed = sum(1 for h in settings.signature_reminder_hours if timedelta(hours=h) <= age)
+    order.signature_reminders_sent = max(order.signature_reminders_sent or 0, elapsed)
+
+    elapsed_rep = sum(1 for h in settings.rep_followup_hours if timedelta(hours=h) <= age)
+    order.rep_followups_sent = max(order.rep_followups_sent or 0, elapsed_rep)
+
+
 def _candidates(db: Session, now: datetime) -> list[Order]:
     """Orders with a live link that has already been emailed once.
 

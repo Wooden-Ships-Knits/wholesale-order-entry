@@ -1046,6 +1046,12 @@ button:hover {
   color: #1d1d1b;
   border-bottom-color: #1a1a1a;
 }
+/* A tab that is a link rather than a panel switch (DOF → the order form). The
+   colour above already wins over the UA default; only the underline needs
+   removing so it sits level with the buttons beside it. */
+a.admin-tab {
+  text-decoration: none;
+}
 .chip {
   padding: 0.3rem 0.75rem;
   font-size: 0.85rem;
@@ -1127,6 +1133,27 @@ button:hover {
   font-size: 0.75rem;
   margin-top: 0.15rem;
 }
+/* "+4 more" in the Brands cell. Styled as the .sub hint it sits among rather
+   than as a button: a table cell full of buttons reads as a form. It IS a
+   real button underneath, so it is reachable by keyboard and announces its
+   state. */
+.admin-table .brand-more {
+  color: #888;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.admin-table .brand-more:hover {
+  color: #1a1a1a;
+}
+
 /* Totals row. Sticks to the bottom of the viewport for the same reason the
    header sticks to the top: with a long list the figure you want is otherwise
    a full scroll away from the rows you are reading. */
@@ -2008,6 +2035,45 @@ button:hover {
 .mark-btn.marked { color: #d9a520; }
 .mark-btn:hover { background: none; color: #d9a520; }
 .badge-women { color: #2f6f4e; }
+
+/* ---- Prospect assessment (app/prospects/assess.py) --------------------- */
+/* Colour carries the verdict, so the WORD has to as well: a rep printing the
+   list or reading it colour-blind must still get the answer. Hence labels, not
+   dots. */
+.verdict-strong { color: #2f6f4e; font-weight: 600; }
+.verdict-possible { color: #8a6d1f; font-weight: 600; }
+.verdict-weak { color: #999; }
+.verdict-unknown { color: #999; font-style: italic; }
+/* The rep sentence is one or two lines of prose in a table cell. Clamped so a
+   long one cannot push every other row's height out; the full text is the
+   title attribute. */
+.verdict-note {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 22rem;
+}
+/* Deliberately the one thing in this column that is red. It means the answer
+   above it failed its own check. */
+.verdict-problem { color: #a33; }
+/* The same verdict word inside a Leaflet popup, which is plain DOM outside the
+   React tree — so it needs its own block rather than inheriting the table's. */
+.popup-verdict { font-weight: 600; }
+/* The count riding on the "Worth a call" chip. Muted on an inactive chip and
+   inherited on the active one, so it reads as part of the label either way. */
+.chip-count { font-weight: 600; opacity: 0.75; }
+/* An explanation, not a fault. Deliberately not the red of .admin-error — see
+   the note in ProspectsPanel. */
+.admin-notice {
+  color: #5b5344;
+  background: #f6f4ef;
+  border-left: 3px solid #c9bfa8;
+  padding: 0.55rem 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+.map-popup .verdict-problem { display: inline-block; margin-top: 0.15rem; }
 .map-popup { font-size: 0.82rem; line-height: 1.5; }
 
 /* ---- Save draft on the signing page ---------------------------------- */
@@ -2115,4 +2181,148 @@ button:hover {
   .sign-summary-grid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* ---- Sortable headers on the prospects table --------------------------- */
+/* A header that is also a control needs to look clickable without becoming a
+   button visually — the row is still a table header first. */
+.sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+.sort-btn:hover { background: none; color: #000; }
+/* Dim until it is the column actually sorting, so one arrow reads as "this
+   one" and the rest as "you could". */
+.sort-arrow { opacity: 0.35; font-size: 0.9em; }
+.sort-btn.active { font-weight: 700; }
+.sort-btn.active .sort-arrow { opacity: 1; }
+
+/* ---- Map layer toggles (the legend doubles as the control) -------------- */
+.prospect-map-legend label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+  user-select: none;
+}
+.prospect-map-legend input[type='checkbox'] {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+}
+/* A hidden layer must still read as "available but off", not as absent. */
+.prospect-map-legend .layer-off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* ---- FAQ link under the rep sign-in ------------------------------------ */
+/* Deliberately low contrast: it is a way out for someone stuck, not a second
+   call to action competing with Sign in. Still a real link — underlined on
+   hover and focus, and it darkens on both, so it never becomes something you
+   can see but cannot tell is clickable.
+   #a3968a on the #f2f0eb page ground is ~2.6:1 — under the WCAG minimum, so
+   this is a considered exception for a secondary link, not an oversight. */
+.admin-login .faq-link {
+  display: block;
+  margin-top: 1.1rem;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a3968a;
+  text-decoration: none;
+}
+.admin-login .faq-link:hover,
+.admin-login .faq-link:focus-visible {
+  color: #6f635a;
+  text-decoration: underline;
+/* ---- Decision column (/admin) ------------------------------------------ */
+/* Wider than the rest: it now carries the status, the date it was decided, a
+   decline reason in the team's own words, and the Salesforce order link. At
+   the default width those wrapped to one word per line. */
+.admin-table th.decision-col,
+.admin-table td.decision-col {
+  min-width: 11rem;
+}
+/* A reason is a sentence someone typed, so let it wrap rather than stretching
+   the column to fit the longest one on the page. */
+.admin-table td.decision-col .sub {
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* "What's new" tab — the changelog rendered from version.md. Narrow measure:
+   it is prose, and prose set to the width of a 15-column order table is
+   unreadable. Everything else inherits the page. */
+.version-panel {
+  max-width: 46rem;
+  padding: 0.5rem 0 2rem;
+  line-height: 1.6;
+}
+.version-panel h1 {
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+}
+.version-panel h2 {
+  font-size: 1.05rem;
+  margin: 2rem 0 0.75rem;
+}
+.version-panel h3 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b6862;
+  margin: 1.5rem 0 0.5rem;
+}
+.version-panel p {
+  margin: 0 0 0.75rem;
+}
+.version-panel ul {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+}
+.version-panel li {
+  margin-bottom: 0.6rem;
+}
+.version-panel hr {
+  border: 0;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+.version-panel code {
+  background: #efece6;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.9em;
+}
+
+/* FAQ link under the rep sign-in. Low-contrast on purpose: a rep signing in
+   fine should not be pulled towards it, but one who is stuck needs a way out. */
+.admin-login .faq-link {
+  display: block;
+  margin-top: 1.1rem;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a3968a;
+  text-decoration: none;
+}
+.admin-login .faq-link:hover,
+.admin-login .faq-link:focus-visible {
+  color: #6f635a;
+  text-decoration: underline;
 }

@@ -4,14 +4,30 @@
 //
 // Colours mirror the Python map (app/maps/prospecting.py::plot) on purpose —
 // grey for stores we already sell to, yellow for prospects — so the folium HTML
-// and this page read as one tool rather than two.
+// and this page read as one tool rather than two. The verdict layer below is an
+// addition the folium map has no equivalent for: it varies SIZE and OPACITY of
+// the same yellow, never the hue, so "yellow means prospect" stays true.
 
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const FL_CENTER = [27.8, -81.7]
-const FL_ZOOM = 6
+// The whole lower 48. A rep's territory can be nine states, and several span
+// the country — opening on one state meant most reps landed somewhere their
+// dots were not. Alaska and Hawaii sit outside this; the search box or a chip
+// gets there in one step, which is better than zooming out far enough to fit
+// them and rendering everyone else too small to read.
+const US_CENTER = [39.5, -98.35]
+const US_ZOOM = 4
+
+// CARTO's raster basemaps stopped serving keyless requests unwatermarked, so
+// the tile URL now carries a key. It is a browser key like the Google Maps one
+// — baked into the bundle at build time, visible to anyone who opens devtools,
+// and restricted at CARTO's end by the domain it was issued for. Not a secret,
+// but it still lives in frontend/.env rather than here, because it differs
+// between the dev VM and production.
+const CARTO_TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+const CARTO_KEY = import.meta.env.VITE_CARTO_API_KEY || ''
 
 const ACCOUNT = { color: '#6b7280', fillColor: '#9aa0a6', fillOpacity: 0.85, weight: 1, radius: 5 }
 // Midway between the folium map's acid '#f2ff01' and the softer '#f2c14e'
@@ -22,6 +38,30 @@ const PROSPECT = { color: '#ae8207', fillColor: '#f2e027', fillOpacity: 0.9, wei
 // prospect — but ringed, because "there is already a store nearby" is the one
 // thing a rep must see before picking up the phone.
 const CONFLICT = { ...PROSPECT, color: '#b9451d', weight: 2 }
+
+// How the assessment (app/prospects/assess.py) changes a dot. Size and opacity
+// only — the stroke stays free to mean "conflict", which is the one thing a rep
+// must see before phoning, and hue stays free to mean "prospect".
+//
+// A shop with NO verdict is drawn unchanged, at the base size. That is the
+// honest default: it has not been assessed, which is different from having been
+// assessed poorly, and shrinking it would state a finding nobody made.
+const VERDICT = {
+  strong: { radius: 9, fillOpacity: 1 },
+  possible: { radius: 8, fillOpacity: 1 },
+  weak: { radius: 4, fillOpacity: 0.4 },
+  // Not "bad" — we could not read the shelf. Faded because there is nothing to
+  // act on, not because the shop was judged and found wanting. 30 of the first
+  // 92 landed here through scraper failure alone.
+  insufficient_data: { radius: 4, fillOpacity: 0.25 },
+}
+
+/** Base style for a prospect: its conflict state, then its verdict. */
+const prospectStyle = (p) => {
+  const base = p.potentialConflict ? CONFLICT : PROSPECT
+  const v = VERDICT[p.verdict]
+  return v ? { ...base, ...v } : base
+}
 
 // When a city is selected, its stores grow and everything else fades rather
 // than disappearing. Removing the others would lose the context that makes the
@@ -43,8 +83,26 @@ const esc = (s) =>
 /** Popup body. Built as a string because Leaflet popups are plain DOM — there
  *  is no React tree inside the map, and rendering one per marker for ~900
  *  markers would cost far more than it returns. */
+const VERDICT_LABEL = {
+  strong: 'Strong', possible: 'Possible', weak: 'Weak',
+  insufficient_data: 'Couldn\u2019t read site',
+}
+
 function popupHtml(p) {
   const bits = [`<strong>${esc(p.storeName)}</strong>`]
+  // Directly under the name: it is the answer the rep opened the dot for, and
+  // burying it under the address would make the map a worse version of the
+  // table rather than a different view of it.
+  if (p.verdict) {
+    const label = VERDICT_LABEL[p.verdict] || p.verdict
+    bits.push(
+      `<span class="popup-verdict verdict-${esc(p.verdict)}">${esc(label)}</span>` +
+        (p.forTheRep ? `<br/>${esc(p.forTheRep)}` : ''),
+    )
+  }
+  // judge.check() disagreed with the verdict above. The only marker saying the
+  // answer is unchecked, so it cannot be left out of the map copy of it.
+  if (p.problems) bits.push(`<span class="verdict-problem">\u26a0 unchecked: ${esc(p.problems)}</span>`)
   if (p.address) bits.push(esc(p.address))
   if (p.rating != null) bits.push(`★ ${esc(p.rating)}${p.reviewCount ? ` (${esc(p.reviewCount)})` : ''}`)
   if (p.phone) bits.push(esc(p.phone))
@@ -65,6 +123,10 @@ export default function Map({
   expanded = false,
   focus = null,
   highlightCity = null, // { name, bounds } — stores in this city stand out
+  // Which circles to draw. Hiding a layer is a VIEW choice, not a filter: the
+  // table still lists every row, so dropping the grey dots to read a crowded
+  // high street does not change what the rep is working from.
+  layers = { prospect: true, conflict: true, account: true },
 }) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
@@ -84,8 +146,8 @@ export default function Map({
       // rendering starts to stutter on pan, and this is the same volume the
       // folium map struggled with.
       preferCanvas: true,
-      center: FL_CENTER,
-      zoom: FL_ZOOM,
+      center: US_CENTER,
+      zoom: US_ZOOM,
       scrollWheelZoom: false, // enabled only when expanded — see below
     })
     // CartoDB Positron — the SAME basemap as the Python map
@@ -94,7 +156,13 @@ export default function Map({
     // tiles with a CSS filter: Positron removes road and label clutter by
     // design rather than just desaturating it, which is what lets the markers
     // carry the page.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    //
+    // The key is appended only when one is configured. Without it CARTO still
+    // serves the tiles, but stamps "API KEY REQUIRED" across every one of them
+    // — so a missing key degrades to a watermarked map rather than a blank one,
+    // and `?key=undefined` (which would be a request for a key that isn't ours)
+    // never gets sent.
+    L.tileLayer(`${CARTO_TILES}${CARTO_KEY ? `?key=${CARTO_KEY}` : ''}`, {
       maxZoom: 19,
       // Both attributions are required — OSM for the data, CARTO for the tiles.
       attribution:
@@ -125,25 +193,31 @@ export default function Map({
     const stateOf = (row) =>
       !city ? 'normal' : (row.city || '').trim().toLowerCase() === city ? 'hit' : 'dim'
 
-    accounts.forEach((a, i) => {
-      if (a.latitude == null || a.longitude == null) return
-      const m = L.circleMarker([a.latitude, a.longitude], styleFor(ACCOUNT, stateOf(a)))
-        .bindPopup(`<div class="map-popup"><strong>${esc(a.name)}</strong><br/>current stockist</div>`)
-        .addTo(aLayer)
-      markersRef.current[`account:${i}`] = m
-    })
+    if (layers.account) {
+      accounts.forEach((a, i) => {
+        if (a.latitude == null || a.longitude == null) return
+        const m = L.circleMarker([a.latitude, a.longitude], styleFor(ACCOUNT, stateOf(a)))
+          .bindPopup(`<div class="map-popup"><strong>${esc(a.name)}</strong><br/>current stockist</div>`)
+          .addTo(aLayer)
+        markersRef.current[`account:${i}`] = m
+      })
+    }
 
     prospects.forEach((p) => {
       if (p.latitude == null || p.longitude == null) return
-      const base = p.potentialConflict ? CONFLICT : PROSPECT
-      const m = L.circleMarker([p.latitude, p.longitude], styleFor(base, stateOf(p)))
+      // Two prospect layers, toggled separately: "we already sell nearby" and
+      // "we do not" are the two piles a rep sorts into, and being able to drop
+      // one is most of the value of a legend.
+      if (!(p.potentialConflict ? layers.conflict : layers.prospect)) return
+      const m = L.circleMarker([p.latitude, p.longitude],
+                               styleFor(prospectStyle(p), stateOf(p)))
         .bindPopup(popupHtml(p))
         .addTo(pLayer)
       // Highlighted pins should sit above the faded ones.
       if (stateOf(p) === 'hit') m.bringToFront()
       markersRef.current[p.id] = m
     })
-  }, [prospects, accounts, highlightCity])
+  }, [prospects, accounts, highlightCity, layers])
 
   // Frame the chosen city on the bounds of the stores actually in it. No
   // boundary polygon is drawn: we do not have one, and a rectangle or a

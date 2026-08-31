@@ -12,6 +12,7 @@ import {
   setOrderAccount,
   setOrderShipWindow,
   setOrderStatus,
+  setTaxCertCleared,
   suggestAccounts,
 } from './api'
 import { distinctValues, rankCode } from './filterOrders'
@@ -339,9 +340,34 @@ function PaymentCell({ order: o }) {
 // The email now goes out automatically at submit (orders._send_signature_request);
 // this column confirms it happened and is where a resend or cancel is done.
 function SignatureCell({ order: o, sent, drafting, cancelling, onDraft, onCancel }) {
-  // Signed on the form, so there is nothing outstanding. Deliberately empty:
-  // a "—" here would read as missing data rather than "not applicable".
-  if (!o.signatureRequested) return <td className="flag-green" />
+  // Signed on the form itself — a customer-filled order, where the buyer typed
+  // their name at submit and no link was ever sent. It IS signed, so it says
+  // so: the cell used to be blank here, which read as "still waiting" for the
+  // one case that needs no chasing at all.
+  //
+  // "on the form" stays because the two are not the same evidence: one is a
+  // name typed into a page anyone could open, the other is a name typed behind
+  // a single-use emailed token. The team should be able to tell them apart.
+  if (!o.signatureRequested) {
+    if (!o.signatureName) return <td className="flag-green" />
+    return (
+      <td className="flag-green">
+        <div className="cert-missing">
+          <span className="sf-created">Signed ✓</span>
+          <span className="sub">{o.signatureName}</span>
+          {o.signatureDate && (
+            <span className="sub">
+              {new Date(o.signatureDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })}
+            </span>
+          )}
+          <span className="sub">on the form</span>
+        </div>
+      </td>
+    )
+  }
 
   if (o.signatureSignedAt) {
     // The buyer may have changed quantities before signing. Say so — otherwise
@@ -452,6 +478,7 @@ export default function OrderTable({
   const [resolving, setResolving] = useState(null) // id of the order whose conflict is being resolved
   const [sentConflict, setSentConflict] = useState(() => new Set()) // orders whose conflict email was sent
   const [sentTaxCert, setSentTaxCert] = useState(() => new Set()) // orders whose tax-cert email was sent
+  const [clearingCert, setClearingCert] = useState(null) // id of the order whose cert chase is being closed
   const [sentSignature, setSentSignature] = useState(() => new Set()) // orders whose signature link was sent
   const [draftingSignature, setDraftingSignature] = useState(null)
   const [cancellingSignature, setCancellingSignature] = useState(null)
@@ -536,11 +563,17 @@ export default function OrderTable({
   // Record how a conflict inquiry ended (cleared / real conflict) so the row
   // closes. A note is optional (prefilled when confirming an AI suggestion);
   // cancelling the prompt aborts without saving.
-  async function resolveConflict(order, outcome, defaultNote = '') {
+  async function resolveConflict(order, outcome, defaultNote = '', { noEmail = false } = {}) {
     const note = window.prompt(
-      outcome === 'cleared'
-        ? 'Mark CLEARED — safe to proceed. Optional note (e.g. what the rep said):'
-        : 'Mark REAL CONFLICT. Optional note (e.g. what the rep said):',
+      noEmail
+        ? // A different question from the two below: nobody has asked the rep
+          // anything, so "what the rep said" would be inviting a lie. The note
+          // is where the ACTUAL basis goes — which order this was settled on.
+          'Mark CLEARED without emailing the rep — use when this account was ' +
+            'already settled on another order.\n\nNote (e.g. "cleared on order 60d641b8"):'
+        : outcome === 'cleared'
+          ? 'Mark CLEARED — safe to proceed. Optional note (e.g. what the rep said):'
+          : 'Mark REAL CONFLICT. Optional note (e.g. what the rep said):',
       defaultNote,
     )
     if (note === null) return // cancelled
@@ -609,6 +642,30 @@ export default function OrderTable({
     }
     if (draft?.signatureOrderId) {
       setSentSignature((prev) => new Set(prev).add(draft.signatureOrderId))
+    }
+  }
+
+  // Stop chasing the certificate on this order. For a batch from one new store,
+  // where the buyer sends the document once and the other rows would otherwise
+  // sit yellow for ever. The note is REQUIRED in practice, not decoration: it is
+  // the only thing linking this row to the order that holds the real document,
+  // which is exactly what anyone auditing the exemption will ask for.
+  async function clearTaxCert(order) {
+    const note = window.prompt(
+      'Stop chasing the tax certificate for this order — use when the same ' +
+        'account already sent one on another order.\n\n' +
+        'Note (e.g. "certificate on order 60d641b8"):',
+      '',
+    )
+    if (note === null) return // cancelled
+    setClearingCert(order.id)
+    try {
+      await setTaxCertCleared(order.id, note)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setClearingCert(null)
     }
   }
 
@@ -700,7 +757,7 @@ export default function OrderTable({
             <th>Payment</th>
             <th>Notes</th>
             <th>Special Instruction</th>
-            <th>Decision</th>
+            <th className="decision-col">Decision</th>
           </tr>
           {/* Per-column filters. Every cell is controlled by one key of the
               `filters` object owned by AdminApp; '' means "no filter". The
@@ -890,9 +947,31 @@ export default function OrderTable({
                 onChange={(e) => onFilterChange('specialInstructions', e.target.value)}
               />
             </th>
-            {/* Decision: no filter here — the toolbar chips above already
-                filter by status, server-side. */}
-            <th aria-hidden="true" />
+            {/* Status itself is filtered by the toolbar chips, server-side —
+                one control per question. This range answers the OTHER one:
+                when was it decided, as opposed to when it was placed. */}
+            <th>
+              <div className="filter-range">
+                <label>
+                  <span>Decided from</span>
+                  <input
+                    type="date"
+                    value={filters.decidedFrom}
+                    max={filters.decidedTo || undefined}
+                    onChange={(e) => onFilterChange('decidedFrom', e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>To</span>
+                  <input
+                    type="date"
+                    value={filters.decidedTo}
+                    min={filters.decidedFrom || undefined}
+                    onChange={(e) => onFilterChange('decidedTo', e.target.value)}
+                  />
+                </label>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1049,14 +1128,35 @@ export default function OrderTable({
                           </div>
                         </>
                       ) : (
-                        <button
-                          type="button"
-                          className="chip"
-                          disabled={drafting === o.id}
-                          onClick={() => draftEmail(o)}
-                        >
-                          {drafting === o.id ? 'Generating…' : 'Generate email'}
-                        </button>
+                        /* Nothing asked of the rep yet. Two ways out, because a
+                           rep who submits four orders for one new account
+                           produces four identical conflicts — mailing them
+                           about each is noise, so once ONE is settled the rest
+                           are cleared here without a second inquiry.
+                           No "Real conflict" beside it on purpose: declaring a
+                           conflict real is the answer to a question nobody has
+                           asked yet, and it is the outcome that stops an order.
+                           Clearing in batch is undoing duplicate work; blocking
+                           in batch would be deciding without the rep. */
+                        <div className="decide">
+                          <button
+                            type="button"
+                            className="chip"
+                            disabled={drafting === o.id}
+                            onClick={() => draftEmail(o)}
+                          >
+                            {drafting === o.id ? 'Generating…' : 'Generate email'}
+                          </button>
+                          <button
+                            type="button"
+                            className="chip"
+                            disabled={resolving === o.id}
+                            title="Already settled on another order for this account — clear without emailing the rep"
+                            onClick={() => resolveConflict(o, 'cleared', '', { noEmail: true })}
+                          >
+                            Cleared
+                          </button>
+                        </div>
                       )}
                     </div>
                   )
@@ -1064,22 +1164,57 @@ export default function OrderTable({
                   'No'
                 )}
               </td>
-              <td className={o.hasCertificate ? 'flag-green' : o.isNewAccount ? 'flag-yellow' : undefined}>
+              <td
+                className={
+                  o.hasCertificate || o.taxCertCleared
+                    ? 'flag-green'
+                    : o.isNewAccount
+                      ? 'flag-yellow'
+                      : undefined
+                }
+              >
                 {o.hasCertificate ? (
                   <a href={certUrl(o.id)} target="_blank" rel="noreferrer">
                     Open
                   </a>
+                ) : o.taxCertCleared ? (
+                  /* Chase closed by hand. Says "No" FIRST and keeps it: there
+                     is still no certificate against this order, and a green
+                     cell that hid that would be the one thing an auditor is
+                     looking for. The note — which order does hold it — is the
+                     hover, same as a resolved conflict. */
+                  <div className="cert-missing">
+                    <span>No</span>
+                    <span className="sf-created" title={o.taxCertClearedNote || ''}>
+                      Cleared ✓ not chasing
+                    </span>
+                  </div>
                 ) : o.isNewAccount ? (
                   /* new account, no cert uploaded → show No + offer to request one */
                   <div className="cert-missing">
                     <span>No</span>
                     {o.taxCertEmailSent || sentTaxCert.has(o.id) ? (
                       <span className="sf-created">Email Sent ✓ waiting for the response</span>
-                    ) : (
-                      <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
-                        Generate email
+                    ) : null}
+                    {/* Both actions in both states: the certificate can arrive
+                        on a sibling order whether or not this row was mailed,
+                        and once it has, chasing this one is noise. */}
+                    <div className="decide">
+                      {!(o.taxCertEmailSent || sentTaxCert.has(o.id)) && (
+                        <button type="button" className="chip" onClick={() => requestTaxCert(o)}>
+                          Generate email
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="chip"
+                        disabled={clearingCert === o.id}
+                        title="Already received on another order for this account — stop chasing this one"
+                        onClick={() => clearTaxCert(o)}
+                      >
+                        Cleared
                       </button>
-                    )}
+                    </div>
                   </div>
                 ) : (
                   <span className="unknown">—</span>
@@ -1092,7 +1227,7 @@ export default function OrderTable({
               <td className="notes-cell" title={o.specialInstructions || ''}>
                 {o.specialInstructions || <span className="unknown">—</span>}
               </td>
-              <td>
+              <td className="decision-col">
                 {o.status === 'submitted' ? (
                   <div className="decide">
                     <button type="button" className="accept" onClick={() => decide(o, 'accepted')}>
@@ -1104,9 +1239,24 @@ export default function OrderTable({
                   </div>
                 ) : (
                   <div className="cert-missing">
-                    <span className={`status ${o.status}`} title={o.statusReason || ''}>
-                      {o.status}
-                    </span>
+                    <span className={`status ${o.status}`}>{o.status}</span>
+                    {/* WHEN it was decided. /reps has shown this all along and
+                        /admin has not, so the rep could see when an order was
+                        accepted and the office could not. */}
+                    {o.statusAt && (
+                      <span className="sub">
+                        {new Date(o.statusAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    )}
+                    {/* Visible, not a `title`. A tooltip never appears on a
+                        touch screen, cannot be copied, and vanishes while you
+                        read it — and a decline reason is the one thing anyone
+                        revisiting this row wants. */}
+                    {o.statusReason && <span className="sub">{o.statusReason}</span>}
                     {o.sfOrderNumber && (
                       <a
                         className="sf-created"

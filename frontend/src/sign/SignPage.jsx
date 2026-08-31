@@ -431,9 +431,12 @@ export default function SignPage({ token }) {
       )}
 
       <form className="section terms" onSubmit={handleSign}>
-        <h2>ORDER POLICIES</h2>
+        <h2>ORDER TERMS & CONDITIONS</h2>
         <div className="terms-text">
           <ul>
+            <li>
+              <strong>All Orders are Pre-Pay</strong>. Net Terms are not available. Payment is due right before shipping.
+            </li>
             <li>
               All Wooden Ships are <strong>made to order</strong>.
             </li>
@@ -468,7 +471,7 @@ export default function SignPage({ token }) {
             onChange={(e) => setAccepted(e.target.checked)}
           />
           <span>
-            I have read and accept the Order Policies.<span className="req">*</span>
+            I have read and accept the Order Terms & Conditions.<span className="req">*</span>
           </span>
         </label>
         <label className="check">

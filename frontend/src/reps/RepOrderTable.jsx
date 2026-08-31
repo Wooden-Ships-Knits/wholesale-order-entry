@@ -27,9 +27,22 @@ function shortDate(iso) {
  *    green + name  — signed
  *  The read-only half of the admin cell: no send, resend or cancel. */
 function SignatureCell({ order: o }) {
-  // Deliberately empty: a "—" here would read as missing data rather than
-  // "not applicable".
-  if (!o.signatureRequested) return <td className="flag-green" />
+  // Signed on the form itself — a customer-filled order, signed at submit with
+  // no link ever sent. Says so rather than showing blank, which read as "still
+  // waiting" for the one case needing no chasing. Same wording as /admin.
+  if (!o.signatureRequested) {
+    if (!o.signatureName) return <td className="flag-green" />
+    return (
+      <td className="flag-green">
+        <div className="cert-missing">
+          <span className="sf-created">Signed ✓</span>
+          <span className="sub">{o.signatureName}</span>
+          {o.signatureDate && <span className="sub">{shortDate(o.signatureDate)}</span>}
+          <span className="sub">on the form</span>
+        </div>
+      </td>
+    )
+  }
 
   if (o.signatureSignedAt) {
     return (

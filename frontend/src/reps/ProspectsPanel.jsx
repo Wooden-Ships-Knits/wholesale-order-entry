@@ -8,26 +8,48 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getProspects, markProspect } from './api'
 import ProspectMap from './Map'
+import {
+  EMPTY_FILTERS,
+  filterProspects,
+  hasActiveFilters,
+  sortProspects,
+} from './filterProspects'
 import ProspectTable from './ProspectTable'
 
 const FILTERS = [
   { value: '', label: 'All' },
   // The default view a rep wants: somewhere we do not already have a store.
   { value: 'open', label: 'No stockist nearby' },
-  { value: 'women', label: 'Womenswear' },
+  // The assessment's own answer (app/prospects/assess.py). Of 225 swept shops
+  // only a handful ever score this well, and without a chip to isolate them a
+  // rep is hunting three rows inside two hundred identical ones.
+  // { value: 'worth', label: 'Worth a call' },
+  // { value: 'women', label: 'Womenswear' },
   { value: 'marked', label: 'My shortlist' },
 ]
+
+// Verdicts that mean "pick up the phone". `weak` and `insufficient_data` are
+// both answers, not absences — see the note on WORTH_A_CALL in Map.jsx.
+const WORTH_A_CALL = new Set(['strong', 'possible'])
 
 export default function ProspectsPanel() {
   const [prospects, setProspects] = useState([])
   const [accounts, setAccounts] = useState([])
   const [counts, setCounts] = useState(null)
-  const [filter, setFilter] = useState('open')
+  const [filter, setFilter] = useState('')
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState(false)
   const [focus, setFocus] = useState(null)
   const [city, setCity] = useState(null) // { name, bounds } from a chosen city
   const [cityOnly, setCityOnly] = useState(false) // also narrow the table to it
+  // Per-column filters, one object rather than one useState per column so
+  // "Clear" is a single assignment — same shape as the Orders table.
+  const [colFilters, setColFilters] = useState(EMPTY_FILTERS)
+  // key = null means "server order"; clicking a header cycles asc -> desc -> off.
+  const [sort, setSort] = useState({ key: null, dir: 'asc' })
+  // Which circle types the map draws. A view control, not a filter — the table
+  // below still lists every row.
+  const [layers, setLayers] = useState({ prospect: true, conflict: true, account: true })
   const [busyId, setBusyId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -41,7 +63,15 @@ export default function ProspectsPanel() {
       setProspects(d.prospects || [])
       setAccounts(d.accounts || [])
       setCounts(d.counts || null)
-      setNotice(d.mocked ? 'Showing sample data — the prospects endpoint is not live yet.' : '')
+      // d.message is the server's explanation for an EMPTY list — no sales
+      // territory, or no sweep run for this rep's states yet. It was being
+      // dropped here, so those cases rendered as a bare "Showing 0 of 0
+      // prospects" and read as a broken page rather than as an answer.
+      setNotice(
+        d.mocked
+          ? 'Showing sample data — the prospects endpoint is not live yet.'
+          : d.message || '',
+      )
     } catch (err) {
       setError(err.message)
     } finally {
@@ -69,11 +99,19 @@ export default function ProspectsPanel() {
     () =>
       prospects.filter((p) => {
         if (filter === 'open' && p.potentialConflict) return false
+        if (filter === 'worth' && !WORTH_A_CALL.has(p.verdict)) return false
         if (filter === 'women' && !p.womenswear) return false
         if (filter === 'marked' && !p.marked) return false
         return true
       }),
     [prospects, filter],
+  )
+
+  // Counted over EVERYTHING loaded, not over `visible` — the whole point is to
+  // advertise findings the current chip is hiding.
+  const worthCount = useMemo(
+    () => prospects.filter((p) => WORTH_A_CALL.has(p.verdict)).length,
+    [prospects],
   )
 
   // Matches over everything loaded, not just `visible`: searching for a store
@@ -211,6 +249,27 @@ export default function ProspectsPanel() {
     setCityOnly(false)
   }
 
+  const setColField = (key, value) => setColFilters((f) => ({ ...f, [key]: value }))
+
+  // asc -> desc -> off. The third state matters: without it a rep can never
+  // get back to the order the server sent, which is distance-then-name and is
+  // often the one they actually wanted.
+  const onSort = (key) =>
+    setSort((s) =>
+      s.key !== key
+        ? { key, dir: 'asc' }
+        : s.dir === 'asc'
+          ? { key, dir: 'desc' }
+          : { key: null, dir: 'asc' },
+    )
+
+  // Column filters and sort apply on TOP of the chips and the city banner, so
+  // the table narrows the map's selection rather than fighting it.
+  const finalRows = useMemo(
+    () => sortProspects(filterProspects(tableRows, colFilters), sort.key, sort.dir),
+    [tableRows, colFilters, sort],
+  )
+
   const toggleMark = async (p) => {
     setBusyId(p.id)
     // Optimistic: the star flips immediately and reverts if the write fails.
@@ -238,15 +297,33 @@ export default function ProspectsPanel() {
             onClick={() => setFilter(f.value)}
           >
             {f.label}
+            {/* ONLY on this chip, and it earns the exception. The default view
+                is "No stockist nearby", and every shop the assessment rates
+                worth calling can sit inside a catchment — in the first CA/HI
+                run all three did. Without the count the tab opens on a list
+                that excludes every finding, and reads as though the assessment
+                turned up nothing. */}
+            {f.value === 'worth' && worthCount > 0 && (
+              <span className="chip-count"> {worthCount}</span>
+            )}
           </button>
         ))}
+        {/* Only once a column filter is on: the chips already show what they
+            are narrowing, a column filter has no such marker. */}
+        {hasActiveFilters(colFilters) && (
+          <button type="button" className="chip" onClick={() => setColFilters(EMPTY_FILTERS)}>
+            Clear column filters
+          </button>
+        )}
         <button type="button" className="link-btn" onClick={load} disabled={loading}>
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>
       </div>
 
       {error && <p className="admin-error">{error}</p>}
-      {notice && <p className="admin-error">{notice}</p>}
+      {/* NOT admin-error: "no sweep has covered your states yet" is an answer,
+          and styling it red tells a rep something is broken when nothing is. */}
+      {notice && <p className="admin-notice">{notice}</p>}
 
       {/* The backdrop is a SIBLING of the map card, never its parent. React
           reconciles by position in the tree, so moving <Map> inside an overlay
@@ -264,6 +341,7 @@ export default function ProspectsPanel() {
           expanded={expanded}
           focus={focus}
           highlightCity={city}
+          layers={layers}
         />
 
         {/* Sits ON the map, like any map app's search. It moves the view; it
@@ -324,10 +402,25 @@ export default function ProspectsPanel() {
         >
           {expanded ? 'Close' : 'Expand'}
         </button>
+        {/* The legend IS the layer control. A separate panel would repeat these
+            three labels and leave the reader matching one list to the other. */}
         <div className="prospect-map-legend">
-          <span><i className="dot dot-prospect" /> prospect</span>
-          <span><i className="dot dot-conflict" /> stockist within 10 mi</span>
-          <span><i className="dot dot-account" /> our store</span>
+          {[
+            ['prospect', 'dot-prospect', 'prospect'],
+            ['conflict', 'dot-conflict', 'stockist within 10 mi'],
+            ['account', 'dot-account', 'our store'],
+          ].map(([key, dotClass, label]) => (
+            <label key={key} className={layers[key] ? undefined : 'layer-off'}>
+              <input
+                type="checkbox"
+                checked={layers[key]}
+                onChange={(e) =>
+                  setLayers((l) => ({ ...l, [key]: e.target.checked }))
+                }
+              />
+              <i className={`dot ${dotClass}`} /> {label}
+            </label>
+          ))}
         </div>
       </div>
 
@@ -347,13 +440,18 @@ export default function ProspectsPanel() {
       )}
 
       <p className="prospect-summary">
-        Showing <strong>{tableRows.length}</strong>
+        Showing <strong>{finalRows.length}</strong>
         {counts ? ` of ${counts.total}` : ''} prospects
         {counts?.noConflict != null && filter !== 'open' ? ` · ${counts.noConflict} with no stockist nearby` : ''}
       </p>
 
       <ProspectTable
-        rows={tableRows}
+        rows={finalRows}
+        allRows={prospects}
+        filters={colFilters}
+        onFilterChange={setColField}
+        sort={sort}
+        onSort={onSort}
         onFocus={setFocus}
         onToggleMark={toggleMark}
         busyId={busyId}

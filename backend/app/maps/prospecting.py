@@ -28,7 +28,7 @@ import re
 import time
 import urllib.parse
 import urllib.request
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from difflib import SequenceMatcher
 
 import pandas as pd
@@ -178,6 +178,21 @@ def _name_forms(name: str) -> list[str]:
     return [f for f in forms if f]
 
 
+def _place_id(row) -> str | None:
+    """A usable Google place_id from a row, or None.
+
+    NOT just `row.place_id`. An all-empty place_id column survives a CSV
+    round-trip as float64 NaN, and NaN is TRUTHY — so a plain `if pid:` decided
+    every row was already resolved, skipped the lookup, and posted "nan" to
+    Google as a place id. Empty strings arrive the same way.
+    """
+    v = getattr(row, "place_id", None)
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    v = str(v).strip()
+    return v or None
+
+
 def _metres(lat1, lng1, lat2, lng2) -> float:
     """Haversine. Good to a few metres at these distances."""
     r = 6371000.0
@@ -270,6 +285,15 @@ def existing_accounts(sf, territory: str) -> pd.DataFrame:
     )
     recs = sf.query_all(q)["records"]
     df = pd.DataFrame(recs).drop(columns="attributes", errors="ignore")
+    # A territory with no accounts yields an EMPTY frame with no columns at
+    # all, and every caller then fails on dropna(subset=[...]) or itertuples
+    # attribute access. Guaranteeing the shape means "no accounts" behaves like
+    # "no matches" — which is exactly right for a territory we have not sold
+    # into yet, and is the case a prospecting sweep most wants to run.
+    for col in ("Id", "Name", "Phone", "Website",
+                "ShippingLatitude", "ShippingLongitude", "Rank__c"):
+        if col not in df.columns:
+            df[col] = pd.Series(dtype="object")
     return df
 
 
@@ -387,20 +411,29 @@ def drop_existing(cands: pd.DataFrame, accounts: pd.DataFrame, verbose: bool = T
     return kept, labelled[~is_new].reset_index(drop=True)
 
 
-# Place Details fields, by billing tier. website/address/phone are Basic+Contact;
-# `reviews` is ATMOSPHERE, which is the most expensive tier — it is here because
-# five customers describing a shop in their own words is the cheapest
-# qualifying signal available, and may answer step 2 without fetching any
-# websites at all. Drop it from this string to fall back to the cheaper tier.
+# Place Details fields. THE FIELD LIST SETS THE PRICE: Google bills the whole
+# call at the highest tier any requested field belongs to, so one review field
+# prices every call at the review tier.
 #
-# rating/user_ratings_total are the SAME Atmosphere tier as `reviews`, so while
-# reviews is requested they are free — asking for them separately would be the
-# expensive way round. An OSM row has no rating at all, so without these the
-# column is None for every store no matter how much enrichment is run.
-DETAIL_FIELDS = (
-    "website,formatted_address,formatted_phone_number,address_components,"
-    "reviews,rating,user_ratings_total"
-)
+#   website, phone, opening_hours   mid tier
+#   rating, user_ratings_total,
+#   reviews, price_level            TOP tier — the expensive one
+#
+# Website only, deliberately. It is the field that actually qualifies a shop
+# (you can look at what they sell), and dropping the review fields takes every
+# call down a tier. Everything else degrades rather than breaking:
+#
+#   state    already stamped by discover_osm from the swept state
+#   address  falls back to the OSM vicinity
+#   phone    falls back to the OSM phone tag
+#   rating / review_count / review_text  stay None
+#
+# To get the richer set back for a small shortlist, override it at the call
+# site rather than editing this line — it is read per request:
+#
+#   p.DETAIL_FIELDS = "website,formatted_address,formatted_phone_number," \
+#                     "address_components,reviews,rating,user_ratings_total"
+DETAIL_FIELDS = "website"
 
 
 def _review_text(result: dict, limit: int = 5) -> str | None:
@@ -438,7 +471,7 @@ def add_details(cands: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
     sites, addrs, phones, states, reviews = [], [], [], [], []
     ratings, counts = [], []
     for row in cands.itertuples():
-        pid = getattr(row, "place_id", None)
+        pid = _place_id(row)
         # An OSM row that resolve_place_ids could not match has no place_id.
         # Skipped rather than sent to Google, which would 400 on every one.
         r = {}
@@ -756,6 +789,10 @@ def discover_osm(state: str | Sequence[str] = "FL", *, drop_chains: bool = True,
                           f"Re-run discover_osm({failed!r}) and concat.")
             return out
         state = states[0]
+    # Normalised HERE, not only inside the list branch: a caller passing the
+    # string "ca" reached the Overpass query as US-ca (which works) and would
+    # have stamped "ca" onto every row, where it matches no state filter.
+    state = str(state).strip().upper()
 
     query = f"""
     [out:json][timeout:180];
@@ -820,6 +857,12 @@ def discover_osm(state: str | Sequence[str] = "FL", *, drop_chains: bool = True,
             "url": f"https://www.openstreetmap.org/{e.get('type')}/{e.get('id')}",
             "types": tags.get("shop", ""),
             "found_near": city,
+            # Which state's sweep produced this row. Stamped here rather than
+            # derived later so a multi-state run stays traceable, and so the
+            # column exists even when nothing is enriched. add_details fills
+            # the same column from Google when it runs, preferring Google's
+            # answer and falling back to this — the two agree in practice.
+            "state": state,
             "rating": None,
             "review_count": None,
             "business_status": "OPERATIONAL",
@@ -839,6 +882,13 @@ def discover_osm(state: str | Sequence[str] = "FL", *, drop_chains: bool = True,
             "email": tags.get("email") or tags.get("contact:email"),
             "opening_hours": tags.get("opening_hours"),
             "postcode": tags.get("addr:postcode"),
+            # The one fact this sweep knows for certain and OSM never tags:
+            # the query asked for exactly this state's boundary. add_details
+            # prefers Google's answer when it runs (`_state_of(r) or
+            # _first(row, "state")`), so this is the free floor under it, not a
+            # competitor. Without it a free run_state sweep carries no state at
+            # all -- which is how 225 rows landed with the column NULL.
+            "state": state,
         })
     # A name occurring this often in ONE state is a chain nobody has brand-tagged
     # — Surf Style x13, Sunelli x7, Versona x4, none of them in CHAINS. Catching
@@ -895,8 +945,9 @@ def resolve_place_ids(cands: pd.DataFrame, *, max_metres: float = 300,
 
     ids, hit, miss, far = [], 0, 0, 0
     for c in cands.itertuples():
-        if getattr(c, "place_id", None):
-            ids.append(c.place_id)             # already resolved; do not re-bill
+        known = _place_id(c)
+        if known:
+            ids.append(known)                  # already resolved; do not re-bill
             continue
         query = " ".join(str(v) for v in (c.store_name, _first(c, "vicinity")) if v)
         try:
@@ -962,7 +1013,11 @@ def add_conflict_fast(cands: pd.DataFrame, accounts: pd.DataFrame,
     return out
 
 
-def run_state(sf, territory: str, state: str | Sequence[str] | None = None) -> pd.DataFrame:
+def run_state(
+    sf,
+    territory: str | Mapping[str, Sequence[str]],
+    state: str | Sequence[str] | None = None,
+) -> pd.DataFrame:
     """Whole-territory sweep: OSM -> label existing -> straight-line conflict.
 
     Deliberately free of billed calls so it can be run over and over while the
@@ -972,12 +1027,57 @@ def run_state(sf, territory: str, state: str | Sequence[str] | None = None) -> p
         short = df[~df.potential_conflict].head(50)
         short = p.add_details(p.resolve_place_ids(short))   # billed
 
-    `state` is optional and normally omitted: the REGION sheet already knows
-    which states a territory covers, and a territory is rarely one of them —
-    "Midwest - Aviva Landin" is nine. Deriving it means a sweep cannot quietly
-    cover a fraction of the book because someone passed the label's prefix.
-    Pass it explicitly only to sweep something narrower than the territory.
+    `territory` may also be a MAPPING of {territory: [state codes]}, in which
+    case every entry is swept and the results concatenated:
+
+        df = p.run_state(sf, {"CA/HI - Rande Cohen": ["CA", "HI"],
+                              "FL - Jason Hilsenrad": ["FL"]})
+
+    That form exists because the states a territory covers are sometimes known
+    (or overridden) locally, and pasting a dict beats eleven separate calls
+    that each have to be concatenated by hand. Every row carries `territory`
+    and `state`, so a combined frame stays traceable to where each shop came
+    from. One territory failing is reported and skipped rather than losing the
+    others — same rule as a failing state inside discover_osm.
+
+    `state` is optional for the single-territory form and normally omitted: the
+    REGION sheet already knows which states a territory covers, and a territory
+    is rarely one of them — "Midwest - Aviva Landin" is nine. Deriving it means
+    a sweep cannot quietly cover a fraction of the book because someone passed
+    the label's prefix. Pass it explicitly only to sweep something narrower.
     """
+    if isinstance(territory, Mapping):
+        if state is not None:
+            raise ValueError(
+                "Pass either a {territory: [states]} mapping or a single "
+                "territory with state=, not both."
+            )
+        frames, failed = [], []
+        for i, (name, states) in enumerate(territory.items(), 1):
+            print(f"\n=== [{i}/{len(territory)}] {name} ===")
+            try:
+                part = run_state(sf, name, states)
+            except Exception as exc:
+                failed.append(name)
+                print(f"  !! {name} FAILED ({type(exc).__name__}: {exc}) — skipped")
+                continue
+            if not part.empty:
+                part = part.copy()
+                part["territory"] = name
+                frames.append(part)
+        if not frames:
+            raise RuntimeError(
+                f"every territory failed or returned nothing: {', '.join(territory)}"
+            )
+        out = pd.concat(frames, ignore_index=True)
+        # A shop on a shared border can be swept by two territories.
+        out = out.drop_duplicates(subset="osm_id").reset_index(drop=True)
+        print(f"\n=== TOTAL {len(out)} prospects across "
+              f"{len(territory) - len(failed)}/{len(territory)} territories ===")
+        if failed:
+            print(f"  INCOMPLETE — no data for: {', '.join(failed)}")
+        return out
+
     if state is None:
         # Imported HERE, not at module scope. app.sheets pulls in
         # google-api-python-client, and requiring that just to import this
@@ -1003,6 +1103,10 @@ def run_state(sf, territory: str, state: str | Sequence[str] | None = None) -> p
         print("   nothing left after dedupe")
         return cands
     print("3. nearest stockist (straight-line)")
-    return add_conflict_fast(cands, accounts).sort_values(
+    out = add_conflict_fast(cands, accounts).sort_values(
         ["potential_conflict", "store_name"]
     ).reset_index(drop=True)
+    # Carried on every row so a frame stays readable after several sweeps are
+    # concatenated, and so the loader has the value the prospects table wants.
+    out["territory"] = territory
+    return out

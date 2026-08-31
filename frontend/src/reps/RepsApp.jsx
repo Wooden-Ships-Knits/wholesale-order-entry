@@ -13,9 +13,14 @@ import RepLogin from './RepLogin'
 import RepMetrics from './RepMetrics'
 import RepOrderTable from './RepOrderTable'
 
+// Two panels and one link. An entry with `href` is NOT a tab: it navigates
+// away instead of swapping the panel below, so it must never become the active
+// `tab` — there is no panel to render for it, and selecting it would leave the
+// Orders table showing under a heading that says otherwise.
 const TABS = [
   { value: 'orders', label: 'Orders' },
   // { value: 'prospects', label: 'Prospects' },
+  // { value: 'dof', label: 'DOF', href: '/order_form' },
 ]
 
 // All first, unlike /admin's "Awaiting review": the office triages a pending
@@ -119,16 +124,26 @@ export default function RepsApp() {
       {/* Same markup as /admin's tabs so the two internal pages stay one
           product — see AdminApp. */}
       <div className="admin-tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.value}
-            type="button"
-            className={tab === t.value ? 'admin-tab active' : 'admin-tab'}
-            onClick={() => setTab(t.value)}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) =>
+          /* A real <a>, not a button with an onClick that assigns
+             window.location: it goes somewhere, so cmd-click, middle-click,
+             "open in new tab" and the status bar preview all have to work.
+             Never carries `active` — it is not a panel that can be current. */
+          t.href ? (
+            <a key={t.value} className="admin-tab" href={t.href}>
+              {t.label}
+            </a>
+          ) : (
+            <button
+              key={t.value}
+              type="button"
+              className={tab === t.value ? 'admin-tab active' : 'admin-tab'}
+              onClick={() => setTab(t.value)}
+            >
+              {t.label}
+            </button>
+          ),
+        )}
       </div>
 
       {tab === 'prospects' ? (

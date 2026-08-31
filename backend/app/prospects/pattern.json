@@ -1,0 +1,732 @@
+{
+ "how_to_read_this": {
+  "what_this_is": "The profile of stores that already buy from us, and the rules we judge a candidate against. Everything here is measured from product catalogues, never from revenue: a candidate has no purchase history with us, so a rule built on it could not be applied to both sides. One figure is not measured and says so where it appears: bands_p10_median_p90.knit_price_median is our own retail price.",
+  "bands": "Every band is {p10, median, p90}. The range our accounts occupy runs from p10 to p90; the median is the middle of that range, never an edge. Read a band as where our accounts sit, not as a target \u2014 a candidate outside one is different, not disqualified, and you say how. knit_price_median is the exception and reads the other way round: it is what our own sweaters retail for ($100\u2013$200), so it IS a target. A shop whose knitwear sits far below it cannot carry our price.",
+  "signature_tags": "A fingerprint of how our accounts describe their own stock, measured from their shelves \u2014 not a list of what we want a store to sell. Jewelry leads it because 47% of our accounts sell jewelry, and only three of these tags name knitwear at all. Read a match as evidence that a shop is merchandised like our customers are; whether it sells sweaters is knitwear_share and knit_tags_carried, measured separately. A candidate with none of these tags is not thereby a poor fit: it may simply tag its stock in another vocabulary, or in promotions only, and that is a fact about its website rather than its shelf.",
+  "order": "Answer the rules in order. The first discards shops that cannot become customers at all, so the other two need not be weighed until it passes.",
+  "rules": [
+   {
+    "question": "Does this shop buy from brands at all?",
+    "reads": [
+     "store_type",
+     "brand_count",
+     "products_per_brand",
+     "top_brand_share",
+     "own_name_share",
+     "knit_own_name_share"
+    ],
+    "against": "store_type_mix, products_per_brand_p10_median_p90",
+    "why": "A shop selling only its own label has no buyer and no budget for outside brands. It cannot become a wholesale account however well the rest fits \u2014 this is a harder fact than any similarity score.",
+    "disqualifies": {
+     "max_brands": 3,
+     "min_catalogue": 200,
+     "verdict": "weak"
+    },
+    "unreadable_below_catalogue": 50,
+    "evidence": "A boutique stocks about 9.2 products per brand; a label stocks hundreds. Two conditions decide it, not one, so a thin catalogue from a failed scrape is not mistaken for a label. Read top_brand_share beside the mean, never instead of it: a mean cannot see a label hiding behind accessories. A shop with 114 of its own 124 products, plus nine brands holding one glove, one belt and one scarf apiece, is 70%+ of one name on the shelf at a mean of 12.4 -- an ordinary boutique's number hiding a shop that buys from nobody. own_name_share and knit_own_name_share answer the sharper version: how much of the shelf, then how much of the KNITWEAR, carries the shop's own name. A shop can name most of a catalogue and still buy its sweaters from twenty brands -- a retailer with a house line, and a customer. One whose CLOTHES are all its own while it buys candles from a dozen brands is a label, whatever the catalogue counts. Our accounts buy knitwear from a median of 21 outside brands. Concentration is only read on catalogues of 75+ products: 100% of twenty is a failed scrape, not a label."
+   },
+   {
+    "question": "Does it sell our kind of thing?",
+    "reads": [
+     "knit_evidence",
+     "knit_tags_carried",
+     "knitwear_share",
+     "signature_tags_carried",
+     "tag_lift",
+     "category_mix"
+    ],
+    "against": "signature_tags, bands_p10_median_p90.knit_share",
+    "why": "A shop already selling sweaters is the opening: it has a knitwear buyer and shelf space to put us on.",
+    "disqualifies": {
+     "knit_evidence": "none",
+     "verdict": "weak"
+    },
+    "evidence": "knit_evidence names where the knitwear was found: in the shop's own tags, in its products, in both, or nowhere. 'products_only' is not a weaker answer than 'tags+products' -- of 271 accounts, 97 show knitwear in their products alone and none in tags alone, so a shop that never writes the word in a tag is the ordinary case, not a doubtful one.",
+    "caution": "A low tag_lift is weak evidence, not proof of a poor fit. 18% of our own accounts would score zero, because they describe their stock in their own words. An empty signature_tags_carried says the shop does not share our accounts' vocabulary -- often because it tags nothing but promotions -- and is never an argument against it on its own. Read knit_tags_carried and knitwear_share instead."
+   },
+   {
+    "question": "Can it afford us, and can we afford it?",
+    "reads": [
+     "knit_in_band_share",
+     "knit_price_p25_p50_p75",
+     "price_p25_p50_p75",
+     "price_range",
+     "knitwear_price_median"
+    ],
+    "against": "bands_p10_median_p90.price_median, .price_range, .knit_price_median",
+    "why": "Our sweaters retail at $100\u2013$200, so the question is whether the shop already sells knitwear at that price. knit_in_band_share answers it directly: the share of its own knitwear inside our band. price_median and price_range stay account bands \u2014 where our customers sit, not targets.",
+    "disqualifies": {
+     "knit_in_band_share": 0,
+     "verdict": "weak"
+    },
+    "evidence": "Do NOT decide this on knitwear_price_median. It is a median, so half the shop's knitwear is cheaper than it by definition. Measured on real candidates: a shop at $218 carries 33% of its knitwear inside our band and belongs on the call list; a shop at $250 carries none and does not. Eight percent apart on the median, opposite answers.",
+    "caution": "Name the band you cite. price_median is a shop's middle price, price_range the spread between its cheapest and dearest item, knit_price_median the middle price of its knitwear only. Comparing against the wrong one produces a sentence that reads correctly and is false."
+   }
+  ]
+ },
+ "store_count": 242,
+ "store_type_mix": {
+  "multi_brand": 0.876,
+  "insufficient_data": 0.087,
+  "house_brand": 0.037
+ },
+ "products_per_brand_p10_median_p90": {
+  "p10": 4.7,
+  "median": 9.2,
+  "p90": 20.3
+ },
+ "signature_tags": [
+  {
+   "tag": "JEWELRY",
+   "share_of_accounts": 0.467
+  },
+  {
+   "tag": "TOPS",
+   "share_of_accounts": 0.446
+  },
+  {
+   "tag": "DENIM",
+   "share_of_accounts": 0.413
+  },
+  {
+   "tag": "ACCESSORIES",
+   "share_of_accounts": 0.409
+  },
+  {
+   "tag": "DRESSES",
+   "share_of_accounts": 0.405
+  },
+  {
+   "tag": "PANTS",
+   "share_of_accounts": 0.355
+  },
+  {
+   "tag": "SHOES",
+   "share_of_accounts": 0.355
+  },
+  {
+   "tag": "EARRINGS",
+   "share_of_accounts": 0.351
+  },
+  {
+   "tag": "JEANS",
+   "share_of_accounts": 0.351
+  },
+  {
+   "tag": "SHORTS",
+   "share_of_accounts": 0.351
+  },
+  {
+   "tag": "DRESS",
+   "share_of_accounts": 0.331
+  },
+  {
+   "tag": "NECKLACE",
+   "share_of_accounts": 0.326
+  },
+  {
+   "tag": "SWEATER",
+   "share_of_accounts": 0.31
+  },
+  {
+   "tag": "SALE",
+   "share_of_accounts": 0.302
+  },
+  {
+   "tag": "TOP",
+   "share_of_accounts": 0.298
+  },
+  {
+   "tag": "JACKET",
+   "share_of_accounts": 0.293
+  },
+  {
+   "tag": "BOTTOMS",
+   "share_of_accounts": 0.289
+  },
+  {
+   "tag": "SWEATERS",
+   "share_of_accounts": 0.289
+  },
+  {
+   "tag": "BRACELET",
+   "share_of_accounts": 0.273
+  },
+  {
+   "tag": "SKIRT",
+   "share_of_accounts": 0.26
+  },
+  {
+   "tag": "JACKETS",
+   "share_of_accounts": 0.256
+  },
+  {
+   "tag": "HATS",
+   "share_of_accounts": 0.252
+  },
+  {
+   "tag": "GIFTS",
+   "share_of_accounts": 0.248
+  },
+  {
+   "tag": "SWEATSHIRT",
+   "share_of_accounts": 0.248
+  },
+  {
+   "tag": "GIFT",
+   "share_of_accounts": 0.244
+  },
+  {
+   "tag": "SKIRTS",
+   "share_of_accounts": 0.24
+  },
+  {
+   "tag": "BAGS",
+   "share_of_accounts": 0.231
+  },
+  {
+   "tag": "BLOUSE",
+   "share_of_accounts": 0.231
+  },
+  {
+   "tag": "SCARF",
+   "share_of_accounts": 0.231
+  },
+  {
+   "tag": "BAG",
+   "share_of_accounts": 0.227
+  },
+  {
+   "tag": "HOLIDAY",
+   "share_of_accounts": 0.223
+  },
+  {
+   "tag": "NEW ARRIVALS",
+   "share_of_accounts": 0.223
+  },
+  {
+   "tag": "GOLD",
+   "share_of_accounts": 0.219
+  },
+  {
+   "tag": "WHITE",
+   "share_of_accounts": 0.219
+  },
+  {
+   "tag": "HAT",
+   "share_of_accounts": 0.215
+  },
+  {
+   "tag": "BELTS",
+   "share_of_accounts": 0.207
+  },
+  {
+   "tag": "BRACELETS",
+   "share_of_accounts": 0.207
+  },
+  {
+   "tag": "CARDIGAN",
+   "share_of_accounts": 0.207
+  },
+  {
+   "tag": "GIFT CARD",
+   "share_of_accounts": 0.207
+  },
+  {
+   "tag": "BELT",
+   "share_of_accounts": 0.202
+  },
+  {
+   "tag": "CANDLE",
+   "share_of_accounts": 0.202
+  },
+  {
+   "tag": "LOUNGEWEAR",
+   "share_of_accounts": 0.198
+  },
+  {
+   "tag": "SANDALS",
+   "share_of_accounts": 0.194
+  },
+  {
+   "tag": "TANK",
+   "share_of_accounts": 0.194
+  },
+  {
+   "tag": "BLACK",
+   "share_of_accounts": 0.19
+  },
+  {
+   "tag": "HANDBAGS",
+   "share_of_accounts": 0.186
+  },
+  {
+   "tag": "NECKLACES",
+   "share_of_accounts": 0.186
+  },
+  {
+   "tag": "ROMPER",
+   "share_of_accounts": 0.186
+  },
+  {
+   "tag": "SUMMER",
+   "share_of_accounts": 0.186
+  },
+  {
+   "tag": "CANDLES",
+   "share_of_accounts": 0.182
+  },
+  {
+   "tag": "LONG SLEEVE",
+   "share_of_accounts": 0.182
+  },
+  {
+   "tag": "PINK",
+   "share_of_accounts": 0.182
+  },
+  {
+   "tag": "TEE",
+   "share_of_accounts": 0.182
+  },
+  {
+   "tag": "BLUE",
+   "share_of_accounts": 0.178
+  },
+  {
+   "tag": "HOME",
+   "share_of_accounts": 0.174
+  },
+  {
+   "tag": "SUNGLASSES",
+   "share_of_accounts": 0.174
+  },
+  {
+   "tag": "TOTE",
+   "share_of_accounts": 0.174
+  },
+  {
+   "tag": "FALL",
+   "share_of_accounts": 0.169
+  },
+  {
+   "tag": "JUMPSUIT",
+   "share_of_accounts": 0.169
+  },
+  {
+   "tag": "SNEAKERS",
+   "share_of_accounts": 0.169
+  },
+  {
+   "tag": "TANK TOP",
+   "share_of_accounts": 0.169
+  },
+  {
+   "tag": "VEST",
+   "share_of_accounts": 0.169
+  },
+  {
+   "tag": "CROSSBODY",
+   "share_of_accounts": 0.165
+  },
+  {
+   "tag": "GREEN",
+   "share_of_accounts": 0.165
+  },
+  {
+   "tag": "PAJAMAS",
+   "share_of_accounts": 0.165
+  },
+  {
+   "tag": "PURSE",
+   "share_of_accounts": 0.165
+  },
+  {
+   "tag": "BROWN",
+   "share_of_accounts": 0.161
+  },
+  {
+   "tag": "SPRING",
+   "share_of_accounts": 0.161
+  },
+  {
+   "tag": "MAXI DRESS",
+   "share_of_accounts": 0.157
+  },
+  {
+   "tag": "FLORAL",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "HANDBAG",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "LEATHER",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "MIDI DRESS",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "NAVY",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "OUTERWEAR",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "SILVER",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "SOCKS",
+   "share_of_accounts": 0.153
+  },
+  {
+   "tag": "TRAVEL",
+   "share_of_accounts": 0.153
+  }
+ ],
+ "bands_p10_median_p90": {
+  "knit_share": {
+   "p10": 0.022540983606557378,
+   "median": 0.11214953271028037,
+   "p90": 0.22388059701492538
+  },
+  "price_median": {
+   "p10": 38.0,
+   "median": 88.0,
+   "p90": 188.0
+  },
+  "price_range": {
+   "p10": 194.01,
+   "median": 490.0,
+   "p90": 1494.6
+  },
+  "knit_price_median": {
+   "p10": 100.0,
+   "median": 150.0,
+   "p90": 200.0
+  }
+ },
+ "example_accounts": [
+  {
+   "domain": "fancithatboutique.com",
+   "catalogue_size": 240,
+   "brand_count": 26,
+   "products_per_brand": 9.2,
+   "store_type": "multi_brand",
+   "top_brands": [
+    "STEVE MADDEN",
+    "PISTOLA",
+    "HOBO",
+    "DAYDREAMER",
+    "GEMELLI",
+    "FANCI THAT BOUTIQUE",
+    "CORKYS",
+    "PROJECT SOCIAL T",
+    "HEARTLOOM",
+    "HIDDEN",
+    "K'LANI",
+    "BOBI LOS ANGELES",
+    "PANACHE APPAREL",
+    "BED STU",
+    "PURA VIDA",
+    "NERO GIARDINI",
+    "DOLCE VITA",
+    "KATIA DESIGNS",
+    "PEOPLE OF LEISURE",
+    "TOWN PRIDE"
+   ],
+   "top_brand_share": 0.279,
+   "own_name_share": 0.042,
+   "knit_own_name_share": 0.0,
+   "category_mix": {
+    "TOPS": 0.407,
+    "ACCESSORIES": 0.233,
+    "BOTTOMS": 0.157,
+    "DRESSES": 0.076,
+    "SHOES": 0.064,
+    "JACKETS": 0.025,
+    "SKIRT": 0.013,
+    "ROMPER": 0.013
+   },
+   "signature_tags_carried": [
+    "ACCESSORIES",
+    "BAGS",
+    "BOTTOMS",
+    "DRESSES",
+    "GIFT CARD",
+    "HATS",
+    "JACKETS",
+    "JEWELRY",
+    "NEW ARRIVALS",
+    "ROMPER",
+    "SALE",
+    "SHOES",
+    "SKIRTS",
+    "SWEATERS",
+    "SWEATSHIRT",
+    "TOPS"
+   ],
+   "tag_lift": 12.07,
+   "price_p25_p50_p75": [
+    39,
+    65,
+    89
+   ],
+   "price_range": 380.0,
+   "knitwear_share": 0.179,
+   "knitwear_price_median": 59.0,
+   "knit_price_p25_p50_p75": [
+    42,
+    59,
+    84
+   ],
+   "knit_in_band_share": 0.07,
+   "knit_tags_carried": [
+    "SWEATERS"
+   ],
+   "knit_evidence": "tags+products",
+   "about_text": "Women&#39;s boutique specializing in stylish clothing, accessories, and unique home decor. Fanci That also features a full service salon."
+  },
+  {
+   "domain": "ginghamshop.com",
+   "catalogue_size": 280,
+   "brand_count": 75,
+   "products_per_brand": 3.7,
+   "store_type": "multi_brand",
+   "top_brands": [
+    "RAILS",
+    "Z SUPPLY",
+    "PERFECT WHITE TEE",
+    "PISTOLA",
+    "MELISSA",
+    "FIFTEEN TWENTY",
+    "VELVET",
+    "CITIZENS OF HUMANITY",
+    "KRIS NATIONS",
+    "MOTHER",
+    "RIPLEY RADLER",
+    "THE GREAT",
+    "AMERICAN VINTAGE",
+    "MICHAEL STARS",
+    "SUNSKI",
+    "HABITAT",
+    "CRAIE STUDIO",
+    "INOUI EDITIONS",
+    "MAREA",
+    "CABALLERO COLLECTION"
+   ],
+   "top_brand_share": 0.086,
+   "own_name_share": 0.011,
+   "knit_own_name_share": 0.0,
+   "category_mix": {
+    "TOP": 0.122,
+    "DENIM": 0.11,
+    "SWEATER": 0.088,
+    "DRESS": 0.083,
+    "ACCESSORY": 0.077,
+    "JEWELRY": 0.066,
+    "PANT": 0.066,
+    "BLOUSE": 0.066
+   },
+   "signature_tags_carried": [
+    "BELT",
+    "BLOUSE",
+    "BRACELETS",
+    "DRESS",
+    "JEWELRY",
+    "PURSE",
+    "SALE",
+    "SCARF",
+    "SWEATER",
+    "TANK",
+    "TANK TOP",
+    "TOP"
+   ],
+   "tag_lift": 10.26,
+   "price_p25_p50_p75": [
+    78,
+    138,
+    218
+   ],
+   "price_range": 1386.0,
+   "knitwear_share": 0.164,
+   "knitwear_price_median": 188.0,
+   "knit_price_p25_p50_p75": [
+    108,
+    188,
+    235
+   ],
+   "knit_in_band_share": 0.422,
+   "knit_tags_carried": [
+    "SWEATER"
+   ],
+   "knit_evidence": "tags+products",
+   "about_text": "Welcome to gingham a women-owned boutique with clothing and accessories that elevate, inspire and brighten your look Our story began in 2016, when Heather Veitch, opened Gingham\u2019s doors in Yarmouth, Maine. Over 7 years, Heather built a beautiful, comfortable, and welcoming shopping experience in her hometown. When she decided to close her doors, Caitlin approached her with hopes to transition the business to Freeport, Maine. Now located in a sweet standalone building with ample parking in downtown Freeport, Gingham provides a curated collection of women\u2019s clothing and accessories. We have a special expertise in denim, and love to carry colorful, vibrant prints along with the basics you need day in and day out. And of course, you can always find a selection of Maine-made jewelry, art, handb"
+  },
+  {
+   "domain": "belleboutiqueoc.com",
+   "catalogue_size": 162,
+   "brand_count": 38,
+   "products_per_brand": 4.3,
+   "store_type": "multi_brand",
+   "top_brands": [
+    "Z SUPPLY",
+    "ASTR THE LABEL",
+    "SANCTUARY",
+    "AMANDA UPRICHARD",
+    "DRESS FORUM",
+    "ELODIE",
+    "BOBI",
+    "KHUSH",
+    "SHOW ME YOUR MUMU",
+    "DYLAN",
+    "RAMY BROOK",
+    "CINQ A SEPT",
+    "FRENCH CONNECTION",
+    "BELLE BOUTIQUE OC",
+    "SHEBIRD",
+    "Z & L",
+    "SHOW ME YOU MUMU",
+    "SIX FIFTY",
+    "PJ SALVAGE",
+    "LEVEL 99"
+   ],
+   "top_brand_share": 0.198,
+   "own_name_share": 0.025,
+   "knit_own_name_share": 0.0,
+   "category_mix": {
+    "DRESSES": 0.286,
+    "CLOTHING": 0.286,
+    "T-SHIRT": 0.143,
+    "LOUNGEWEAR": 0.143,
+    "GIFT CARDS": 0.143
+   },
+   "signature_tags_carried": [
+    "BELTS",
+    "CARDIGAN",
+    "DENIM",
+    "DRESSES",
+    "JACKETS",
+    "LOUNGEWEAR",
+    "NEW ARRIVALS",
+    "PANTS",
+    "ROMPER",
+    "SHORTS",
+    "SKIRTS",
+    "SWEATERS",
+    "TANK TOP",
+    "TOPS",
+    "VEST"
+   ],
+   "tag_lift": 10.12,
+   "price_p25_p50_p75": [
+    80,
+    98,
+    132
+   ],
+   "price_range": 585.0,
+   "knitwear_share": 0.191,
+   "knitwear_price_median": 88.0,
+   "knit_price_p25_p50_p75": [
+    78,
+    88,
+    110
+   ],
+   "knit_in_band_share": 0.323,
+   "knit_tags_carried": [
+    "CARDIGAN",
+    "SWEATERS"
+   ],
+   "knit_evidence": "tags+products",
+   "about_text": "About Us Who We Are Established in 2010 by Kim Belle, Belle Boutique OC began as a pop up clothing boutique bringing trend setting fashion to local Orange County communities through school functions, church events and gym clothing shops. Through the years our customer relationships continued to grow which led Kim Belle to expanding in a co/op retail partnership with Seaside Gallery and Goods in Newport Beach. In 2019, it was time to open her first location. Belle Boutique OC officially opened its doors in Rancho Santa Margarita. After much success we opened two more locations in 2022, Ladera Ranch and Dana Point. From basic essentials to statement pieces, Belle Boutique offers fashion forward looks for the office, a night-out with the girls, to a casual Sunday morning at home and everythin"
+  },
+  {
+   "domain": "zertz.com",
+   "catalogue_size": 1211,
+   "brand_count": 99,
+   "products_per_brand": 12.2,
+   "store_type": "multi_brand",
+   "top_brands": [
+    "BIRKENSTOCK",
+    "Z SUPPLY",
+    "KENDRA SCOTT",
+    "BACK 70",
+    "FREE PEOPLE",
+    "VARLEY",
+    "DEAR JOHN",
+    "FAVORITE DAUGHTER",
+    "GOLA",
+    "SHOW ME YOUR MUMU",
+    "ILSE JACOBSEN",
+    "THML",
+    "DOLCE VITA",
+    "SANCTUARY CLOTHING",
+    "PJ SALVAGE",
+    "FARM RIO",
+    "FAHERTY",
+    "CHUBBIES",
+    "FREE PEOPLE MOVEMENT",
+    "KUT FROM THE KLOTH"
+   ],
+   "top_brand_share": 0.121,
+   "own_name_share": 0.0,
+   "knit_own_name_share": 0.0,
+   "category_mix": {
+    "SHOES": 0.278,
+    "TOPS": 0.17,
+    "DRESSES": 0.132,
+    "JEWELRY": 0.091,
+    "JEANS": 0.059,
+    "SWEATERS": 0.043,
+    "SKIRTS": 0.039,
+    "SHORTS": 0.037
+   },
+   "signature_tags_carried": [
+    "BAGS",
+    "BELTS",
+    "BRACELETS",
+    "DRESSES",
+    "HATS",
+    "HOME",
+    "JACKETS",
+    "JEANS",
+    "JEWELRY",
+    "NEW ARRIVALS",
+    "PAJAMAS",
+    "PANTS",
+    "ROMPER",
+    "SHOES",
+    "SHORTS",
+    "SKIRTS",
+    "SUNGLASSES",
+    "SWEATERS",
+    "TOPS"
+   ],
+   "tag_lift": 9.02,
+   "price_p25_p50_p75": [
+    73,
+    100,
+    145
+   ],
+   "price_range": 364.0,
+   "knitwear_share": 0.084,
+   "knitwear_price_median": 89.0,
+   "knit_price_p25_p50_p75": [
+    69,
+    89,
+    123
+   ],
+   "knit_in_band_share": 0.304,
+   "knit_tags_carried": [
+    "SWEATERS"
+   ],
+   "knit_evidence": "tags+products",
+   "about_text": "Shopping Cart Quick view Login What are you looking for? See more Free store pickup available at checkout! ABOUT NEW CLOTHES Dresses Jeans Intimates & Lounge Pajamas Pants & Leggings Sets Shorts Skirts Sweaters Tops OUTERWEAR Coats Jackets Vests ACCESSORIES & MORE Bag Charms Beauty Belts Game Day Jewelry Hats Purses & Bags Shoes MEN Shorts Men's Clothing BRANDS A AG Jeans Allison Avery Aureum Aylaya B Beach by Matisse Back 70 Streetwear Beek Betsey Johnson Birkenstock Bog Baggs Blingagogo Brooke Wright Designs By Together C Chubbies D Daydreamer LA Dear John Dolce Vita E Elan F Faherty Farm Rio Favorite Daughter Free People Free People Movement G Gola H Hancock Hats by Madi Hunter & Brown I Ilse Jacobsen Intimately by Free People Ivy Jane/Sister Mary/Uncle Frank J J. Marie Collections Joe'"
+  }
+ ]
+}

@@ -18,3 +18,10 @@ pandas>=2.2,<3
 openai>=1.40,<2
 matplotlib>=3.8,<4
 pillow>=10,<12
+# Prospect scoring (app/prospects/). The scraper parses a shop's own catalogue
+# with BeautifulSoup over the lxml parser and fetches with requests. All three
+# were already present in the dev venv by accident and declared nowhere, so the
+# container built fine and would have failed on the first import.
+beautifulsoup4>=4.12,<5
+lxml>=5,<7
+requests>=2.31,<3

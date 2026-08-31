@@ -40,6 +40,9 @@ services:
       # cannot overwrite or sit beside a real customer's paperwork.
       - ./output-dev/orders:/output/orders
       - ./output-dev/notices:/output/notices
+      # Page cache for prospect scoring. Without this every re-run
+      # re-fetches every shop's catalogue.
+      - ./output-dev/prospects:/output/prospects
       - ./backend/credentials/dialy-report-automation-e20c53e67542.json:/credentials/service-account.json:ro
     depends_on:
       db:

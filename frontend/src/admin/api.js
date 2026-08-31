@@ -42,6 +42,12 @@ export const createSfAccount = (id) => post(`/api/admin/orders/${id}/create-acco
 export const setConflictResolution = (id, outcome, note = '') =>
   post(`/api/admin/orders/${id}/conflict-resolution`, { outcome, note })
 
+// Close the tax-cert chase on one order without emailing the buyer — for a
+// batch of orders from one new store, where the certificate arrives once. Does
+// NOT mean a certificate exists here; `hasCertificate` still answers that.
+export const setTaxCertCleared = (id, note = '', cleared = true) =>
+  post(`/api/admin/orders/${id}/tax-cert-cleared`, { cleared, note })
+
 // Capture new inbound conflict replies and classify them. Returns
 // { captured, suggested }. No-op server-side if IMAP/OpenAI aren't configured.
 export const pollReplies = () => post('/api/admin/poll-replies')

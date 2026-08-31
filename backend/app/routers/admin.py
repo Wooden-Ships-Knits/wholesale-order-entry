@@ -58,6 +58,13 @@ class ConflictResolutionRequest(BaseModel):
     note: str = Field("", max_length=1000)
 
 
+class TaxCertClearedRequest(BaseModel):
+    # No outcome field: unlike a conflict there is only one, so the endpoint
+    # being called IS the decision. `cleared` exists solely to undo a misclick.
+    cleared: bool = True
+    note: str = Field("", max_length=1000)
+
+
 # ------------------------------------------------------------------ session
 
 @router.post("/login")
@@ -135,6 +142,11 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         # Persistent "Sent ✓" state for the admin email buttons.
         "conflictEmailSent": o.conflict_email_sent_at is not None,
         "taxCertEmailSent": o.tax_cert_email_sent_at is not None,
+        # "Someone decided this row needs no further chasing" — NOT "a
+        # certificate exists". hasCertificate above stays the only answer to
+        # that, and the two are deliberately separate keys.
+        "taxCertCleared": o.tax_cert_cleared_at is not None,
+        "taxCertClearedNote": o.tax_cert_cleared_note,
         # Buyer signature by emailed link. Sent → waiting → signed. The token
         # itself is never exposed: it is a credential, and /admin doesn't need
         # it to show state or to re-draft the email.
@@ -171,6 +183,11 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
             o.signature_signed_at.isoformat() if o.signature_signed_at else None
         ),
         "signatureName": o.signature_name,
+        # The date typed on the FORM, for an order signed on the spot rather
+        # than through an emailed link. Those orders have no
+        # signature_signed_at — nothing was ever sent — but they are signed,
+        # and a column that showed them blank read as "still waiting".
+        "signatureDate": o.signature_date.isoformat() if o.signature_date else None,
         # Non-null only once a buyer edited the order through the sign link —
         # the pre-edit totals, so the change is visible instead of silent.
         "origTotalQty": o.orig_total_qty,
@@ -282,11 +299,17 @@ def _purge_expired_card_copies(db: Session) -> None:
 def list_orders(
     db: Session = Depends(get_db),
     status_filter: str | None = None,
-    limit: int = 100,
+    # 0 = every order, and the default. NOT a convenience: the page's column
+    # filters run in the BROWSER, so a server-side cap made "show me every F26
+    # order" quietly mean "every F26 order among the last 100" — a filter that
+    # looks exhaustive and is not. Same limit=0 convention as /api/seasons.
+    limit: int = 0,
 ) -> dict:
     _purge_expired_card_copies(db)
 
-    stmt = select(Order).order_by(Order.created_at.desc()).limit(min(limit, 500))
+    stmt = select(Order).order_by(Order.created_at.desc())
+    if limit:
+        stmt = stmt.limit(limit)
     if status_filter:
         stmt = stmt.where(Order.status == status_filter)
     orders = list(db.execute(stmt).scalars())
@@ -443,6 +466,42 @@ def set_conflict_resolution(
             "Order %s conflict cleared — releasing the held signing link", str(order.id)[:8]
         )
         background.add_task(orders._send_signature_request, order.id)
+    return _row(order)
+
+
+@router.post("/orders/{order_id}/tax-cert-cleared", dependencies=[AdminRequired])
+def set_tax_cert_cleared(
+    order_id: str,
+    payload: TaxCertClearedRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Close the tax-certificate chase on one order without emailing the buyer.
+
+    For the batch case: one new store, four orders, one certificate. The buyer
+    sends the document once, and the other three rows are closed here rather
+    than by mailing the same person four times.
+
+    NO SIDE EFFECTS -- and unlike clearing a conflict, deliberately so. That one
+    releases a held signing link because the conflict was what held it; nothing
+    is ever held on a certificate, so this writes a status stamp and stops.
+    It also does NOT make the order tax-exempt: exemption follows the document
+    on file, and this records only that a person stopped chasing it.
+    """
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if payload.cleared:
+        order.tax_cert_cleared_at = datetime.now(timezone.utc)
+        order.tax_cert_cleared_note = payload.note or None
+    else:
+        order.tax_cert_cleared_at = None
+        order.tax_cert_cleared_note = None
+    db.commit()
+    logger.info(
+        "Order %s tax cert %s",
+        str(order.id)[:8],
+        "cleared" if payload.cleared else "re-opened",
+    )
     return _row(order)
 
 
