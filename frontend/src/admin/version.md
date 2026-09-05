@@ -19,6 +19,42 @@ anyone reading this file is actually asking.
 
 ---
 
+## v1.2 — 2026-09-05
+
+### New
+
+- **Order monitoring — new "Catalog" tab.** Pick a collection, then tick any
+  style/colour to take it off the order form. Use it for the ones that sold
+  out, never got made, or were pulled after the line sheet went out — until
+  now the only way to stop a customer ordering those was to edit the price
+  book in Salesforce, which changes what the whole company sees.
+
+  Ticks save as you make them; there is no Save button. A search box filters
+  by style name or product code, and the count beside it tells you how many of
+  the collection's style/colours are currently hidden.
+
+  **Nothing is changed in Salesforce**, and orders already placed or already
+  out for signature keep their prices and totals — a customer part-way through
+  signing will not find their sweater has vanished.
+
+### Fixed
+
+- **The Version tab you are reading had never actually been styled.** A single
+  missing bracket in the stylesheet meant every rule written for this page was
+  ignored by the browser, along with the widths set for the Decision column on
+  the order table. Both now look the way they were written to look.
+
+### Worth knowing
+
+- Hiding is for this web order form only. It does not stop a style being
+  ordered any other way, and it does not touch the price book — so it is a
+  merchandising choice, not a lock.
+
+- This version adds a database table, so the deploy needs
+  `alembic upgrade head` as well as a frontend rebuild.
+
+---
+
 ## v1.1 — 2026-08-29
 
 ### New

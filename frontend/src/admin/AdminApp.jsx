@@ -7,13 +7,15 @@ import OrderTable from './OrderTable'
 import ConflictCheck from '../conflict/ConflictCheck.jsx'
 import OrderReport from './OrderReport'
 import PaymentNotice from './PaymentNotice'
+import CatalogPanel from './CatalogPanel'
 import VersionPanel from './VersionPanel'
 
 const TABS = [
   { value: 'orders', label: 'Orders' },
   { value: 'conflict', label: 'Conflict check' },
   { value: 'reports', label: 'Reports' },
-  { value: 'notice', label: 'Payment notice'},
+  { value: 'notice', label: 'Payment notice' },
+  { value: 'catalog', label: 'Catalog' },
   // Last, and it stays last: it is the only tab nobody opens to do their job.
   { value: 'version', label: 'Version' },
 ]
@@ -144,6 +146,8 @@ export default function AdminApp() {
         <OrderReport />
       ) : tab === 'notice' ? (
         <PaymentNotice />
+      ) : tab === 'catalog' ? (
+        <CatalogPanel />
       ) : tab === 'version' ? (
         <VersionPanel />
       ) : (

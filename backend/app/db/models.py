@@ -460,3 +460,25 @@ class ProspectMark(Base):
         # Un-starring deletes the row, so at most one per (rep, prospect).
         UniqueConstraint("prospect_id", "rep_name", name="uq_prospect_mark"),
     )
+
+
+class HiddenProduct(Base):
+    """A style+color the admin has taken off the order form for one season.
+
+    Products come live from Salesforce, so "hidden" is our data, not theirs.
+    The key is (season, style, color) — exactly the grain group_products()
+    returns — and it is the whole primary key, so hiding is an upsert and
+    unhiding is a delete. No boolean column that can drift out of sync with
+    whether the row is there.
+
+    Merchandising, not access control: see app/services/hidden_products.py.
+    """
+
+    __tablename__ = "hidden_products"
+
+    season_code: Mapped[str] = mapped_column(Text, primary_key=True)
+    style_name: Mapped[str] = mapped_column(Text, primary_key=True)
+    color: Mapped[str] = mapped_column(Text, primary_key=True)
+    hidden_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
