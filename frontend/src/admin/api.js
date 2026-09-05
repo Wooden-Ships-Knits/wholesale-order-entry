@@ -109,3 +109,14 @@ export const noticeCardUrl = (name) =>
 // Admin reports (DTO/DMM). getReport = last cached run; runReport = run now.
 export const getReport = (key) => request(`/api/admin/reports/${key}`)
 export const runReport = (key) => post(`/api/admin/reports/${key}/run`)
+
+// ---- Catalog visibility ----
+// Every style+color in a season, each carrying `hidden`. The same rows the
+// order form loads — hiding one is an opinion about that list, not a filter on
+// a different one.
+export const getCatalog = (season) =>
+  request(`/api/admin/catalog?season=${encodeURIComponent(season)}`)
+// One row at a time: a whole-list save would let two open tabs clobber each
+// other's ticks.
+export const setProductHidden = (seasonCode, styleName, color, hidden) =>
+  post('/api/admin/catalog/hidden', { season_code: seasonCode, style_name: styleName, color, hidden })

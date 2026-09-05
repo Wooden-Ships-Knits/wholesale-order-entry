@@ -15,6 +15,7 @@ from app.tasks import poll_replies
 from app.routers import (
     accounts,
     admin,
+    catalog,
     conflict_email,
     health,
     notices,
@@ -159,6 +160,7 @@ app.include_router(accounts.router, prefix="/api")
 app.include_router(reps.router, prefix="/api")
 app.include_router(orders.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(catalog.router, prefix="/api")
 app.include_router(reps_portal.router, prefix="/api")
 app.include_router(conflict_email.router, prefix="/api")
 app.include_router(send_email.router, prefix="/api")
