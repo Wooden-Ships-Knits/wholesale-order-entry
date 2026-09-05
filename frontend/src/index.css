@@ -1485,6 +1485,118 @@ a.admin-tab {
   padding: 2rem;
 }
 
+/* ---- Catalog tab: hide a style+color from the order form ---- */
+.catalog-intro {
+  color: #6b6862;
+  font-size: 0.85rem;
+  max-width: 62ch;
+  margin: 0 0 1rem;
+}
+.catalog-picker {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.catalog-picker label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b6862;
+}
+.catalog-picker select,
+.catalog-picker input[type='search'] {
+  min-width: 15rem;
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* Grows into the space the count leaves, so a long style name stays readable
+   while it is being typed. */
+.catalog-search {
+  flex: 1 1 15rem;
+  max-width: 24rem;
+}
+.catalog-picker input[type='search'] {
+  width: 100%;
+}
+.catalog-count {
+  font-size: 0.85rem;
+  color: #6b6862;
+  /* Sits on the select's baseline, not under it — the count is the answer to
+     "did that tick land", so it belongs beside what was ticked. */
+  padding-bottom: 0.45rem;
+}
+.catalog-style {
+  border-top: 1px solid #e5e2dc;
+  padding: 0.9rem 0;
+}
+.catalog-style h3 {
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 0.6rem;
+}
+.catalog-code {
+  color: #8a867e;
+  font-weight: 400;
+  margin-right: 0.4rem;
+}
+.catalog-colors {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.4rem;
+}
+/* The whole block is the label, so the colour name is as clickable as the box
+   itself — these get ticked in runs of five or six at a time.
+   GRID, NOT FLEX. A flex child will not shrink below its content by default,
+   so "PINK WHIM/BREAKER WHITE MARL" pushed the price straight through the
+   right-hand border. `1fr` plus min-width:0 makes the name the part that
+   gives, which is the only part that can wrap. */
+.catalog-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.15rem 0.55rem;
+  border: 1px solid #e5e2dc;
+  background: #fff;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.catalog-item:hover {
+  border-color: #c9c4bb;
+}
+/* Level with the first line of a name that wraps, not with the middle of it. */
+.catalog-item input[type='checkbox'] {
+  margin: 0.15rem 0 0;
+}
+/* Hidden reads as struck-through and greyed, i.e. as what the buyer will not
+   see — not as an error, which is what red would say. */
+.catalog-item.hidden {
+  background: #f6f5f2;
+  color: #8a867e;
+}
+.catalog-item.hidden .catalog-color {
+  text-decoration: line-through;
+}
+.catalog-color {
+  /* Breaks inside "KHAKI/BREAKER" if it has to — a slash is not a break
+     opportunity, and one long token would otherwise widen every column. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.catalog-price {
+  color: #8a867e;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ---- Order report tab: DTO / DMM runner cards ---- */
 .report-grid {
   display: grid;
@@ -2250,6 +2362,8 @@ a.admin-tab {
 .admin-login .faq-link:focus-visible {
   color: #6f635a;
   text-decoration: underline;
+}
+
 /* ---- Decision column (/admin) ------------------------------------------ */
 /* Wider than the rest: it now carries the status, the date it was decided, a
    decline reason in the team's own words, and the Salesforce order link. At
@@ -2309,20 +2423,6 @@ a.admin-tab {
   font-size: 0.9em;
 }
 
-/* FAQ link under the rep sign-in. Low-contrast on purpose: a rep signing in
-   fine should not be pulled towards it, but one who is stuck needs a way out. */
-.admin-login .faq-link {
-  display: block;
-  margin-top: 1.1rem;
-  text-align: center;
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #a3968a;
-  text-decoration: none;
-}
-.admin-login .faq-link:hover,
-.admin-login .faq-link:focus-visible {
-  color: #6f635a;
-  text-decoration: underline;
-}
+/* (The FAQ link's styles live once, up with the rep sign-in rules. They were
+   duplicated down here because the missing brace above swallowed the original
+   and made it look like it had never been written.) */

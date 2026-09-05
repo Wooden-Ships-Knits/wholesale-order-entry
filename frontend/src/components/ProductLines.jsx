@@ -67,15 +67,30 @@ export default function ProductLines({
   loading,
   seasonSelected,
 }) {
+  // What the lines already point at. A hidden row that is ALREADY on a line
+  // has to stay pickable: this component is also the signing page's grid
+  // (sign/SignPage.jsx), where the lines were chosen days earlier and the admin
+  // may have hidden the style since. Drop it and the buyer opens their own
+  // order to find the colour dropdown empty and their choice gone.
+  const chosen = useMemo(
+    () => new Set(lines.map((l) => `${l.styleName}|||${l.color}`)),
+    [lines],
+  )
+
   // catalog derived per style: styleName -> { code, colors: [row, ...] }
+  //
+  // `hidden` rows (admin → Catalog tab) are dropped HERE and nowhere else, so
+  // they leave the pickers without leaving the catalogue: the caller keeps the
+  // full `rows` to resolve prices, totals and the size columns.
   const styles = useMemo(() => {
     const map = new Map()
     for (const r of rows) {
+      if (r.hidden && !chosen.has(`${r.styleName}|||${r.color}`)) continue
       if (!map.has(r.styleName)) map.set(r.styleName, { styleName: r.styleName, code: r.code, colors: [] })
       map.get(r.styleName).colors.push(r)
     }
     return [...map.values()].sort((a, b) => a.styleName.localeCompare(b.styleName))
-  }, [rows])
+  }, [rows, chosen])
 
   const styleByName = useMemo(() => new Map(styles.map((s) => [s.styleName, s])), [styles])
 
