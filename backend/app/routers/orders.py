@@ -178,8 +178,16 @@ def _send_signature_request(
             filename = pdf_render.order_pdf_filename(
                 order.season_code, order.buyer_name or "", order.created_at, order.id
             )
+        # CC the order's rep from the rep sheet (reinstated 2026-09-16 at the
+        # team's request, reversing the 2026-08-06 no-CC rule). The link is a
+        # bearer credential, so a CC'd rep can sign in the buyer's place — that
+        # is accepted: the rep is meant to be on the thread and chase the store
+        # directly. "" when no rep resolves, which sends exactly as before.
         draft = signature_template.build(
             to_email=order.signature_email,
+            cc_email=sheets_client.rep_email_for_order(
+                order.order_written_by, order.sales_territory
+            ),
             sign_url=sign.sign_url(order.signature_token),
             account_name=order.account_name,
             season_label=mapping.season_label(order.season_code),
@@ -187,14 +195,10 @@ def _send_signature_request(
             total_amount=order.total_amount,
             short_id=str(order_id)[:8],
         )
-        # NO CC (2026-08-06). The body is a signing link, and the link is a
-        # bearer credential — copying the rep put it in their inbox and let
-        # them sign on the buyer's behalf. The rep hears about the order
-        # through send_rep_notice at submit instead, which carries the PDF but
-        # no link.
         if not mailer.send_email(
             draft["to"], draft["subject"], draft["body"],
             [(filename, pdf_bytes, "pdf")],
+            cc=draft["cc"],
             html=mailer.html_from_text(draft["body"]),
         ):
             logger.error(
