@@ -25,6 +25,7 @@ from app.db.session import get_db
 from app.email import signature_template
 from app.routers.sign import mint_token, sign_url
 from app.salesforce import mapping
+from app.sheets import client as sheets_client
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ class SignatureEmailRequest(BaseModel):
     orderId: str = Field(max_length=36)
     # Override the recipient; defaults to the order's Ship To email.
     email: str | None = Field(None, max_length=254)
+    # Override the CC; defaults to the order's rep from the rep sheet.
+    cc: str | None = Field(None, max_length=1000)
 
 
 @router.post("/signature-email", dependencies=[AdminRequired])
@@ -57,8 +60,14 @@ def signature_email(payload: SignatureEmailRequest, db: Session = Depends(get_db
         db.commit()
         logger.info("Minted a signing token for order %s", str(order.id)[:8])
 
+    # The rep is CC'd by default, matching the automatic send — the admin can
+    # still edit or clear the field in the draft modal before sending.
+    cc = payload.cc if payload.cc is not None else sheets_client.rep_email_for_order(
+        order.order_written_by, order.sales_territory
+    )
     draft = signature_template.build(
         to_email=payload.email or order.signature_email or order.ship_email,
+        cc_email=cc,
         sign_url=sign_url(order.signature_token),
         account_name=order.account_name,
         season_label=mapping.season_label(order.season_code),
