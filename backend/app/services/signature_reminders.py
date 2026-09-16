@@ -109,8 +109,15 @@ def _send(order: Order) -> bool:
     """Re-send the signature request for one order. True if the mail left."""
     from app.routers.sign import sign_url  # local: routers import services
 
+    # CC'd to the rep, like the first request — see
+    # routers/orders.py::_send_signature_request. A chaser is the same email,
+    # so it is copied to the same people; the rep also gets their own, separate
+    # follow-up ladder (send_due_rep_followups below), which carries no link.
     draft = signature_template.build(
         to_email=order.signature_email or order.ship_email,
+        cc_email=sheets_client.rep_email_for_order(
+            order.order_written_by, order.sales_territory
+        ),
         sign_url=sign_url(order.signature_token),
         account_name=order.account_name,
         season_label=mapping.season_label(order.season_code),
@@ -118,8 +125,6 @@ def _send(order: Order) -> bool:
         total_amount=order.total_amount,
         short_id=str(order.id)[:8],
     )
-    # No CC — see routers/orders.py::_send_signature_request. The link must not
-    # reach the rep's inbox, and a chaser is the same link five more times.
 
     # Re-rendered from the order row rather than read off disk: the buyer may
     # have been sent a link before an admin corrected the store or the ship
@@ -144,6 +149,7 @@ def _send(order: Order) -> bool:
 
     return mailer.send_email(
         draft["to"], draft["subject"], draft["body"], attachments,
+        cc=draft["cc"],
         html=mailer.html_from_text(draft["body"]),
     )
 

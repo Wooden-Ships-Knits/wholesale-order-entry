@@ -594,9 +594,10 @@ export default function OrderTable({
     setDraftingSignature(order.id)
     try {
       const d = await getSignatureEmail(order.id)
-      // To the buyer, CC the territory's lead rep (same as the tax-cert
-      // request) so the rep knows their order went out for signature. The CC
-      // may arrive empty when the territory has no rep — editable in the modal.
+      // To the buyer, CC the order's rep so they know it went out for
+      // signature — the server now fills the CC in the draft (same rep-sheet
+      // lookup as repEmail, which stays as a fallback). It arrives empty when
+      // no rep resolves; editable in the modal either way.
       setDraft({
         ...d,
         cc: d.cc || order.repEmail || '',

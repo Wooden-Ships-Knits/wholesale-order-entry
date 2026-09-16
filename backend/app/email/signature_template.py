@@ -3,11 +3,12 @@
 Text only: this module never sends anything. The endpoint hands the draft to
 the admin UI, where a human edits it and sends it (POST /api/send-email).
 
-Unlike the conflict email this one goes to the CUSTOMER, so it names nothing
-internal — no rep, no territory, no other stockists, no rank. It carries one
-link, and that link is a credential: anyone the buyer forwards it to can edit
-and sign the order. The body says so plainly rather than assuming the buyer
-infers it.
+Unlike the conflict email this one goes to the CUSTOMER, so the BODY names
+nothing internal — no rep, no territory, no other stockists, no rank. It
+carries one link, and that link is a credential: anyone the buyer forwards it
+to can edit and sign the order. The body says so plainly rather than assuming
+the buyer infers it. The order's rep is CC'd (see build()), which the buyer can
+see — that is the point, the rep is on the thread.
 
 The same body is used for the automatic chasers (app/services/
 signature_reminders.py), so nothing in it may read as first-contact-only.
@@ -18,6 +19,7 @@ def build(
     *,
     to_email: str | None,
     sign_url: str,
+    cc_email: str | None = None,
     account_name: str | None = None,
     season_label: str | None = None,
     total_qty: int | None = None,
@@ -26,10 +28,19 @@ def build(
 ) -> dict:
     """-> {to, cc, subject, body}.
 
-    cc is always empty (2026-08-06): the body is a signing link, and a link is
-    a bearer credential — copying the rep let them sign on the buyer's behalf.
-    The key stays in the return value so the admin draft modal still renders a
-    CC field the team can fill in by hand.
+    cc is the order's rep, resolved by the caller from the rep sheet
+    (sheets.client.rep_email_for_order) and passed in as cc_email; "" when no
+    rep resolves, which is also what the admin draft modal shows for a CC field
+    the team can still fill in by hand.
+
+    This reverses the 2026-08-06 "never CC" rule (reinstated 2026-09-16 at the
+    team's request): the body is a signing link and a link is a bearer
+    credential, so a CC'd rep CAN open, edit and sign the order in the buyer's
+    place. That is accepted deliberately — the rep is expected to be on the
+    thread so they can chase the store directly. Do not re-remove it without
+    asking. A CC equal to the To address is dropped here rather than mailing
+    the same person twice — a rep who ordered for their own account would
+    otherwise be both.
 
     No expiry date is passed in: the body says "the link will expire so don't
     delay" rather than naming a day (wording set 2026-08-06). That also suits
@@ -81,9 +92,14 @@ Thank you!
 Wooden Ships
 """
 
+    to = (to_email or "").strip()
+    cc = (cc_email or "").strip()
+    if cc.casefold() == to.casefold():
+        cc = ""
+
     return {
-        "to": (to_email or "").strip(),
-        "cc": "",
+        "to": to,
+        "cc": cc,
         "subject": subject,
         "body": body,
     }
