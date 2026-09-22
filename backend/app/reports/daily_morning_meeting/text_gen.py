@@ -16,7 +16,13 @@ def add_mode(group):
     mode   = 'FCL' if parts[-1].endswith('15') else 'AIR'   # end day 15 -> FCL
     return f'{prefix} {mode} {rng}'
 
-def genText():
+def genText() -> tuple[str, int, int]:
+    """(recap text, paid SOs from the sheet, unpaid groups from Salesforce).
+
+    The two counts come back so recap.run() can put them in the admin run log:
+    the recap reads the same whether a source is quiet or broken, and on
+    2026-09-22 both were zero at once for unrelated reasons.
+    """
     #====================== part one
     jumlah, shiipping_plan = plp.problemListReps()
 
@@ -89,4 +95,4 @@ Additionally, below is the total of the open orders that remain unpaid as of tod
     Thanks!
     """
     paragraph_combined = paragraphOne + paragraphTwo
-    return paragraph_combined
+    return paragraph_combined, jumlah, len(df)
