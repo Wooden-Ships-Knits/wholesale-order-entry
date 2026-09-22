@@ -1,8 +1,12 @@
 """Salesforce side of the DMM report — the unpaid open orders table."""
+import logging
+
 import pandas as pd
 
 from app.config import settings
 from app.salesforce.client import _client
+
+logger = logging.getLogger(__name__)
 
 
 def report() -> pd.DataFrame:
@@ -29,4 +33,19 @@ def report() -> pd.DataFrame:
         {lbl: cell["label"] for lbl, cell in zip(labels, r["dataCells"])}
         for r in result["factMap"]["T!T"]["rows"]
     ]
+    if not rows:
+        # The API always runs the report's SAVED filters — a window someone
+        # widened on the SF run page is not saved and does not apply here. On
+        # 2026-09-22 the saved filter still read "Date Required <= 2026-07-01",
+        # so the report returned nothing and the recap printed an unpaid
+        # section with no orders in it. Name the filters rather than returning
+        # a silent empty frame.
+        logger.warning(
+            "Salesforce report %r returned no rows. Its saved filters are: %s",
+            settings.dmm_report_name,
+            [
+                f"{f.get('column')} {f.get('operator')} {f.get('value')}"
+                for f in result["reportMetadata"].get("reportFilters", [])
+            ],
+        )
     return pd.DataFrame(rows, columns=labels)
