@@ -146,6 +146,7 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
             contacts={buyerContacts}
             value={billTo.buyerName}
             onPick={(name) => setBillTo('buyerName', name)}
+            tidy={titleCase}
           />
         ) : (
           <Field
