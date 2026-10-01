@@ -84,59 +84,57 @@ function Field({ label, value, onChange, type = 'text', required = false, autoCo
 }
 
 export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLocationSearch = false, isNewAccount = false, buyerContacts = [] }) {
-  const [sameAsBilling, setSameAsBilling] = useState(false)
+  const [sameAsShipping, setSameAsShipping] = useState(false)
 
-  const shipHasAddress = Boolean(shipTo.street || shipTo.cityState || shipTo.zip)
+  const billHasAddress = Boolean(billTo.street || billTo.cityState || billTo.zip)
 
-  // New customers usually ship to their billing address, so default the box on
-  // for them — but only while Ship To is still empty, so we never clobber an
+  // New customers usually bill to their shipping address, so default the box on
+  // for them — but only while Bill To is still empty, so we never clobber an
   // address the user already typed (e.g. a rep marking the account New after
-  // filling Ship To). Unticking sticks: once Ship To is populated this stops
+  // filling Bill To). Unticking sticks: once Bill To is populated this stops
   // re-checking. Existing accounts (lookup autofills both sides) are untouched.
   const seededRef = useRef(false)
   useEffect(() => {
     if (seededRef.current) return
-    if (isNewAccount && !shipHasAddress) {
+    if (isNewAccount && !billHasAddress) {
       seededRef.current = true
-      setSameAsBilling(true)
+      setSameAsShipping(true)
     }
-    // shipHasAddress guards the seed; setSameAsBilling is stable.
+    // billHasAddress guards the seed; setSameAsShipping is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNewAccount, shipHasAddress])
+  }, [isNewAccount, billHasAddress])
 
-  // While checked, mirror the shared address fields from Bill To — including
-  // when billing is autofilled from the account lookup after the box is ticked.
+  // While checked, mirror the shared address fields from Ship To — including
+  // when shipping is autofilled from the account lookup after the box is ticked.
   useEffect(() => {
-    if (!sameAsBilling) return
-    setShipTo('street', billTo.street)
-    setShipTo('cityState', billTo.cityState)
-    setShipTo('zip', billTo.zip)
-    // Coordinates too, so the conflict check works when the address was
-    // searched in the Bill To box.
-    setShipTo('lat', billTo.lat)
-    setShipTo('lng', billTo.lng)
-    // setShipTo is intentionally omitted: it's re-created each render.
+    if (!sameAsShipping) return
+    setBillTo('street', shipTo.street)
+    setBillTo('cityState', shipTo.cityState)
+    setBillTo('zip', shipTo.zip)
+    setBillTo('lat', shipTo.lat)
+    setBillTo('lng', shipTo.lng)
+    // setBillTo is intentionally omitted: it's re-created each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sameAsBilling, billTo.street, billTo.cityState, billTo.zip, billTo.lat, billTo.lng])
+  }, [sameAsShipping, shipTo.street, shipTo.cityState, shipTo.zip, shipTo.lat, shipTo.lng])
 
-  // Editing a mirrored Ship To field (typing, or a Ship To map search) breaks
-  // the link so the manual value isn't overwritten by later Bill To changes.
-  const setShipUnlink = (field, value) => {
-    if (sameAsBilling) setSameAsBilling(false)
-    setShipTo(field, value)
+  // Editing a mirrored Bill To field (typing, or a Bill To map search) breaks
+  // the link so the manual value isn't overwritten by later Ship To changes.
+  const setBillUnlink = (field, value) => {
+    if (sameAsShipping) setSameAsShipping(false)
+    setBillTo(field, value)
   }
 
   // Street / City / Zip stay hidden until the address is populated — by the
   // location search (new customer picks a place) or the account lookup
   // (existing account autofills). Any one of the three being present reveals
   // the block so it can be reviewed / edited.
-  const billHasAddress = Boolean(billTo.street || billTo.cityState || billTo.zip)
+  const shipHasAddress = Boolean(shipTo.street || shipTo.cityState || shipTo.zip)
 
   return (
     <section className="section addresses">
       <div className="address-col">
         <div className="col-head">
-          <h2>Bill To</h2>
+          <h2>Ship To</h2>
         </div>
         {/* One control for Buyer name, never two. Several contacts to choose
             between makes it a dropdown; otherwise it stays the free-text field,
@@ -161,37 +159,37 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
         )}
         {showLocationSearch && (
           <AddressMap
-            lat={billTo.lat}
-            lng={billTo.lng}
+            lat={shipTo.lat}
+            lng={shipTo.lng}
             onPlaceSelect={(p) => {
-              setBillTo('street', p.street)
-              setBillTo('cityState', p.cityState)
-              setBillTo('zip', p.zip)
-              setBillTo('lat', p.lat)
-              setBillTo('lng', p.lng)
+              setShipTo('street', p.street)
+              setShipTo('cityState', p.cityState)
+              setShipTo('zip', p.zip)
+              setShipTo('lat', p.lat)
+              setShipTo('lng', p.lng)
             }}
           />
         )}
 
-        {billHasAddress && (
+        {shipHasAddress && (
           <>
-            <Field label="Street" value={billTo.street} onChange={(v) => setBillTo('street', v)} required />
-            <Field label="City / State" value={billTo.cityState} onChange={(v) => setBillTo('cityState', v)} required />
-            <Field label="Zip" value={billTo.zip} onChange={(v) => setBillTo('zip', v)} required />
+            <Field label="Street" value={shipTo.street} onChange={(v) => setShipTo('street', v)} required />
+            <Field label="City / State" value={shipTo.cityState} onChange={(v) => setShipTo('cityState', v)} required />
+            <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipTo('zip', v)} required />
           </>
         )}
         <Field label="Tel" value={billTo.tel} onChange={(v) => setBillTo('tel', v)} type="tel" placeholder="Example: (423) 240-9340" required />
       </div>
       <div className="address-col">
         <div className="col-head">
-          <h2>Ship To</h2>
+          <h2>Bill To</h2>
           <label className="check">
             <input
               type="checkbox"
-              checked={sameAsBilling}
-              onChange={(e) => setSameAsBilling(e.target.checked)}
+              checked={sameAsShipping}
+              onChange={(e) => setSameAsShipping(e.target.checked)}
             />
-            Same as Bill To
+            Same as Ship To
           </label>
         </div>
         <Field
@@ -204,36 +202,36 @@ export default function Addresses({ billTo, shipTo, setBillTo, setShipTo, showLo
         />
         {showLocationSearch && (
           <AddressMap
-            lat={shipTo.lat}
-            lng={shipTo.lng}
+            lat={billTo.lat}
+            lng={billTo.lng}
             onPlaceSelect={(p) => {
-              // Searching a Ship To address is a manual choice — unlink so it
-              // isn't overwritten by the Bill To mirror.
-              if (sameAsBilling) setSameAsBilling(false)
-              setShipTo('street', p.street)
-              setShipTo('cityState', p.cityState)
-              setShipTo('zip', p.zip)
-              setShipTo('lat', p.lat)
-              setShipTo('lng', p.lng)
+              // Searching a Bill To address is a manual choice — unlink so it
+              // isn't overwritten by the Ship To mirror.
+              if (sameAsShipping) setSameAsShipping(false)
+              setBillTo('street', p.street)
+              setBillTo('cityState', p.cityState)
+              setBillTo('zip', p.zip)
+              setBillTo('lat', p.lat)
+              setBillTo('lng', p.lng)
             }}
           />
         )}
 
-        {shipHasAddress && (
+        {billHasAddress && (
           <>
             <Field
               label="Street"
               required
-              value={shipTo.street}
-              onChange={(v) => setShipUnlink('street', v)}
+              value={billTo.street}
+              onChange={(v) => setBillUnlink('street', v)}
             />
             <Field
               label="City / State"
               required
-              value={shipTo.cityState}
-              onChange={(v) => setShipUnlink('cityState', v)}
+              value={billTo.cityState}
+              onChange={(v) => setBillUnlink('cityState', v)}
             />
-            <Field label="Zip" value={shipTo.zip} onChange={(v) => setShipUnlink('zip', v)} required />
+            <Field label="Zip" value={billTo.zip} onChange={(v) => setBillUnlink('zip', v)} required />
           </>
         )}
         <Field label="Resale tax ID" value={shipTo.resaleTaxId} onChange={(v) => setShipTo('resaleTaxId', v)} required />
