@@ -2426,3 +2426,17 @@ a.admin-tab {
 /* (The FAQ link's styles live once, up with the rep sign-in rules. They were
    duplicated down here because the missing brace above swallowed the original
    and made it look like it had never been written.) */
+
+/* "Choose from existing contacts" under the new-buyer text box — a plain link,
+   not the global black button. */
+.link-btn.buyer-back {
+  display: block;
+  padding: 4px 0 0;
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.link-btn.buyer-back:hover {
+  background: none;
+  color: #1d1d1b;
+}
