@@ -19,6 +19,37 @@ anyone reading this file is actually asking.
 
 ---
 
+## v1.3 — unreleased
+
+### New
+
+- **Add a new buyer from the Buyer name dropdown.** When an account has more
+  than one contact, reps choose the buyer from a dropdown. If the person placing
+  the order isn't in it yet, the dropdown now ends with **+ Add new buyer…**,
+  which turns it into a text box for typing the name. **Choose from existing
+  contacts** underneath switches back to the list.
+
+### Changed
+
+- **Ship To and Bill To have swapped sides on the order form.** Ship To is now
+  on the left and Bill To on the right. The address search on the left fills
+  in the shipping address, and the **Same as Ship To** box under Bill To copies
+  it into billing. For new accounts that box starts ticked. Typing in a Bill To
+  field or searching a different billing address unticks it, so a separate
+  billing address is never overwritten.
+
+  Buyer name, Tel, Email and Resale tax ID stay where they were.
+
+### Worth knowing
+
+- A buyer added this way is saved on the order only. It is not created as a
+  contact in Salesforce, so the next order from that account will not list
+  them until someone adds them there.
+
+- Frontend rebuild only. No database change.
+
+---
+
 ## v1.2 — 2026-09-05
 
 ### New
