@@ -128,9 +128,10 @@ export default function RepsApp() {
           /* A real <a>, not a button with an onClick that assigns
              window.location: it goes somewhere, so cmd-click, middle-click,
              "open in new tab" and the status bar preview all have to work.
-             Never carries `active` — it is not a panel that can be current. */
+             Never carries `active` — it is not a panel that can be current.
+             Opens in a new tab so the rep keeps their dashboard open. */
           t.href ? (
-            <a key={t.value} className="admin-tab" href={t.href}>
+            <a key={t.value} className="admin-tab" href={t.href} target="_blank" rel="noopener noreferrer">
               {t.label}
             </a>
           ) : (
