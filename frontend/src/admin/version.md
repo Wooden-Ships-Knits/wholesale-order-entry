@@ -40,6 +40,9 @@ anyone reading this file is actually asking.
 
   Buyer name, Tel, Email and Resale tax ID stay where they were.
 
+- **The DOF link in the reps portal now opens the order form in a new tab**,
+  so the rep's dashboard stays open behind it.
+
 ### Worth knowing
 
 - A buyer added this way is saved on the order only. It is not created as a
