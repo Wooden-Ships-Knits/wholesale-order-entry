@@ -11,7 +11,7 @@
 // filterOrders' helpers — deriving either of them twice is how an export starts
 // disagreeing with the filter that produced its rows.
 
-import { isNewAccount, isSigned, rankCode } from './filterOrders'
+import { campaignLabel, isNewAccount, isSigned, rankCode } from './filterOrders'
 
 // Column headers and widths, in the table's own order. Widths are Excel
 // character units — eyeballed so the sheet opens readable without the reviewer
@@ -26,6 +26,7 @@ const COLUMNS = [
   { header: 'Account Name', width: 30 },
   { header: 'Value', width: 14 },
   { header: 'Written By', width: 18 },
+  { header: 'Campaign', width: 24 },
   { header: 'Sales Territory', width: 18 },
   { header: 'New account', width: 24 },
   { header: 'Rank', width: 7 },
@@ -212,6 +213,7 @@ export function orderSheetData(orders) {
       text(o.accountName),
       money(o.totalAmount),
       text(o.orderWrittenBy),
+      text(campaignLabel(o.campaign)),
       text(o.salesTerritory),
       text(newAccountText(o)),
       text(rankCode(o.rank)),

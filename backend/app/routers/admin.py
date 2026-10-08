@@ -124,6 +124,9 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         # Internal Use "Order written by" — a rep-filled order records who wrote
         # it; a customer-filled one leaves it empty.
         "orderWrittenBy": o.order_written_by,
+        # Internal Use campaign as stored: 'rep-non-show', 'Other: <text>', or
+        # null on customer-filled orders. Editable from /admin until Accept.
+        "campaign": o.campaign,
         "orderCopyEmail": o.order_copy_email,
         "salesTerritory": o.sales_territory,
         # Account rank at order time; a new account has none yet, so show the
@@ -681,6 +684,39 @@ def set_ship_window(
     order.ship_window = window
     db.commit()
     logger.info("Order %s ship window: %r -> %r", str(order.id)[:8], before, window)
+    return _row(order, _account_exists(order))
+
+
+class CampaignRequest(BaseModel):
+    # The same choices as the form's Internal Use radios; '' clears it.
+    campaign: Literal["", "rep-non-show", "other"]
+    campaign_other: str = Field(default="", max_length=200)
+
+
+@router.post("/orders/{order_id}/campaign", dependencies=[AdminRequired])
+def set_campaign(order_id: str, payload: CampaignRequest, db: Session = Depends(get_db)) -> dict:
+    """Change an order's Internal Use campaign.
+
+    Not blocked by an outstanding signing link, unlike the ship window: the
+    campaign is internal bookkeeping, not part of what the buyer agrees to.
+    """
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    # Accept copies the campaign onto the Kugamon order in Salesforce; editing
+    # here afterwards would leave the two disagreeing.
+    if order.status != "submitted":
+        raise HTTPException(
+            status_code=409,
+            detail=f"This order is already {order.status} — its campaign can no longer be changed.",
+        )
+    if payload.campaign == "other" and not payload.campaign_other.strip():
+        raise HTTPException(status_code=400, detail='Type the campaign name for "Other".')
+
+    before = order.campaign
+    order.campaign = orders.campaign_value(payload.campaign, payload.campaign_other) or None
+    db.commit()
+    logger.info("Order %s campaign: %r -> %r", str(order.id)[:8], before, order.campaign)
     return _row(order, _account_exists(order))
 
 
