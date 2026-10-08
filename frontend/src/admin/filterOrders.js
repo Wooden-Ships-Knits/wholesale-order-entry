@@ -16,6 +16,7 @@ export const EMPTY_FILTERS = {
   shipWindow: '',
   accountName: '',
   writtenBy: '', // Internal Use "Order written by"; '' on customer-filled orders
+  campaign: '', // campaignLabel() text, so the dropdown matches what the cell shows
   territory: '',
   newAccount: '', // '' | 'yes' | 'no'
   paymentMethod: '', // '' | 'Credit Card' | 'PayPal'
@@ -76,6 +77,16 @@ export function isSigned(o) {
 }
 
 
+/** Display text for a stored campaign. The form stores 'rep-non-show' as a
+ *  code (Accept resolves it to the Salesforce Campaign) and anything else as
+ *  "Other: <text>". Shared by the Campaign cell, its filter and the export. */
+export function campaignLabel(campaign) {
+  if (!campaign) return ''
+  if (campaign === 'rep-non-show') return 'Rep non-show order'
+  if (campaign === 'other') return 'Other'
+  return campaign
+}
+
 const contains = (value, query) => String(value ?? '').toLowerCase().includes(query)
 
 // Tri-state ('' | 'yes' | 'no') against a possibly-null boolean. null/undefined
@@ -114,6 +125,7 @@ export function filterOrders(orders, f) {
     if (f.shipWindow && o.shipWindow !== f.shipWindow) return false
     if (accountName && !contains(o.accountName, accountName)) return false
     if (f.writtenBy && o.orderWrittenBy !== f.writtenBy) return false
+    if (f.campaign && campaignLabel(o.campaign) !== f.campaign) return false
     if (f.territory && o.salesTerritory !== f.territory) return false
     if (!matchesYesNo(f.newAccount, isNewAccount(o))) return false
     if (f.paymentMethod && o.paymentMethod !== f.paymentMethod) return false

@@ -42,6 +42,17 @@ SHIP_WINDOW_NOTE = "Please allow 7–12 days for transit."
 CONFLICT_NEIGHBOURS = 5
 
 
+def campaign_value(choice: str, other: str = "") -> str:
+    """The stored form of the Internal Use campaign: 'rep-non-show' as is (it is
+    what salesforce.client.campaign_id_for resolves on Accept), 'other' with its
+    text as "Other: <text>". Shared by submit and the /admin campaign edit so the
+    two can never store it differently."""
+    other = other.strip()
+    if choice == "other" and other:
+        return f"Other: {other}"
+    return choice
+
+
 def _fail(errors: list[dict]) -> None:
     raise HTTPException(status_code=422, detail={"errors": errors})
 
@@ -293,9 +304,7 @@ def submit_order(
     card_digits = payload.payment.card_number.get_secret_value().replace(" ", "")
     card_last4 = card_digits[-4:] if len(card_digits) >= 4 else None
 
-    campaign = payload.internal.campaign
-    if campaign == "other" and payload.internal.campaign_other:
-        campaign = f"Other: {payload.internal.campaign_other}"
+    campaign = campaign_value(payload.internal.campaign, payload.internal.campaign_other)
     # Stored as given, not rendered: these two feed Salesforce picklists.
     # The name is kept only when there actually is a split.
     split = payload.internal.split

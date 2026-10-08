@@ -67,6 +67,10 @@ export const getOrderShipWindows = (id) => request(`/api/admin/orders/${id}/ship
 export const setOrderShipWindow = (id, shipWindow) =>
   post(`/api/admin/orders/${id}/ship-window`, { ship_window: shipWindow })
 
+// Internal Use campaign: 'rep-non-show', 'other' (with its text) or '' to clear.
+export const setOrderCampaign = (id, campaign, campaignOther = '') =>
+  post(`/api/admin/orders/${id}/campaign`, { campaign, campaign_other: campaignOther })
+
 // Draft of the "we already have a stockist nearby" email. Pass { orderId } from
 // the order table, or the store details from the conflict-check tab.
 export const getConflictEmail = (payload) => post('/api/conflict-email', payload)

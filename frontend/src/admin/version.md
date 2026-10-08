@@ -29,6 +29,13 @@ anyone reading this file is actually asking.
   which turns it into a text box for typing the name. **Choose from existing
   contacts** underneath switches back to the list.
 
+- **Order monitoring — new Campaign column.** Shows the campaign chosen in
+  the form's Internal Use section (Rep non-show order, or Other with its name).
+  **Change** lets you correct it or fill it in while the order is awaiting
+  review. Once an order is accepted the campaign is on the Salesforce order, so
+  it can no longer be changed here. The column has its own filter and is
+  included in Export to Excel.
+
 ### Changed
 
 - **Ship To and Bill To have swapped sides on the order form.** Ship To is now
@@ -49,7 +56,10 @@ anyone reading this file is actually asking.
   contact in Salesforce, so the next order from that account will not list
   them until someone adds them there.
 
-- Frontend rebuild only. No database change.
+- Changing an order's campaign does not update the order PDF already on file;
+  the PDF keeps the campaign it was submitted with.
+
+- Rebuild both the frontend and the backend. No database change.
 
 ---
 

@@ -10,12 +10,13 @@ import {
   pdfUrl,
   setConflictResolution,
   setOrderAccount,
+  setOrderCampaign,
   setOrderShipWindow,
   setOrderStatus,
   setTaxCertCleared,
   suggestAccounts,
 } from './api'
-import { distinctValues, rankCode } from './filterOrders'
+import { campaignLabel, distinctValues, rankCode } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
 // Money for display only — the DB keeps numeric. Same format as the signing
@@ -292,6 +293,103 @@ function ShipWindowCell({ order: o, onChanged, onError }) {
   )
 }
 
+/** Campaign cell, editable while the order is still awaiting review — Accept
+ *  copies the campaign onto the Salesforce order, so it freezes after that.
+ *
+ *  Same two choices as the form's Internal Use radios, plus "None" to clear.
+ *  "Rep non-show order" and "None" save on pick; "Other" waits for its text. */
+function CampaignCell({ order: o, onChanged, onError }) {
+  const [editing, setEditing] = useState(false)
+  const [choice, setChoice] = useState('')
+  const [otherText, setOtherText] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  function startEditing() {
+    const c = o.campaign || ''
+    if (!c || c === 'rep-non-show') {
+      setChoice(c)
+      setOtherText('')
+    } else {
+      // "Other: <text>", a bare "other", or anything older — all edit as Other.
+      setChoice('other')
+      setOtherText(c === 'other' ? '' : c.replace(/^Other:\s*/, ''))
+    }
+    setEditing(true)
+  }
+
+  async function save(nextChoice, nextOther = '') {
+    setSaving(true)
+    try {
+      await setOrderCampaign(o.id, nextChoice, nextOther)
+      setEditing(false)
+      onChanged()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function pick(value) {
+    setChoice(value)
+    if (value !== 'other') save(value)
+  }
+
+  if (!editing) {
+    return (
+      <td>
+        <div className="cert-missing">
+          <span>{campaignLabel(o.campaign) || <span className="unknown">—</span>}</span>
+          {o.status === 'submitted' && (
+            <button type="button" className="link-btn inline" onClick={startEditing}>
+              Change
+            </button>
+          )}
+        </div>
+      </td>
+    )
+  }
+
+  return (
+    <td>
+      <div className="cert-missing">
+        <select autoFocus disabled={saving} value={choice} onChange={(e) => pick(e.target.value)}>
+          <option value="">None</option>
+          <option value="rep-non-show">Rep non-show order</option>
+          <option value="other">Other…</option>
+        </select>
+        {choice === 'other' && (
+          <>
+            <input
+              type="text"
+              placeholder="Campaign name"
+              aria-label="Campaign name"
+              maxLength={200}
+              disabled={saving}
+              value={otherText}
+              onChange={(e) => setOtherText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && otherText.trim()) save('other', otherText)
+              }}
+            />
+            <button
+              type="button"
+              className="link-btn inline"
+              disabled={saving || !otherText.trim()}
+              onClick={() => save('other', otherText)}
+            >
+              Save
+            </button>
+          </>
+        )}
+        <button type="button" className="link-btn inline" onClick={() => setEditing(false)}>
+          Cancel
+        </button>
+      </div>
+    </td>
+  )
+}
+
 /** Payment cell: which Kugamon record type to pick, plus the card summary and
  *  a link to the admin copy showing the full number.
  *
@@ -487,6 +585,7 @@ export default function OrderTable({
   // not remove the other territories from the list you picked it from.
   const territories = useMemo(() => distinctValues(allOrders, (o) => o.salesTerritory), [allOrders])
   const writers = useMemo(() => distinctValues(allOrders, (o) => o.orderWrittenBy), [allOrders])
+  const campaigns = useMemo(() => distinctValues(allOrders, (o) => campaignLabel(o.campaign)), [allOrders])
   const ranks = useMemo(() => distinctValues(allOrders, (o) => rankCode(o.rank)), [allOrders])
   const seasons = useMemo(() => distinctValues(allOrders, (o) => o.seasonCode), [allOrders])
   const shipWindows = useMemo(() => distinctValues(allOrders, (o) => o.shipWindow), [allOrders])
@@ -750,6 +849,7 @@ export default function OrderTable({
             <th>Account Name</th>
             <th>Value</th>
             <th>Written By</th>
+            <th>Campaign</th>
             <th>Sales Territory</th>
             <th>New account</th>
             <th>Rank</th>
@@ -872,6 +972,20 @@ export default function OrderTable({
             </th>
             <th>
               <select
+                aria-label="Filter by campaign"
+                value={filters.campaign}
+                onChange={(e) => onFilterChange('campaign', e.target.value)}
+              >
+                <option value="">All</option>
+                {campaigns.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <select
                 aria-label="Filter by sales territory"
                 value={filters.territory}
                 onChange={(e) => onFilterChange('territory', e.target.value)}
@@ -978,7 +1092,7 @@ export default function OrderTable({
         <tbody>
           {!orders.length && (
             <tr>
-              <td className="admin-empty-row" colSpan={18}>
+              <td className="admin-empty-row" colSpan={19}>
                 {allOrders.length ? 'No orders match these filters.' : 'No orders yet.'}
               </td>
             </tr>
@@ -1041,6 +1155,7 @@ export default function OrderTable({
               {/* Internal Use "Order written by" — only rep-filled orders carry
                   one, so a dash here means the customer submitted it. */}
               <td>{o.orderWrittenBy || <span className="unknown">—</span>}</td>
+              <CampaignCell order={o} onChanged={onChanged} onError={onError} />
               {/* Flagged when empty: a territory-less order has no rep to fall
                   back to, so a customer-filled one sends its copy to the buyer
                   alone. Someone has to link it to the right account. */}
@@ -1289,7 +1404,7 @@ export default function OrderTable({
               {/* Ship Window + Account Name sit between the two figures. */}
               <td colSpan={2} />
               <td className="num">{money(totals.amount)}</td>
-              <td colSpan={10} />
+              <td colSpan={11} />
             </tr>
           </tfoot>
         )}
