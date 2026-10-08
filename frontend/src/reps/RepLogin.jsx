@@ -83,9 +83,9 @@ export default function RepLogin({ onSignedIn }) {
           needs somewhere to go. The FAQ is public, so it opens without a
           session — which is the point, since being unable to sign in is one of
           the things it answers. */}
-      {/* <a className="faq-link" href="/faq">
+      <a className="faq-link" href="/faq">
         FAQ&rsquo;s
-      </a> */}
+      </a>
     </form>
   )
 }

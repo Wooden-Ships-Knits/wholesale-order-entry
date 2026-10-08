@@ -19,7 +19,7 @@ import RepOrderTable from './RepOrderTable'
 // Orders table showing under a heading that says otherwise.
 const TABS = [
   { value: 'orders', label: 'Orders' },
-  // { value: 'prospects', label: 'Prospects' },
+  { value: 'prospects', label: 'Prospects' },
   { value: 'dof', label: 'DOF', href: '/order_form' },
 ]
 
