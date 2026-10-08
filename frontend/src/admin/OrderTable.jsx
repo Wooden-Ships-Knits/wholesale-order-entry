@@ -849,8 +849,8 @@ export default function OrderTable({
             <th>Account Name</th>
             <th>Value</th>
             <th>Written By</th>
-            <th>Campaign</th>
             <th>Sales Territory</th>
+            <th>Campaign</th>
             <th>New account</th>
             <th>Rank</th>
             <th>Potential conflict</th>
@@ -972,20 +972,6 @@ export default function OrderTable({
             </th>
             <th>
               <select
-                aria-label="Filter by campaign"
-                value={filters.campaign}
-                onChange={(e) => onFilterChange('campaign', e.target.value)}
-              >
-                <option value="">All</option>
-                {campaigns.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </th>
-            <th>
-              <select
                 aria-label="Filter by sales territory"
                 value={filters.territory}
                 onChange={(e) => onFilterChange('territory', e.target.value)}
@@ -994,6 +980,20 @@ export default function OrderTable({
                 {territories.map((t) => (
                   <option key={t} value={t}>
                     {t}
+                  </option>
+                ))}
+              </select>
+            </th>
+            <th>
+              <select
+                aria-label="Filter by campaign"
+                value={filters.campaign}
+                onChange={(e) => onFilterChange('campaign', e.target.value)}
+              >
+                <option value="">All</option>
+                {campaigns.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
@@ -1155,13 +1155,13 @@ export default function OrderTable({
               {/* Internal Use "Order written by" — only rep-filled orders carry
                   one, so a dash here means the customer submitted it. */}
               <td>{o.orderWrittenBy || <span className="unknown">—</span>}</td>
-              <CampaignCell order={o} onChanged={onChanged} onError={onError} />
               {/* Flagged when empty: a territory-less order has no rep to fall
                   back to, so a customer-filled one sends its copy to the buyer
                   alone. Someone has to link it to the right account. */}
               <td className={o.salesTerritory?.trim() ? undefined : 'flag-yellow'}>
                 {o.salesTerritory || <span className="unknown">—</span>}
               </td>
+              <CampaignCell order={o} onChanged={onChanged} onError={onError} />
               {/* New account: answered by the submit-time Salesforce check, not
                   by the buyer's "first order" answer. Yes stacks a "Create
                   account" action (or "Created ✓") beneath it. */}
