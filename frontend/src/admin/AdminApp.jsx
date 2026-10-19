@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { getOrders, getSession, logout, pollReplies } from './api'
+import { getOrderItems, getOrders, getSession, logout, pollReplies } from './api'
 import { exportOrdersXlsx } from './exportOrders'
 import { EMPTY_FILTERS, filterOrders, hasActiveFilters } from './filterOrders'
 import Login from './Login'
@@ -92,12 +92,14 @@ export default function AdminApp() {
 
   // Download the visible rows as .xlsx. Exports `visibleOrders`, not `orders`,
   // so the file matches the table exactly — status chips and column filters
-  // included. Nothing is sent to the server; the rows are already here.
+  // included. The order rows are already here; only their line items are
+  // fetched, for the "Order items" sheet.
   async function exportXlsx() {
     setExporting(true)
     setError('')
     try {
-      await exportOrdersXlsx(visibleOrders)
+      const { items } = await getOrderItems(visibleOrders.map((o) => o.id))
+      await exportOrdersXlsx(visibleOrders, items)
     } catch (err) {
       setError(`Export failed: ${err.message}`)
     } finally {

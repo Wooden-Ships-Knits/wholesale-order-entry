@@ -67,6 +67,9 @@ export const getOrderShipWindows = (id) => request(`/api/admin/orders/${id}/ship
 export const setOrderShipWindow = (id, shipWindow) =>
   post(`/api/admin/orders/${id}/ship-window`, { ship_window: shipWindow })
 
+// Line items of the given orders, for Export to Excel's "Order items" sheet.
+export const getOrderItems = (ids) => post('/api/admin/orders/items', { ids })
+
 // Internal Use campaign: 'rep-non-show', 'other' (with its text) or '' to clear.
 export const setOrderCampaign = (id, campaign, campaignOther = '') =>
   post(`/api/admin/orders/${id}/campaign`, { campaign, campaign_other: campaignOther })

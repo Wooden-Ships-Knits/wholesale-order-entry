@@ -5,6 +5,7 @@ certificates live outside the web root and are streamed through here, never
 served statically: they carry buyer contact details and tax IDs.
 """
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
@@ -19,7 +20,7 @@ from app import crypto
 from app.admin.security import SESSION_KEY, AdminRequired, verify_password
 from app.ai import conflict_reply
 from app.config import settings
-from app.db.models import Order
+from app.db.models import Order, OrderItem
 from app.db.session import get_db
 from app.login_guard import LoginGuard, client_ip
 from app.email import inbound, order_email
@@ -333,6 +334,49 @@ def list_orders(
         return o.account_name.strip().casefold() in existing
 
     return {"orders": [_row(o, exists(o)) for o in orders]}
+
+
+class OrderItemsRequest(BaseModel):
+    # The orders the admin table is showing — at most one page of the list.
+    ids: list[uuid.UUID] = Field(max_length=2000)
+
+
+def _item_row(item: OrderItem) -> dict:
+    """One order line for the Excel export's "Order items" sheet."""
+    return {
+        "orderId": str(item.order_id),
+        "code": item.code,
+        "styleName": item.style_name,
+        "color": item.color,
+        "qtyXs": item.qty_xs,
+        "qtySm": item.qty_sm,
+        "qtyMl": item.qty_ml,
+        "lineQty": item.line_qty,
+        "unitPrice": float(item.unit_price) if item.unit_price is not None else None,
+        "lineTotal": float(item.line_total) if item.line_total is not None else None,
+    }
+
+
+@router.post("/orders/items", dependencies=[AdminRequired])
+def list_order_items(payload: OrderItemsRequest, db: Session = Depends(get_db)) -> dict:
+    """Line items for the given orders, for Export to Excel.
+
+    Separate from GET /orders so the table doesn't carry every line of every
+    order on each load — the export is the only thing that needs them. POST
+    because a page of ids is too long for a query string.
+
+    Items are the order's current lines: a buyer who changed quantities at
+    signing changed these too, so they agree with the row's QTY and Value.
+    """
+    if not payload.ids:
+        return {"items": []}
+    stmt = (
+        select(OrderItem)
+        .where(OrderItem.order_id.in_(payload.ids))
+        # No line-position column exists, so sort for a stable, readable sheet.
+        .order_by(OrderItem.order_id, OrderItem.code, OrderItem.style_name, OrderItem.color)
+    )
+    return {"items": [_item_row(i) for i in db.execute(stmt).scalars()]}
 
 
 def _push_order_to_salesforce(order: Order) -> None:
