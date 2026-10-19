@@ -22,6 +22,9 @@ const COLUMNS = [
   { header: 'Signature', width: 34 },
   { header: 'Season', width: 9 },
   { header: 'QTY', width: 8 },
+  // Export-only: how many lines (style/colours) the order has. The lines
+  // themselves are on the "Order items" sheet.
+  { header: 'Styles', width: 8 },
   { header: 'Ship Window', width: 16 },
   { header: 'Account Name', width: 30 },
   { header: 'Value', width: 14 },
@@ -36,6 +39,26 @@ const COLUMNS = [
   { header: 'Notes', width: 40 },
   { header: 'Special Instruction', width: 40 },
   { header: 'Decision', width: 24 },
+]
+
+// The "Order items" sheet: one row per order line (style × colour). The order
+// columns repeat on every row so the sheet filters and pivots on its own; the
+// size columns use the order form's own labels.
+const ITEM_COLUMNS = [
+  { header: 'Order ID', width: 12 },
+  { header: 'Date', width: 20 },
+  { header: 'Account Name', width: 30 },
+  { header: 'Season', width: 9 },
+  { header: 'Status', width: 16 },
+  { header: 'Code', width: 12 },
+  { header: 'Style', width: 26 },
+  { header: 'Colour', width: 18 },
+  { header: 'X/S', width: 7 },
+  { header: 'S/M', width: 7 },
+  { header: 'M/L', width: 7 },
+  { header: 'Line QTY', width: 10 },
+  { header: 'Unit price', width: 12 },
+  { header: 'Line total', width: 14 },
 ]
 
 // Excel number format for the Date column. Month name rather than 7/31 for the
@@ -184,31 +207,57 @@ function certificateText(o) {
   return o.isNewAccount ? 'No' : 'N/A'
 }
 
-/** The orders as sheet data: one header row, then one row per order.
- *
- *  Pure and free of the xlsx writer, so it can be exercised without a browser. */
-export function orderSheetData(orders) {
-  const header = COLUMNS.map((c) => ({
+const headerRow = (columns) =>
+  columns.map((c) => ({
     value: c.header,
     type: String,
     fontWeight: 'bold',
     backgroundColor: '#f1f0ec',
   }))
 
-  const rows = orders.map((o) => {
-    // A real date cell, not a string, so Excel can sort and filter the column.
-    // Null for a missing or unparseable timestamp — an "Invalid Date" cell
-    // makes the writer throw and takes the whole export down with it.
-    const created = o.createdAt ? excelLocalDate(o.createdAt) : null
+/** A real date cell, not a string, so Excel can sort and filter the column.
+ *  Null for a missing or unparseable timestamp — an "Invalid Date" cell makes
+ *  the writer throw and takes the whole export down with it. */
+function dateCell(iso) {
+  const created = iso ? excelLocalDate(iso) : null
+  return created ? { value: created, type: Date, format: DATE_FORMAT } : null
+}
 
+/** Status in the words the table's toolbar uses. */
+function statusText(status) {
+  if (status === 'submitted') return 'Awaiting review'
+  if (status === 'accepted') return 'Accepted'
+  if (status === 'declined') return 'Declined'
+  return status || ''
+}
+
+/** Order lines grouped by order id, in the order the server sorted them. */
+export function groupItemsByOrder(items) {
+  const byOrder = new Map()
+  for (const item of items || []) {
+    if (!byOrder.has(item.orderId)) byOrder.set(item.orderId, [])
+    byOrder.get(item.orderId).push(item)
+  }
+  return byOrder
+}
+
+/** The orders as sheet data: one header row, then one row per order.
+ *
+ *  `itemsByOrder` (from groupItemsByOrder) fills the Styles column; without it
+ *  the column is left blank rather than showing a misleading 0.
+ *
+ *  Pure and free of the xlsx writer, so it can be exercised without a browser. */
+export function orderSheetData(orders, itemsByOrder = null) {
+  const rows = orders.map((o) => {
     return [
-      created ? { value: created, type: Date, format: DATE_FORMAT } : null,
+      dateCell(o.createdAt),
       text(o.shortId),
       text(signatureText(o)),
       text(o.seasonCode),
       // Total pieces as the order stands. A buyer who changed quantities at
       // signing changed this too — the Signature column carries the before/after.
       number(o.totalQty),
+      itemsByOrder ? number((itemsByOrder.get(o.id) || []).length) : null,
       text(o.shipWindow),
       text(o.accountName),
       money(o.totalAmount),
@@ -226,7 +275,35 @@ export function orderSheetData(orders) {
     ]
   })
 
-  return [header, ...rows]
+  return [headerRow(COLUMNS), ...rows]
+}
+
+/** The "Order items" sheet: one row per order line, orders in the same order
+ *  as the Orders sheet so the two read side by side. Only lines of `orders`
+ *  are included, so the sheet obeys the same filters as the table. */
+export function itemSheetData(orders, itemsByOrder) {
+  const rows = []
+  for (const o of orders) {
+    for (const item of itemsByOrder.get(o.id) || []) {
+      rows.push([
+        text(o.shortId),
+        dateCell(o.createdAt),
+        text(o.accountName),
+        text(o.seasonCode),
+        text(statusText(o.status)),
+        text(item.code),
+        text(item.styleName),
+        text(item.color),
+        number(item.qtyXs),
+        number(item.qtySm),
+        number(item.qtyMl),
+        number(item.lineQty),
+        money(item.unitPrice),
+        money(item.lineTotal),
+      ])
+    }
+  }
+  return [headerRow(ITEM_COLUMNS), ...rows]
 }
 
 /** 'wooden-ships-orders-2026-08-08.xlsx' — dated, so successive exports don't
@@ -236,22 +313,33 @@ export function exportFileName(now = new Date()) {
   return `wooden-ships-orders-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.xlsx`
 }
 
-/** Build the .xlsx and hand it to the browser's downloader.
+/** Build the .xlsx — an "Orders" sheet and an "Order items" sheet — and hand
+ *  it to the browser's downloader. `items` are the lines of these orders, from
+ *  POST /api/admin/orders/items.
  *
  *  The writer is imported on demand: /admin shares one bundle with the buyer's
  *  order form (single Vite entry — see main.jsx), and there is no reason for
  *  every buyer to download an Excel writer they will never run. */
-export async function exportOrdersXlsx(orders) {
+export async function exportOrdersXlsx(orders, items) {
   const { default: writeXlsxFile } = await import('write-excel-file/browser')
-  await writeXlsxFile(orderSheetData(orders), {
-    sheet: 'Orders',
-    columns: COLUMNS.map((c) => ({ width: c.width })),
-    // Freeze the header; the table is sixteen columns wide and the reviewer is
-    // going to scroll.
-    stickyRowsCount: 1,
-  }).toFile(exportFileName())
+  const itemsByOrder = groupItemsByOrder(items)
+  await writeXlsxFile([
+    {
+      data: orderSheetData(orders, itemsByOrder),
+      sheet: 'Orders',
+      columns: COLUMNS.map((c) => ({ width: c.width })),
+      // Freeze the header; the table is wide and the reviewer is going to scroll.
+      stickyRowsCount: 1,
+    },
+    {
+      data: itemSheetData(orders, itemsByOrder),
+      sheet: 'Order items',
+      columns: ITEM_COLUMNS.map((c) => ({ width: c.width })),
+      stickyRowsCount: 1,
+    },
+  ]).toFile(exportFileName())
 }
 
 // Exported for the sanity check in tools/, and so a future column change has one
 // obvious place to stay in sync with the table's <thead>.
-export { COLUMNS }
+export { COLUMNS, ITEM_COLUMNS }
