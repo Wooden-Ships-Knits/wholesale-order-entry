@@ -36,6 +36,15 @@ anyone reading this file is actually asking.
   it can no longer be changed here. The column has its own filter and is
   included in Export to Excel.
 
+- **Export to Excel now includes the items ordered.** The file has a second
+  sheet, **Order items**, with one row per style/colour: the code, style,
+  colour, quantity in each size (X/S, S/M, M/L), line quantity, unit price and
+  line total. Each row also carries its order's ID, date, account, season and
+  status, so the sheet can be filtered or turned into a pivot table on its own.
+  It covers the same orders as the Orders sheet, so whatever filters are on
+  screen apply to both. The Orders sheet gains a **Styles** column showing how
+  many lines each order has.
+
 ### Changed
 
 - **Ship To and Bill To have swapped sides on the order form.** Ship To is now
