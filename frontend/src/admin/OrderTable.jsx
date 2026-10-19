@@ -16,7 +16,7 @@ import {
   setTaxCertCleared,
   suggestAccounts,
 } from './api'
-import { campaignLabel, distinctValues, rankCode } from './filterOrders'
+import { campaignLabel, distinctValues, rankCode, toDayString } from './filterOrders'
 import EmailDraftModal from '../components/EmailDraftModal'
 
 // Money for display only — the DB keeps numeric. Same format as the signing
@@ -212,8 +212,20 @@ function AccountNameCell({ order: o, onChanged, onError }) {
  * season itself is deliberately not editable — line prices and Salesforce
  * product ids were resolved from that season's price book at submit.
  */
+/** Has this order's ship window already opened, with the order still awaiting
+ *  review? Then it is late before anyone has accepted it — flag it yellow.
+ *  Decided orders are left alone: an old accepted order is always "past" and
+ *  would turn the whole column yellow. Compared as local 'YYYY-MM-DD' strings,
+ *  which sort the same way as dates. */
+function shipWindowStarted(o) {
+  return o.status === 'submitted' && Boolean(o.shipWindowStart) && toDayString(new Date().toISOString()) > o.shipWindowStart
+}
+
 function ShipWindowCell({ order: o, onChanged, onError }) {
   const [editing, setEditing] = useState(false)
+  const late = shipWindowStarted(o)
+  const cellClass = late ? 'flag-yellow' : undefined
+  const lateTitle = late ? `Ship window opened ${o.shipWindowStart}` : undefined
   const [options, setOptions] = useState(null) // null = still loading
   const [saving, setSaving] = useState(false)
 
@@ -251,7 +263,7 @@ function ShipWindowCell({ order: o, onChanged, onError }) {
 
   if (!editing) {
     return (
-      <td>
+      <td className={cellClass} title={lateTitle}>
         <div className="cert-missing">
           <span>{o.shipWindow || <span className="unknown">—</span>}</span>
           {o.status === 'submitted' && (
@@ -265,7 +277,7 @@ function ShipWindowCell({ order: o, onChanged, onError }) {
   }
 
   return (
-    <td>
+    <td className={cellClass} title={lateTitle}>
       <div className="cert-missing">
         <select
           autoFocus

@@ -45,6 +45,11 @@ anyone reading this file is actually asking.
   screen apply to both. The Orders sheet gains a **Styles** column showing how
   many lines each order has.
 
+- **Ship Window turns yellow once the window has opened.** An order still
+  awaiting review whose ship window start date has passed is now highlighted,
+  so late orders stand out. Hover over the cell to see the date it opened.
+  Accepted and declined orders are not highlighted.
+
 ### Changed
 
 - **Ship To and Bill To have swapped sides on the order form.** Ship To is now

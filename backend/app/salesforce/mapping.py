@@ -578,6 +578,14 @@ def _window_year(ship_window: str | None, season_code: str | None) -> int | None
         return None
 
 
+def ship_window_start(ship_window: str | None, season_code: str | None) -> str | None:
+    """ISO start date of an order's ship window ('2026-12-01'), or None if it
+    can't be parsed. Same year rule as the Salesforce push, so /admin and the
+    Kugamon order agree on when a window opens."""
+    dates = ship_window_dates(ship_window, season_code, _window_year(ship_window, season_code))
+    return dates["start"] if dates else None
+
+
 def build_sales_order_header(
     order: Any,
     pricebook_id: str,
