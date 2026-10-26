@@ -139,3 +139,5 @@ def run_classify(db, complete: Completer | None = None) -> int:
     if suggested:
         logger.info("Classifier produced %d conflict suggestion(s)", suggested)
     return suggested
+
+teste
