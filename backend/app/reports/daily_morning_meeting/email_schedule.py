@@ -1,11 +1,19 @@
-"""Which chase email was last sent to reps for each ship window."""
-import re
-from datetime import date
+"""Where each ship window's chase emails stand, from the "Email Schedule" tab.
 
-import pandas as pd
+One row per ship window and year (plus "UPDATED" rows that re-plan an earlier
+one); one column per step in send order: CC notification, email #1, its
+"Reply to All" follow-up, email #2, … email #8 or more, then the cancel date.
+"""
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from datetime import date, timedelta
 
 from app.config import settings
 from app.sheets import client as sheets
+
+from .steps import Step, step_name
 
 WORKSHEET = "Email Schedule"
 
@@ -13,96 +21,77 @@ WORKSHEET = "Email Schedule"
 # zero-padding ('06/01') and not ('6/1').
 _RANGE_RE = re.compile(r'(\d{1,2})/(\d{1,2})\s*-\s*(\d{1,2})/(\d{1,2})')
 
+# Rows of one window this far apart belong to different years' cycles.
+_SAME_CYCLE = timedelta(days=60)
 
-def _range_key(text):
+
+def range_key(text: object) -> tuple[int, int, int, int] | None:
     """'06/01 - 06/30' or '6/1 - 6/30' -> (6, 1, 6, 30); None if no range found."""
-    if not isinstance(text, str):
-        return None
-    m = _RANGE_RE.search(text)
+    m = _RANGE_RE.search(str(text or ""))
     return tuple(int(x) for x in m.groups()) if m else None
 
 
-def _email_date_cols(df):
-    """[(column, label)] for each EMAIL #N / FOLLOW UP EMAIL #N column, in send order.
-
-    Column order in the sheet is the send order (#1..#7 then the rep follow-up),
-    so we just keep the columns as they appear. 'Reply to All...' columns are skipped.
-    """
-    cols = []
-    for c in df.columns:
-        cu = c.upper()
-        if 'REPLY' in cu:
-            continue
-        m = re.search(r'EMAIL\s*#\s*(\d)', cu)
-        if not m:
-            continue
-        n = m.group(1)
-        label = f'Sent follow-up email #{n} to rep' if 'FOLLOW UP' in cu else f'Sent email #{n}'
-        cols.append((c, label))
-    return cols
+@dataclass
+class Status:
+    last: Step | None  # most recent step on or before today
+    next: Step | None  # first step after today
+    ended: bool  # no email left before the cancel date
 
 
-_LOOKUP = None
+class Schedule:
+    """The Email Schedule tab, read once per DMM run (never cached across runs:
+    the team edits it, and an old copy would report the wrong emails)."""
+
+    def __init__(self, values: list[list], today: date):
+        self.today = today
+        self._rows: dict[tuple, list[list[Step]]] = {}
+        if len(values) < 7:
+            raise RuntimeError(f"Worksheet {WORKSHEET!r} has no data rows")
+        header = values[4]
+        window = next(i for i, h in enumerate(header) if "SHIP WINDOW" in str(h).upper())
+        columns = [(i, name) for i, h in enumerate(header) if (name := step_name(h))]
+        for row in values[6:]:
+            key = range_key(row[window] if window < len(row) else "")
+            if key is None:
+                continue
+            steps = [Step(_serial(row[i]), name) for i, name in columns if i < len(row) and _serial(row[i])]
+            if steps:
+                self._rows.setdefault(key, []).append(steps)
+
+    @classmethod
+    def load(cls, today: date) -> "Schedule":
+        if not settings.problem_list_reps_sheet_id:
+            raise RuntimeError("PROBLEM_LIST_REPS_SHEET_ID is not set")
+        # UNFORMATTED_VALUE: dates arrive as Google serial numbers, unambiguous
+        # whatever way the cell is formatted ('Mon, Oct 26' / 'Tue,  26, Dec').
+        return cls(
+            sheets.get_values(settings.problem_list_reps_sheet_id, WORKSHEET, value_render_option="UNFORMATTED_VALUE"),
+            today,
+        )
+
+    def status(self, window: str) -> Status | None:
+        """The window's position in its schedule today; None if it has no row.
+
+        The tab keeps every year's rows, so the row used is the one whose first
+        step is closest to today — and among rows of that cycle the last one,
+        since an "UPDATED" plan sits below the plan it replaces.
+        """
+        rows = self._rows.get(range_key(window))
+        if not rows:
+            return None
+        anchor = min((r[0].day for r in rows), key=lambda d: abs(d - self.today))
+        steps = [r for r in rows if abs(r[0].day - anchor) <= _SAME_CYCLE][-1]
+        done = [s for s in steps if s.day <= self.today]
+        ahead = [s for s in steps if s.day > self.today]
+        return Status(
+            last=max(done, key=lambda s: s.day) if done else None,
+            next=min(ahead, key=lambda s: s.day) if ahead else None,
+            ended=not ahead,
+        )
 
 
-def _build_lookup():
-    """{range_key: [(label, date), ...]} for the current year, keyed by ship window.
-
-    Later rows overwrite earlier ones so 'UPDATED PLAN' rows win over 'INITIAL PLAN'.
-    """
-    if not settings.problem_list_reps_sheet_id:
-        raise RuntimeError("PROBLEM_LIST_REPS_SHEET_ID is not set")
-    # UNFORMATTED_VALUE so the send dates arrive as Google serial numbers,
-    # which the conversion below expects.
-    values = sheets.get_values(
-        settings.problem_list_reps_sheet_id,
-        WORKSHEET,
-        value_render_option="UNFORMATTED_VALUE",
-    )
-    if len(values) < 7:
-        raise RuntimeError(f"Worksheet {WORKSHEET!r} has no data rows")
-    df = pd.DataFrame(values[6:], columns=values[4])
-
-    email_cols = _email_date_cols(df)
-    for c, _ in email_cols:
-        nums = pd.to_numeric(df[c], errors='coerce')                       # Google serial -> date
-        df[c] = (pd.Timestamp('1899-12-30') + pd.to_timedelta(nums, unit='D')).dt.date
-
-    this_year = date.today().year
-    first_col = email_cols[0][0]
-
-    lookup = {}
-    for _, row in df.iterrows():
-        key = _range_key(row['SHIP WINDOW'])
-        if key is None:
-            continue
-        first = row[first_col]                                             # email #1 anchors the year
-        if pd.isna(first) or first.year != this_year:
-            continue
-        lookup[key] = [(label, row[c]) for c, label in email_cols if pd.notna(row[c])]
-    return lookup
-
-
-def sentEmailLine(range_text, today=None):
-    """'Sent email #N:  <Weekday, Month D>' for the most recent email sent on/before
-    today for this ship window. None if the range isn't found or nothing sent yet.
-
-    Past months resolve to follow-up #7 (all emails are already sent); the ongoing
-    month resolves to whichever email is the closest one on/before today.
-    """
-    global _LOOKUP
-    if _LOOKUP is None:
-        _LOOKUP = _build_lookup()
-
-    today = today or date.today()
-    key = _range_key(range_text)
-    if key is None:
+def _serial(value: object) -> date | None:
+    """A Google Sheets serial day number as a date; None for text ('N/A', '#REF!')."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    dates = _LOOKUP.get(key)
-    if not dates:
-        return None
-    sent = [(label, d) for label, d in dates if d <= today]
-    if not sent:
-        return None
-    label, d = max(sent, key=lambda x: x[1])
-    return f"{label}:  {d.strftime('%A, %B ')}{d.day}"
+    return date(1899, 12, 30) + timedelta(days=int(value))

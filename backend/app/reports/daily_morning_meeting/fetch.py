@@ -1,51 +1,110 @@
-"""Salesforce side of the DMM report — the unpaid open orders table."""
-import logging
+"""Salesforce side of the DMM report — the unpaid open orders, and order details
+the report doesn't carry (account, territory, AIR/FCL)."""
+from __future__ import annotations
 
-import pandas as pd
+import logging
+from dataclasses import dataclass
+from datetime import date, timedelta
 
 from app.config import settings
-from app.salesforce.client import _client
+from app.salesforce import mapping
+from app.salesforce.client import _client, query_all, soql_str
 
 logger = logging.getLogger(__name__)
 
+DATE_REQUIRED = "kugo2p__SalesOrder__c.kugo2p__DateRequired__c"
+ORDER_NO = "CUST_NAME"
+AMOUNT = "kugo2p__SalesOrder__c.kugo2p__ProductAmount__c"
+SHIPMENT = "kugo2p__SalesOrder__c.Estimated_Shipment_Name__c"
+UNITS = "kugo2p__SalesOrder__c.Total_Units__c"
+ORDER_NAME = "kugo2p__SalesOrder__c.kugo2p__OrderName__c"
 
-def report() -> pd.DataFrame:
-    """Reproduce the UNPAID DAILY MORNING MEETING report as shown in the SF UI.
 
-    The report is a TABULAR report (no groupings): every detail row is a single
-    SO. factMap['T!T']['rows'] holds the detail rows, and each dataCell carries
-    a formatted display string ('label') plus the raw value ('value'). We keep
-    the formatted labels so the DataFrame matches the SF UI one-to-one (e.g.
-    '$1,068.00', '16.0000'); text_gen parses them back where it needs numbers.
+@dataclass
+class Unpaid:
+    number: str
+    shipment: str  # Estimated Shipment Name, e.g. '10-01 AIR'
+    order_name: str  # e.g. 'F26 SWEATERS 10/01 - 10/30'
+    units: float
+    amount: float
+
+
+def window_end(today: date) -> date:
+    """Last day of next month: the unpaid windows the meeting covers. In the
+    26 Oct 2026 recap that meant every window up to November."""
+    first_after = date(today.year + (today.month + 1) // 12, (today.month + 1) % 12 + 1, 1)
+    return first_after - timedelta(days=1)
+
+
+def report(today: date) -> list[Unpaid]:
+    """Run the UNPAID DAILY MORNING MEETING report (tabular: one row per SO).
+
+    The report's saved "Date Required <= …" filter was edited by hand on the
+    run page, which the API never sees — on 2026-09-22 and again on 2026-10-27
+    it still read 2026-07-01 and the report returned nothing. The upper bound
+    is set here on every run instead (window_end), as the OO report does.
     """
-    sf = _client()  # shared, already-authenticated session
-    rpt = sf.query(f"SELECT Id FROM Report WHERE Name = '{settings.dmm_report_name}'")
-    records = rpt["records"]
-    if not records:
+    sf = _client()
+    found = sf.query(f"SELECT Id FROM Report WHERE Name = '{soql_str(settings.dmm_report_name)}'")["records"]
+    if not found:
         raise RuntimeError(f"No Salesforce report named {settings.dmm_report_name!r}")
-    result = sf.restful(f"analytics/reports/{records[0]['Id']}")
+    report_id = found[0]["Id"]
 
-    cols = result["reportMetadata"]["detailColumns"]  # column API names, in display order
-    info = result["reportExtendedMetadata"]["detailColumnInfo"]
-    labels = [info[c]["label"] for c in cols]  # ['Product Amount', 'Order: Order Number', ...]
+    md = sf.restful(f"analytics/reports/{report_id}/describe")["reportMetadata"]
+    filters = md.get("reportFilters") or []
+    upper = [f for f in filters if f["column"] == DATE_REQUIRED and f["operator"] == "lessOrEqual"]
+    for f in upper:
+        f["value"] = window_end(today).isoformat()
+    if not upper:
+        filters.append({"column": DATE_REQUIRED, "operator": "lessOrEqual", "value": window_end(today).isoformat()})
+    md["reportFilters"] = filters
 
-    rows = [
-        {lbl: cell["label"] for lbl, cell in zip(labels, r["dataCells"])}
-        for r in result["factMap"]["T!T"]["rows"]
-    ]
-    if not rows:
-        # The API always runs the report's SAVED filters — a window someone
-        # widened on the SF run page is not saved and does not apply here. On
-        # 2026-09-22 the saved filter still read "Date Required <= 2026-07-01",
-        # so the report returned nothing and the recap printed an unpaid
-        # section with no orders in it. Name the filters rather than returning
-        # a silent empty frame.
-        logger.warning(
-            "Salesforce report %r returned no rows. Its saved filters are: %s",
-            settings.dmm_report_name,
-            [
-                f"{f.get('column')} {f.get('operator')} {f.get('value')}"
-                for f in result["reportMetadata"].get("reportFilters", [])
-            ],
-        )
-    return pd.DataFrame(rows, columns=labels)
+    result = sf.restful(f"analytics/reports/{report_id}", method="POST", json={"reportMetadata": md})
+    if not result.get("allData", True):
+        raise RuntimeError("The unpaid report has more than 2,000 rows — the API returned only part of it")
+
+    cols = md["detailColumns"]
+    rows = []
+    for r in result["factMap"]["T!T"]["rows"]:
+        cell = dict(zip(cols, r["dataCells"]))
+        amount = cell[AMOUNT]["value"]
+        rows.append(Unpaid(
+            number=cell[ORDER_NO]["label"],
+            shipment=cell[SHIPMENT]["label"] or "",
+            order_name=cell[ORDER_NAME]["label"] or "",
+            units=float(cell[UNITS]["value"] or 0),
+            amount=float((amount or {}).get("amount") or 0) if isinstance(amount, dict) else float(amount or 0),
+        ))
+    return rows
+
+
+@dataclass
+class OrderInfo:
+    account: str
+    territory: str  # the order's Sales Territory, e.g. 'FL - Jason Hilsenrad'
+    shipment: str  # Estimated Shipment Name
+
+
+def orders(numbers: list[str]) -> dict[str, OrderInfo]:
+    """{SO number: OrderInfo} for these orders; numbers not found are left out."""
+    account = mapping.SALES_ORDER_ACCOUNT.removesuffix("__c") + "__r"
+    out: dict[str, OrderInfo] = {}
+    unique = sorted(set(numbers))
+    for i in range(0, len(unique), 200):
+        inlist = "','".join(soql_str(n) for n in unique[i:i + 200])
+        for r in query_all(
+            f"SELECT Name, {account}.Name, {mapping.SALES_ORDER_TERRITORY}, {mapping.ESTIMATED_SHIPMENT_NAME} "
+            f"FROM {mapping.SALES_ORDER} WHERE Name IN ('{inlist}')"
+        ):
+            out[r["Name"]] = OrderInfo(
+                account=(r.get(account) or {}).get("Name") or "",
+                territory=r.get(mapping.SALES_ORDER_TERRITORY) or "",
+                shipment=r.get(mapping.ESTIMATED_SHIPMENT_NAME) or "",
+            )
+    return out
+
+
+def mode(shipment: str) -> str | None:
+    """'AIR' / 'FCL' from an Estimated Shipment Name like '06-05 FCL'."""
+    last = shipment.split()[-1].upper() if shipment.split() else ""
+    return last if last in ("AIR", "FCL") else None

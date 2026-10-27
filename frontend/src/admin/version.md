@@ -87,6 +87,30 @@ anyone reading this file is actually asking.
 - **The DOF link in the reps portal now opens the order form in a new tab**,
   so the rep's dashboard stays open behind it.
 
+- **The DMM recap now reads like the team's own morning email.**
+  - **Paid orders** are split by AIR and FCL ("For 3 AIR SOs, we plan to ship
+    them on Wed, Oct 28 (LT = 2 days) at the latest"). AIR or FCL comes from
+    each order's Estimated Shipment Name in Salesforce.
+  - **Each unpaid group** is titled with its season, month and AIR/FCL, for
+    example *UNPAID F26 October AIR (10/01 - 10/15)*. It shows the window's
+    **Last communication** and **Plan** from the Email Schedule tab, including
+    the "Reply to All" follow-ups.
+  - **FCL groups, and windows whose emails have run out before the cancel
+    date,** list every account instead. Each account shows its rep, its latest
+    problem note from the rep's tab, its last email or notice, and its next one
+    from the month tab (OCT, NOV, …).
+  - **The unpaid section is no longer empty.** The Salesforce report's saved
+    date filter had gone stale (it still read 1 July). The report now always
+    runs up to the end of next month, so it never needs editing in Salesforce.
+  - **Changes to the Email Schedule show up on the next run.** They used to
+    wait for a server restart.
+
+- **The DMM and OO reports now go by Bali time.** "Today" is the date in Bali
+  (WITA), not the server's clock, which runs on UTC. In the DMM that decides
+  which paid SOs count as updated today, the lead times, and which chase
+  emails have gone out; in the OO, which orders are yellow, orange or red.
+  Before this, a DMM run before 8 am Bali time used yesterday's date.
+
 ### Worth knowing
 
 - A buyer added this way is saved on the order only. It is not created as a

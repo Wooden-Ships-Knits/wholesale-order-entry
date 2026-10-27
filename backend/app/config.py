@@ -184,9 +184,12 @@ class Settings(BaseSettings):
     # "Order Date <= ..." filter is replaced with today on every run, so it
     # never needs editing in Salesforce.
     oo_report_name: str = "Rep Open Order Detail Report"
-    # Whose calendar "today" is: decides which orders count as entered last
-    # week, within their ship window, or past it.
-    oo_timezone: str = "Asia/Jakarta"
+
+    # Whose calendar "today" the DMM and OO reports use: the team works on Bali
+    # time (WITA, UTC+8), not the server's. Decides which paid SOs were updated
+    # today and which chase emails have gone out (DMM), and which orders count
+    # as entered last week, within their ship window, or past it (OO).
+    report_timezone: str = "Asia/Makassar"
 
     @property
     def mail_configured(self) -> bool:
