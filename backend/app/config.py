@@ -180,6 +180,14 @@ class Settings(BaseSettings):
     # (today's shipping plan) and the "Email Schedule" tab (rep chase dates).
     problem_list_reps_sheet_id: str = ""
 
+    # OO (Open Order). Salesforce Report.Name, like DTO/DMM. The report's saved
+    # "Order Date <= ..." filter is replaced with today on every run, so it
+    # never needs editing in Salesforce.
+    oo_report_name: str = "Rep Open Order Detail Report"
+    # Whose calendar "today" is: decides which orders count as entered last
+    # week, within their ship window, or past it.
+    oo_timezone: str = "Asia/Jakarta"
+
     @property
     def mail_configured(self) -> bool:
         return bool(self.smtp_host and self.smtp_user and self.smtp_pass)

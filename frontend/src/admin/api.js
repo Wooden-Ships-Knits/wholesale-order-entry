@@ -116,6 +116,8 @@ export const noticeCardUrl = (name) =>
 // Admin reports (DTO/DMM). getReport = last cached run; runReport = run now.
 export const getReport = (key) => request(`/api/admin/reports/${key}`)
 export const runReport = (key) => post(`/api/admin/reports/${key}/run`)
+// The file the last run built (OO's .xlsx) — a URL for a plain download link.
+export const reportFileUrl = (key) => `/api/admin/reports/${key}/file`
 
 // ---- Catalog visibility ----
 // Every style+color in a season, each carrying `hidden`. The same rows the
