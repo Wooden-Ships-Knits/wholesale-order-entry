@@ -2,7 +2,7 @@
 2026-10-26 one is the model). Pure layout: recap.py gathers the data.
 
 It is pasted into WhatsApp, so it uses WhatsApp's markup: *bold* for each
-group's title, and plain '- ' bullets."""
+group's title and each listed account (name + rep), and plain '- ' bullets."""
 from __future__ import annotations
 
 from collections import Counter
@@ -82,7 +82,7 @@ def _group_lines(g: Group) -> list[str]:
     for i, a in enumerate(g.accounts, 1):
         if i > 1:
             lines.append("")
-        lines.append(f"{i}. {a.name}" + (f" ({a.rep})" if a.rep else ""))
+        lines.append(f"{i}. *{a.name}" + (f" ({a.rep})" if a.rep else "") + "*")  # WhatsApp bold
         for text in (a.note, a.last):
             if text:
                 lines.append(f"{BULLET}{text.rstrip('.')}.")

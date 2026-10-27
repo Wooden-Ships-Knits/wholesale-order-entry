@@ -182,7 +182,7 @@ def test_group_and_per_account_layout():
             "- Last communication: Mon, Oct 26 - Sent email #6.\n"
             "- Plan: Fri, Oct 30 - Send email #7.") in text
     assert ("- Details as below:\n"
-            "1. WILDFLOWER WOMEN (Rande)\n"
+            "1. *WILDFLOWER WOMEN (Rande)*\n"
             "- Wed, Oct 14 - The cust will take the order later.\n"
             "- Mon, Oct 26 - Sent notice #5.\n"
             "- PLAN: Wed, Oct 28 - Send notice #6.") in text
