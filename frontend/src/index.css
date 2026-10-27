@@ -2440,3 +2440,9 @@ a.admin-tab {
   background: none;
   color: #1d1d1b;
 }
+
+/* OO report: the link to the .xlsx the last run built. */
+.report-download {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+}
