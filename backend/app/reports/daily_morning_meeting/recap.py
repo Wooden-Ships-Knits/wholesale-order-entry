@@ -11,8 +11,9 @@ Gathers the recap's data, then text_gen lays it out:
             month tab ("OCT", "NOV", …).
   Accounts  FCL windows, and windows whose schedule has no email left before
             the cancel date, list every account instead of a Plan: its latest
-            problem note (rep tabs) and its own last/next email (month tab).
-            Decided 2026-10-27.
+            problem note (rep tabs) and its own last/next email (month tab) —
+            but only up to MAX_LISTED SOs; a bigger group keeps the group
+            Last communication / Plan. Decided 2026-10-27.
 """
 from __future__ import annotations
 
@@ -21,6 +22,14 @@ from app.reports.clock import today
 
 from . import email_schedule, fetch, order_tabs, problem_list_reps, rep_notes, text_gen
 from .steps import nearest, parse
+
+
+MAX_LISTED = 3  # most SOs a group lists account by account
+
+
+def lists_accounts(mode: str | None, status: email_schedule.Status | None, sos: int) -> bool:
+    """Whether a group lists its accounts ("Details as below") instead of a Plan."""
+    return (mode == "FCL" or bool(status and status.ended)) and sos <= MAX_LISTED
 
 
 def rep_short(territory: str) -> str | None:
@@ -64,7 +73,7 @@ def run() -> dict:
             start=nearest(key[0], key[1], day),
             sos=len(rows), qty=sum(r.units for r in rows), amount=sum(r.amount for r in rows),
         )
-        if mode == "FCL" or (status and status.ended):
+        if lists_accounts(mode, status, len(rows)):
             g.accounts = []
         groups.append((g, rows, status))
 
@@ -82,16 +91,19 @@ def run() -> dict:
 
     for g, rows, status in groups:
         fcl = g.mode == "FCL"
+        # A listed FCL group has no group-level line, as in the team's email;
+        # every other group gets its window's Last communication (and Plan).
+        group_line = not (fcl and g.accounts is not None)
         if status is None:
             log.append(f"{g.title} — window not on the Email Schedule; using its orders' dates on the "
                        f"{order_tabs.tab_name(g.start.month)} tab.")
             own = [tab_for(g)[r.number] for r in rows if r.number in tab_for(g)]
             sent = [o.last for o in own if o.last]
             planned = [o.plan for o in own if o.plan]
-            if not fcl:
+            if group_line:
                 g.last = max(sent, key=lambda s: s.day).worded(done=True) if sent else None
                 g.plan = min(planned, key=lambda s: s.day).worded(done=False) if planned else None
-        elif not fcl:
+        elif group_line:
             g.last = status.last.worded(done=True) if status.last else None
             g.plan = status.next.worded(done=False) if status.next else None
 
