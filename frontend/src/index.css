@@ -2441,6 +2441,26 @@ a.admin-tab {
   color: #1d1d1b;
 }
 
+/* Report card: "Output" heading with the copy-to-clipboard button beside it. */
+.report-output-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.report-copy {
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  background: #fff;
+  color: #1d1d1b;
+  border: 1px solid #b9b4aa;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.report-copy:hover {
+  border-color: #1d1d1b;
+}
+
 /* OO report: the link to the .xlsx the last run built. */
 .report-download {
   margin: 0.6rem 0 0;

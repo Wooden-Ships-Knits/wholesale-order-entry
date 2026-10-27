@@ -87,7 +87,13 @@ anyone reading this file is actually asking.
 - **The DOF link in the reps portal now opens the order form in a new tab**,
   so the rep's dashboard stays open behind it.
 
-- **The DMM recap now reads like the team's own morning email.**
+- **Reports — Copy button on the output.** Each report card now has a
+  **Copy** button beside its Output, which copies the whole recap in one click,
+  ready to paste into WhatsApp.
+
+- **The DMM recap now reads like the team's own morning email.** It is
+  formatted for WhatsApp: each group's title and each listed account are in
+  \*bold\*, and the bullets are plain dashes.
   - **Paid orders** are split by AIR and FCL ("For 3 AIR SOs, we plan to ship
     them on Wed, Oct 28 (LT = 2 days) at the latest"). AIR or FCL comes from
     each order's Estimated Shipment Name in Salesforce.
