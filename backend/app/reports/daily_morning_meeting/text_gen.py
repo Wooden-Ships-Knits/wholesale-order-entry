@@ -1,5 +1,8 @@
 """The DMM recap text, laid out like the team's hand-written email (the
-2026-10-26 one is the model). Pure layout: recap.py gathers the data."""
+2026-10-26 one is the model). Pure layout: recap.py gathers the data.
+
+It is pasted into WhatsApp, so it uses WhatsApp's markup: *bold* for each
+group's title, and plain '- ' bullets."""
 from __future__ import annotations
 
 from collections import Counter
@@ -8,7 +11,7 @@ from datetime import date
 
 from .steps import short
 
-BULLET = "•  "
+BULLET = "- "
 _MODE_ORDER = {"AIR": 0, "FCL": 1, None: 2}
 
 
@@ -37,7 +40,7 @@ class Group:
     @property
     def title(self) -> str:
         words = [self.season, f"{self.start:%B}", self.mode]
-        return f"UNPAID {' '.join(w for w in words if w)} ({self.window}) order:"
+        return f"*UNPAID {' '.join(w for w in words if w)} ({self.window}) order:*"  # WhatsApp bold
 
 
 def sort_groups(groups: list[Group]) -> list[Group]:

@@ -161,8 +161,8 @@ def test_paid_lines_air_first_with_plurals():
         ("AIR", date(2026, 10, 28)), ("AIR", date(2026, 10, 28)), ("AIR", date(2026, 10, 28)),
     ], [])
     assert "Today, we have a total of 4 orders that have been paid.\n" \
-           "•  For 3 AIR SOs, we plan to ship them on Wed, Oct 28 (LT = 2 days) at the latest.\n" \
-           "•  For 1 FCL SO, we plan to ship it on Tue, Oct 27 (LT = 1 day) at the latest." in text
+           "- For 3 AIR SOs, we plan to ship them on Wed, Oct 28 (LT = 2 days) at the latest.\n" \
+           "- For 1 FCL SO, we plan to ship it on Tue, Oct 27 (LT = 1 day) at the latest." in text
     assert "Daily Morning Meeting Update - Monday, October 26, 2026." in text
 
 
@@ -177,14 +177,14 @@ def test_group_and_per_account_layout():
     assert "Today, we have no orders that have been paid." in text
     # October before November, AIR before FCL
     assert text.index("October AIR") < text.index("October FCL") < text.index("November AIR")
-    assert ("UNPAID F26 October AIR (10/01 - 10/30) order:\n"
-            "•  # of SO: 24 SO, TTL Qty: 733, TTL Amount: $49,080\n"
-            "•  Last communication: Mon, Oct 26 - Sent email #6.\n"
-            "•  Plan: Fri, Oct 30 - Send email #7.") in text
-    assert ("•  Details as below:\n"
+    assert ("*UNPAID F26 October AIR (10/01 - 10/30) order:*\n"
+            "- # of SO: 24 SO, TTL Qty: 733, TTL Amount: $49,080\n"
+            "- Last communication: Mon, Oct 26 - Sent email #6.\n"
+            "- Plan: Fri, Oct 30 - Send email #7.") in text
+    assert ("- Details as below:\n"
             "1. WILDFLOWER WOMEN (Rande)\n"
-            "•  Wed, Oct 14 - The cust will take the order later.\n"
-            "•  Mon, Oct 26 - Sent notice #5.\n"
-            "•  PLAN: Wed, Oct 28 - Send notice #6.") in text
-    assert "TTL Qty: 1,235, TTL Amount: $84,152\n•  Plan: (none scheduled)" in text
+            "- Wed, Oct 14 - The cust will take the order later.\n"
+            "- Mon, Oct 26 - Sent notice #5.\n"
+            "- PLAN: Wed, Oct 28 - Send notice #6.") in text
+    assert "TTL Qty: 1,235, TTL Amount: $84,152\n- Plan: (none scheduled)" in text
     assert text.endswith("Thanks!")
