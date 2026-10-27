@@ -4,7 +4,7 @@ from datetime import date
 from app.reports.daily_morning_meeting import email_schedule as es
 from app.reports.daily_morning_meeting import order_tabs, rep_notes, text_gen
 from app.reports.daily_morning_meeting.fetch import mode, window_end
-from app.reports.daily_morning_meeting.recap import rep_short
+from app.reports.daily_morning_meeting.recap import lists_accounts, rep_short
 from app.reports.daily_morning_meeting.steps import Step, nearest, parse, step_name
 
 TODAY = date(2026, 10, 26)
@@ -52,6 +52,15 @@ def test_fcl_steps_are_notices():
 def test_mode_from_shipment_name():
     assert mode("06-05 FCL") == "FCL" and mode("10-01 AIR") == "AIR"
     assert mode("-") is None and mode("") is None
+
+
+def test_accounts_listed_only_up_to_three_sos():
+    ended = es.Status(last=None, next=None, ended=True)
+    running = es.Status(last=None, next=None, ended=False)
+    assert lists_accounts("FCL", running, 3) and lists_accounts("AIR", ended, 2)
+    assert not lists_accounts("FCL", running, 4)  # e.g. November FCL, 16 SOs: group line + Plan
+    assert not lists_accounts("AIR", ended, 4)
+    assert not lists_accounts("AIR", running, 1) and not lists_accounts("AIR", None, 1)
 
 
 def test_rep_short():

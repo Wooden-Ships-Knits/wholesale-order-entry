@@ -96,7 +96,8 @@ anyone reading this file is actually asking.
     **Last communication** and **Plan** from the Email Schedule tab, including
     the "Reply to All" follow-ups.
   - **FCL groups, and windows whose emails have run out before the cancel
-    date,** list every account instead. Each account shows its rep, its latest
+    date,** list every account instead, as long as the group has 3 SOs or
+    fewer. Bigger groups keep the Last communication and Plan lines. Each account shows its rep, its latest
     problem note from the rep's tab, its last email or notice, and its next one
     from the month tab (OCT, NOV, …).
   - **The unpaid section is no longer empty.** The Salesforce report's saved
