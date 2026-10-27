@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getReport, runReport } from './api'
+import { getReport, reportFileUrl, runReport } from './api'
 
 // The automation reports surfaced in /admin. `ready` = the backend runner
 // exists (backend/app/routers/reports.py _RUNNERS).
@@ -18,6 +18,13 @@ const REPORTS = [
     description:
       "Pull today's shipping plan and unpaid open orders, and draft the morning-meeting recap.",
   },
+  {
+    key: 'oo',
+    ready: true,
+    title: 'OO — Open Order',
+    description:
+      "Pull the Salesforce 'Rep Open Order Detail Report' up to today and download a zip of colour-coded spreadsheets: the Master plus one file per rep and a House file, with split orders copied to the rep they're split with. Yellow = entered last week, orange = within the ship window, red = past it.",
+  },
 ]
 
 function ReportCard({ report }) {
@@ -25,6 +32,7 @@ function ReportCard({ report }) {
   const [log, setLog] = useState('')
   const [output, setOutput] = useState('')
   const [ranAt, setRanAt] = useState(null)
+  const [download, setDownload] = useState(null) // filename of the last run's file, if any
   const [error, setError] = useState('')
 
   // A run result → the card's fields (log is a list of lines from the backend).
@@ -33,6 +41,7 @@ function ReportCard({ report }) {
     setLog((d.log || []).join('\n'))
     setOutput(d.recap || '')
     setRanAt(d.ranAt || null)
+    setDownload(d.download || null)
   }
 
   // Show the last cached run when the tab opens — so "run once, stays there".
@@ -75,6 +84,15 @@ function ReportCard({ report }) {
         </button>
         {ranAt && <span className="report-ranat">Last run: {new Date(ranAt).toLocaleString()}</span>}
       </div>
+      {/* A plain link: the browser downloads it with the admin cookie, and the
+          file is the one the last run built — re-run to refresh it. */}
+      {download && !running && (
+        <p className="report-download">
+          <a href={reportFileUrl(report.key)} download={download}>
+            ⬇ Download {download}
+          </a>
+        </p>
+      )}
       {error && <p className="report-note">{error}</p>}
 
       <h3>Log</h3>

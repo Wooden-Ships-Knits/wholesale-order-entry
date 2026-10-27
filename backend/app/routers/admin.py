@@ -118,6 +118,9 @@ def _row(o: Order, account_exists: bool | None = None) -> dict:
         # Buyer-selected ship window. Editable from /admin (the season is not —
         # changing it would invalidate every line item's price book).
         "shipWindow": o.ship_window,
+        # When that window opens (ISO date, or null if unparseable) — the table
+        # flags an order still awaiting review once this date has passed.
+        "shipWindowStart": mapping.ship_window_start(o.ship_window, o.season_code),
         # The buyer has saved a draft through their link: this order is still
         # being edited and its totals may move again before it is signed.
         "draftSavedAt": o.draft_saved_at,

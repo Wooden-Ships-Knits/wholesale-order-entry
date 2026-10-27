@@ -45,6 +45,34 @@ anyone reading this file is actually asking.
   screen apply to both. The Orders sheet gains a **Styles** column showing how
   many lines each order has.
 
+- **Ship Window turns yellow once the window has opened.** An order still
+  awaiting review whose ship window start date has passed is now highlighted,
+  so late orders stand out. Hover over the cell to see the date it opened.
+  Accepted and declined orders are not highlighted.
+
+- **Reports — new "OO — Open Order" report.** **Run report** pulls the
+  Salesforce "Rep Open Order Detail Report" up to today and downloads one zip
+  with the Master - OO spreadsheet plus one file per rep
+  (e.g. `OO-CA,HI-YTD-261027-Rande.xlsx`) and a House file for the House and
+  unassigned territories. An order split with another rep also appears in that
+  rep's file, in a **Split orders** section below their own orders with its own
+  subtotal. Each order is coloured:
+  **yellow** — entered in the last week, make sure nothing is missing;
+  **orange** — within its ship window, check the Problem List in case it is
+  stuck; **red** — past its ship window, see the Problem List Email. An order
+  that fits more than one colour takes the most urgent. The card also lists the
+  red orders and how many orders are in each colour.
+
+  Like the hand-made file, the spreadsheet opens grouped: one Total row per
+  order, showing the order's territory, dates, account and amount, with the
+  **+** button below it opening that order's lines. Orders are sorted by Sales
+  Territory, then order number.
+
+  The report's "Order Date up to" filter is set to today automatically, so it
+  never needs changing in Salesforce. Unlike the hand-made file, every line
+  shows its own product — in the old file each order's first line was blank
+  and the product names sat one row lower than their quantities.
+
 ### Changed
 
 - **Ship To and Bill To have swapped sides on the order form.** Ship To is now
