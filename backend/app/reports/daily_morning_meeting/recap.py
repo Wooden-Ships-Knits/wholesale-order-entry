@@ -95,7 +95,7 @@ def run() -> dict:
         # every other group gets its window's Last communication (and Plan).
         group_line = not (fcl and g.accounts is not None)
         if status is None:
-            log.append(f"{g.title} — window not on the Email Schedule; using its orders' dates on the "
+            log.append(f"{g.title.strip('*')} — window not on the Email Schedule; using its orders' dates on the "
                        f"{order_tabs.tab_name(g.start.month)} tab.")
             own = [tab_for(g)[r.number] for r in rows if r.number in tab_for(g)]
             sent = [o.last for o in own if o.last]
@@ -112,7 +112,7 @@ def run() -> dict:
         steps = tab_for(g)
         missing = [r.number for r in rows if r.number not in steps]
         if missing:
-            log.append(f"{g.title} — not on the {order_tabs.tab_name(g.start.month)} tab: {', '.join(missing)}.")
+            log.append(f"{g.title.strip('*')} — not on the {order_tabs.tab_name(g.start.month)} tab: {', '.join(missing)}.")
         names = [(info[r.number].account if r.number in info else "") or r.number for r in rows]
         for r, name in zip(rows, names):
             o = info.get(r.number)
