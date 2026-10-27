@@ -1,98 +1,128 @@
-"""Builds the DMM recap text from the Salesforce report + the two sheets."""
-from datetime import date, datetime
+"""The DMM recap text, laid out like the team's hand-written email (the
+2026-10-26 one is the model). Pure layout: recap.py gathers the data.
 
-import pandas as pd
+It is pasted into WhatsApp, so it uses WhatsApp's markup: *bold* for each
+group's title and each listed account (name + rep), and plain '- ' bullets."""
+from __future__ import annotations
 
-from app.config import settings
+from collections import Counter
+from dataclasses import dataclass
+from datetime import date
 
-from . import email_schedule as es
-from . import fetch as udmm
-from . import problem_list_reps as plp
+from .steps import short
 
-def add_mode(group):
-    parts  = group.split(" ")
-    prefix = " ".join(parts[:-3])          # "April 2026 S26 SWEATERS"
-    rng    = " ".join(parts[-3:])          # "04/01 - 04/30"
-    mode   = 'FCL' if parts[-1].endswith('15') else 'AIR'   # end day 15 -> FCL
-    return f'{prefix} {mode} {rng}'
+BULLET = "- "
+_MODE_ORDER = {"AIR": 0, "FCL": 1, None: 2}
 
-def genText() -> tuple[str, int, int]:
-    """(recap text, paid SOs from the sheet, unpaid groups from Salesforce).
 
-    The two counts come back so recap.run() can put them in the admin run log:
-    the recap reads the same whether a source is quiet or broken, and on
-    2026-09-22 both were zero at once for unrelated reasons.
-    """
-    #====================== part one
-    jumlah, shiipping_plan = plp.problemListReps()
+@dataclass
+class Account:
+    name: str
+    rep: str | None  # first name, or 'House'
+    note: str | None  # 'Wed, Oct 14 - <latest problem note>'
+    last: str | None  # 'Mon, Oct 26 - Sent notice #4'
+    plan: str | None  # 'Wed, Oct 28 - Send notice #5'
 
-    SO_total = 'SOs' if jumlah > 1 else 'SO'
-    col = 'Planned Ship Date\n(Bali time)'
 
-    ship_on = ""
-    for ship_date, row in shiipping_plan.iterrows():
-        d = datetime.strptime(ship_date.strip(), '%a, %b %d').replace(year=date.today().year).date()
-        lt = (d - date.today()).days
-        nice_date = d.strftime('%A, %B ') + str(d.day)   # 'Wednesday, July 1'
-        ship_on += f"""
-* For {row['SO qty']} {SO_total}, we plan to ship on {nice_date} (LT = {lt} days)"""
-    paragraphOne = f"""
-Hi {settings.dmm_recap_recipient},
+@dataclass
+class Group:
+    season: str  # 'F26'
+    mode: str | None  # 'AIR' / 'FCL'
+    window: str  # '10/01 - 10/15'
+    start: date  # the window's first day
+    sos: int
+    qty: float
+    amount: float
+    last: str | None = None  # the window's last communication
+    plan: str | None = None  # the window's next one
+    accounts: list[Account] | None = None  # set = list each account instead of a Plan
 
-Please see below the Daily Morning Meeting Update - {pd.Timestamp(date.today()).strftime('%A, %B %d, %Y')}.
+    @property
+    def title(self) -> str:
+        words = [self.season, f"{self.start:%B}", self.mode]
+        return f"*UNPAID {' '.join(w for w in words if w)} ({self.window}) order:*"  # WhatsApp bold
 
-Confirming, today we had a daily morning meeting as scheduled.
 
-Today, we have a total of {jumlah} {SO_total} that have been paid {ship_on}
+def sort_groups(groups: list[Group]) -> list[Group]:
+    """By month, AIR before FCL, then the shorter window first."""
+    return sorted(groups, key=lambda g: (g.start, _MODE_ORDER.get(g.mode, 2), g.window))
 
-Confirming that there are no charged orders from more than 3 days that have not yet shipped.
 
-Additionally, below is the total of the open orders that remain unpaid as of today."""
-    
-    #======================= part two
-    # report() returns formatted display strings ('$1,068.00', '16.0000') to match the
-    # SF UI, so parse the numeric columns back to numbers before aggregating.
-    df = udmm.report()
-    # '01-08 FCL' + 'S26 SWEATERS 06/01 - 06/30' -> 'FCL S26 SWEATERS (06/01 - 06/30)'
-    # drop the leading ship-date prefix, wrap the trailing date range in parens
-    df['Unpaid Group'] = (df['Estimated Shipment Name'] + ' ' + df['Order Name']).str.replace(
-        r'^\d{2}-\d{2} (.*) (\d{2}/\d{2} - \d{2}/\d{2})$', r'\1 (\2)', regex=True)
-    
-    df['Product Amount'] = df['Product Amount'].replace(r'[$,]', '', regex=True).astype(float)
-    df['Total Units']    = df['Total Units'].astype(float)
+def _paid_lines(paid: list[tuple[str | None, date | str]], today: date) -> list[str]:
+    """One bullet per (mode, ship date): AIR first, then FCL, each by date."""
+    counts = Counter(paid)
 
-    # One row per Unpaid Group: count SOs, sum units and amount. (sort=False keeps SF order)
-    df = (df.groupby('Unpaid Group', sort=False)
-            .agg(**{'# of SO':        ('Order: Order Number', 'count'),
-                    'Total Units':    ('Total Units', 'sum'),
-                    'Product Amount': ('Product Amount', 'sum')})
-            .reset_index())
+    def key(item):
+        (mode, ship), _ = item
+        return (_MODE_ORDER.get(mode, 2), isinstance(ship, str), ship if isinstance(ship, date) else date.max)
 
-    # Email label: put the month name first -> '<Month> <MODE> (<range>)'  e.g. 'April AIR (04/01 - 04/30)'
-    mode  = df['Unpaid Group'].str.split().str[0]                                   # 'AIR' / 'FCL'
-    rng   = df['Unpaid Group'].str.extract(r'\((\d{2}/\d{2} - \d{2}/\d{2})\)')[0]   # '04/01 - 04/30'
-    month = pd.to_datetime(rng.str[:5], format='%m/%d').dt.strftime('%B')           # '04/01' -> 'April'
-    df['Label'] = month + ' ' + mode + ' (' + rng + ')'
+    lines = []
+    for (mode, ship), n in sorted(counts.items(), key=key):
+        what = f"{n} {mode + ' ' if mode else ''}{'SOs' if n > 1 else 'SO'}"
+        if isinstance(ship, date):
+            lt = (ship - today).days
+            when = f"on {short(ship)} (LT = {lt} {'day' if lt == 1 else 'days'}) at the latest"
+        else:
+            when = f"on {ship.strip() or 'a date not set yet'}"
+        lines.append(f"{BULLET}For {what}, we plan to ship {'them' if n > 1 else 'it'} {when}.")
+    return lines
 
-    # Order the unpaid groups chronologically by month (range start, e.g. '04/01' -> April).
-    df = df.assign(_month_order=pd.to_datetime(rng.str[:5], format='%m/%d'))
-    df = df.sort_values('_month_order', kind='stable').reset_index(drop=True)
 
-    unpaid_text = ""
+def _group_lines(g: Group) -> list[str]:
+    lines = [
+        g.title,
+        f"{BULLET}# of SO: {g.sos} SO, TTL Qty: {round(g.qty):,}, TTL Amount: ${round(g.amount):,}",
+    ]
+    if g.last:
+        lines.append(f"{BULLET}Last communication: {g.last}.")
+    if g.accounts is None:
+        lines.append(f"{BULLET}Plan: {g.plan + '.' if g.plan else '(none scheduled)'}")
+        return lines
+    lines.append(f"{BULLET}Details as below:" if g.mode == "FCL" else f"{BULLET}Details per account as below:")
+    for i, a in enumerate(g.accounts, 1):
+        if i > 1:
+            lines.append("")
+        lines.append(f"{i}. *{a.name}" + (f" ({a.rep})" if a.rep else "") + "*")  # WhatsApp bold
+        for text in (a.note, a.last):
+            if text:
+                lines.append(f"{BULLET}{text.rstrip('.')}.")
+        lines.append(f"{BULLET}PLAN: {a.plan.rstrip('.') + '.' if a.plan else '(none scheduled)'}")
+    return lines
 
-    for idx, d in df.iterrows():
-        # Latest email sent on/before today for this ship window (past month -> follow-up #7,
-        # ongoing month -> closest sent date). Blank if the window isn't in the Email Schedule.
-        sent_line = es.sentEmailLine(d['Label'])
-        email_text = f"\n    * {sent_line}" if sent_line else ""
-        unpaid_text +=f"""
-    UNPAID {d['Label']} order:
-    * # of SO: {d['# of SO']} SO, TTL QTY: {int(d['Total Units'])}, TTL Amount: ${int(d['Product Amount']):,}{email_text}
-    """
 
-    paragraphTwo = f"""
-    {unpaid_text}
-    Thanks!
-    """
-    paragraph_combined = paragraphOne + paragraphTwo
-    return paragraph_combined, jumlah, len(df)
+def build(
+    today: date,
+    recipient: str,
+    paid: list[tuple[str | None, date | str]],
+    groups: list[Group],
+) -> str:
+    """The whole recap. paid: one (mode, planned ship date) per SO paid today."""
+    n = len(paid)
+    if n == 0:
+        paid_intro = "Today, we have no orders that have been paid."
+    elif n == 1:
+        paid_intro = "Today, we have a total of 1 order that has been paid."
+    else:
+        paid_intro = f"Today, we have a total of {n} orders that have been paid."
+
+    lines = [
+        f"Hi {recipient},",
+        "",
+        f"Please see below the Daily Morning Meeting Update - {today:%A, %B} {today.day}, {today.year}.",
+        "",
+        "Confirming that today we had a daily morning meeting as scheduled.",
+        "",
+        paid_intro,
+        *_paid_lines(paid, today),
+        "",
+        "Confirming that there are no charged orders from more than 3 days that have not yet shipped.",
+        "",
+    ]
+    if groups:
+        lines.append("Additionally, below is the total of the open orders that remain unpaid as of today.")
+        for g in sort_groups(groups):
+            lines += ["", *_group_lines(g)]
+    else:
+        lines.append("Additionally, there are no open orders that remain unpaid as of today.")
+    lines += ["", "Thanks!"]
+    return "\n".join(lines)

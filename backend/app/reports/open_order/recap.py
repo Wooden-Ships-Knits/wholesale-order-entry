@@ -9,10 +9,8 @@ from __future__ import annotations
 
 import io
 import zipfile
-from datetime import date, datetime
-from zoneinfo import ZoneInfo
-
 from app.config import settings
+from app.reports.clock import today
 
 from . import fetch, rep_files, workbook
 
@@ -23,15 +21,11 @@ LEGEND = {
 }
 
 
-def today() -> date:
-    return datetime.now(ZoneInfo(settings.oo_timezone)).date()
-
-
 def run() -> dict:
     """Build the OO files. Returns {"recap", "log", "file": (zip name, bytes)}."""
     day = today()
     log = [
-        f"Salesforce report: {settings.oo_report_name!r}, order date up to {day:%Y-%m-%d} ({settings.oo_timezone}).",
+        f"Salesforce report: {settings.oo_report_name!r}, order date up to {day:%Y-%m-%d} ({settings.report_timezone}).",
     ]
     report = fetch.fetch(day)
     log.append(f"Fetched {len(report.rows)} order lines in {report.runs} API runs.")

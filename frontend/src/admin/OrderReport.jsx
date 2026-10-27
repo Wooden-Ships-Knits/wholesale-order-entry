@@ -34,6 +34,18 @@ function ReportCard({ report }) {
   const [ranAt, setRanAt] = useState(null)
   const [download, setDownload] = useState(null) // filename of the last run's file, if any
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState('') // '' | 'ok' | 'failed'
+
+  // The output goes straight into WhatsApp, so copy it exactly as shown.
+  async function copyOutput() {
+    try {
+      await navigator.clipboard.writeText(output)
+      setCopied('ok')
+    } catch {
+      setCopied('failed')
+    }
+    setTimeout(() => setCopied(''), 2000)
+  }
 
   // A run result → the card's fields (log is a list of lines from the backend).
   function apply(d) {
@@ -98,7 +110,14 @@ function ReportCard({ report }) {
       <h3>Log</h3>
       <pre className="report-box">{log || '—'}</pre>
 
-      <h3>Output</h3>
+      <div className="report-output-head">
+        <h3>Output</h3>
+        {output && (
+          <button type="button" className="report-copy" onClick={copyOutput}>
+            {copied === 'ok' ? '✓ Copied' : copied === 'failed' ? 'Copy failed' : '⧉ Copy'}
+          </button>
+        )}
+      </div>
       <pre className="report-box">{output || '—'}</pre>
     </section>
   )
