@@ -276,7 +276,10 @@ def build_card(items, save_to=None, per_row=PER_ROW):
     if save_to:
         fig.savefig(save_to, facecolor=CARD_BG, bbox_inches="tight")
         print("saved", save_to)
-        plt.show()
+        # Not plt.show(): on the server it draws nothing. Close instead — pyplot
+        # keeps every open figure (and its photos) in memory until closed, so
+        # each card generated would otherwise stay in the backend's RAM.
+        plt.close(fig)
     return fig
 
 
