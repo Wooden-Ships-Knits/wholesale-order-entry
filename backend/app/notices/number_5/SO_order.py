@@ -12,10 +12,10 @@ from .varia import (
     BLOCK_COL_GAP, BLOCK_ROW_GAP, MARGIN_L, MARGIN_R, MARGIN_T, MARGIN_B,
     LABEL_WRAP_WIDTH, LABEL_FONTSIZE, LABEL_PAD, TITLE_FONTSIZE, TITLE_PAD_IN,
     OVAL_W_SCALE, OVAL_H_SCALE, OVAL_Y_FACTOR, OVAL_COLOR, OVAL_LW,
-    CARD_BG, SWATCH_BORDER, season_code
+    CARD_BG, SWATCH_BORDER, HERO_TRIM_TOL, season_code
 )
 import matplotlib.pyplot as plt
-from PIL import Image
+from PIL import Image, ImageChops
 from matplotlib import gridspec
 from matplotlib.patches import Ellipse 
 import textwrap
@@ -62,6 +62,102 @@ def _open(drive_path: str, filename: str):
     return Image.open(drive.open_image(drive_path, filename))
 
 
+def _hero_choice(style, chosen):
+    """(hero photo filename or None, every photo of the style) for one block.
+
+    The hero photo is per-color, so a block can only show one of them: with
+    swatches off build_card has already split the styles so `chosen` is a
+    single color, otherwise we fall back to the first one ordered."""
+    chosen_label = chosen[0] if isinstance(chosen, list) else chosen
+    color = chosen_label.replace("/", " ")
+    # Filenames come from a cached Drive listing (metadata only); only the
+    # photo picked here is downloaded.
+    style_any = [f for f in drive.list_images(_style_path()) if _match_key(style) in _match_key(f)]
+    picked = [f for f in style_any if color.lower() in f.lower()]
+    if not picked and SHOW_SWATCHES:
+        # the block stands for the whole style (the swatches name the colors),
+        # so any color's photo is a fair illustration
+        picked = style_any
+    if not picked:
+        # per-color block: another color's photo would sit under this color's
+        # name, so leave it empty rather than mislabel it
+        print(f"[build_card] no hero photo for style {style!r} / color {color!r}")
+    return (picked[0] if picked else None), style_any
+
+
+def _prep_hero(img, height_px):
+    """The hero photo ready to draw: on white, its white left/right margins
+    trimmed, and scaled down to the height it prints at.
+
+    Only the SIDES are trimmed: they are what makes a front + back photo look
+    wider than its garments. Top and bottom keep the studio's framing, which is
+    what keeps a cropped tank shorter than a long cardigan on the card.
+    Scaling down to print size also keeps memory low — the originals are far
+    larger than the card needs. It happens first (trimming the sides doesn't
+    change the height), and a JPEG is decoded straight at the smaller size, so
+    the full-size original is never held in memory."""
+    if img.format == "JPEG" and img.height > height_px:
+        img.draft("RGB", (img.width * height_px // img.height, height_px))
+    if img.height > height_px:
+        img = img.resize((max(round(img.width * height_px / img.height), 1), height_px), Image.LANCZOS)
+    if img.mode in ("RGBA", "LA", "P"):
+        img = img.convert("RGBA")
+        flat = Image.new("RGB", img.size, CARD_BG)
+        flat.paste(img, mask=img.getchannel("A"))
+        img = flat
+    else:
+        img = img.convert("RGB")
+    ink = ImageChops.difference(img, Image.new("RGB", img.size, CARD_BG)).convert("L")
+    box = ink.point(lambda p: 255 if p > HERO_TRIM_TOL else 0).getbbox()
+    if box:
+        pad = max(img.width // 100, 2)
+        img = img.crop((max(box[0] - pad, 0), 0, min(box[2] + pad, img.width), img.height))
+    return img
+
+
+def _split_rows(units, per_row):
+    """Blocks (in order) split into rows: as few rows as keep each within
+    per_row units of width, then as even as possible — the top rows taking the
+    extra on a tie, so 5 -> [5], 6 -> [3, 3], 7 -> [4, 3] for plain blocks. A
+    block twice as wide counts as about 2."""
+    n = len(units)
+    if n == 0:
+        return []
+    pre = [0.0]
+    for u in units:
+        pre.append(pre[-1] + u)
+
+    def partition(k):
+        memo = {}
+
+        def best(i, k):  # rows for blocks i.. in k rows -> (widest row, cut points)
+            if k == 1:
+                return pre[n] - pre[i], (n,)
+            if (i, k) not in memo:
+                res = None
+                for j in range(i + 1, n - k + 2):
+                    widest, cuts = best(j, k - 1)
+                    cand = (max(pre[j] - pre[i], widest), (j,) + cuts)
+                    if res is None or cand[0] <= res[0] + 1e-9:
+                        res = cand
+                memo[(i, k)] = res
+            return memo[(i, k)]
+
+        return best(0, k)
+
+    k = max(math.ceil(pre[n] / per_row - 1e-9), 1)
+    while True:
+        widest, cuts = partition(k)
+        if widest <= per_row + 1e-9 or k >= n:
+            break
+        k += 1
+    rows, start = [], 0
+    for c in cuts:
+        rows.append(list(range(start, c)))
+        start = c
+    return rows
+
+
 def _match_key(name):
     """Normalize a style/filename for matching: lowercase and drop '/' and '_'.
     The two image folders encode a slash differently — style photos write 'L/S'
@@ -83,9 +179,13 @@ def _wrap_label(cname, width=LABEL_WRAP_WIDTH):
     return "\n".join(lines)
 
 
-def _draw_style_block(fig, subspec, style, chosen=None, price=None, sw_rows_slots=None):
+def _draw_style_block(fig, subspec, style, chosen=None, price=None, sw_rows_slots=None,
+                      hero=None, style_any=()):
     """Render one style (hero photo + labeled swatch row) into `subspec`,
-    a cell of an outer GridSpec. Draws an oval around each chosen color.
+    this block's place on the card. Draws an oval around each chosen color.
+
+    hero is the photo already prepared by build_card (_prep_hero), or None;
+    style_any every photo filename of the style (for its "#347" number).
 
     price comes straight off the sales order line, so it is the price this
     order was actually placed at; a non-numeric price renders as "N/A". It is
@@ -97,18 +197,7 @@ def _draw_style_block(fig, subspec, style, chosen=None, price=None, sw_rows_slot
     With SHOW_SWATCHES off (config/varia.py) the swatch strip and its ovals are
     skipped entirely and the block is just the hero photo plus its title."""
 
-    # the hero photo is per-color, so a block can only show one of them: with
-    # swatches off build_card has already split the styles so `chosen` is a
-    # single color, otherwise we fall back to the first one ordered
     chosen_label = chosen[0] if isinstance(chosen, list) else chosen
-    color = chosen_label.replace("/", " ")
-    # Filenames come from a cached Drive listing (metadata only); the matched
-    # photo is downloaded further down, so a card fetches what it draws.
-    style_list_path = _style_path()
-    style_list = drive.list_images(style_list_path)
-
-    style_any = [f for f in style_list if _match_key(style) in _match_key(f)]
-    style_list_filtered = [f for f in style_any if color.lower() in f.lower()]
 
     # with SHOW_SWATCHES off there is nothing below the hero, so the block
     # reserves no swatch rows and stays a plain photo + title
@@ -147,16 +236,8 @@ def _draw_style_block(fig, subspec, style, chosen=None, price=None, sw_rows_slot
         hspace=SWATCH_ROW_GAP, wspace=SWATCH_COL_GAP)
 
     ax_hero = fig.add_subplot(inner[0, :])   # hero spans the full swatch-grid width
-    if not style_list_filtered and SHOW_SWATCHES:
-        # the block stands for the whole style (the swatches name the colors),
-        # so any color's photo is a fair illustration
-        style_list_filtered = style_any
-    if style_list_filtered:
-        ax_hero.imshow(_open(style_list_path, style_list_filtered[0]))
-    else:
-        # per-color block: another color's photo would sit under this color's
-        # name, so leave it empty rather than mislabel it
-        print(f"[build_card] no hero photo for style {style!r} / color {color!r}")
+    if hero is not None:
+        ax_hero.imshow(hero)
     ax_hero.axis("off")
 
     # swatch strip + the oval marking each chosen color (skipped entirely when
@@ -232,6 +313,13 @@ def build_card(items, save_to=None, per_row=PER_ROW):
               of names, price is the sales-order line price for that style.
     per_row : max style blocks per row. The grid stays balanced and only wraps
               past this many: 4->[4], 5->[5], 6->[3,3], 7->[4,3], 8->[4,4], ...
+              A block widened for a wide photo counts as its width (~2 for a
+              front + back photo).
+
+    Every hero photo is drawn at the SAME height, and each block is as wide as
+    its photo needs at that height (never narrower than a plain block). So a
+    front + back photo gets a block about twice as wide, and its garments come
+    out the size of the single ones beside it.
 
     With SHOW_SWATCHES on, one block per style covers every color via its
     swatch strip. With it off there is no swatch strip, so each ordered color
@@ -244,34 +332,55 @@ def build_card(items, save_to=None, per_row=PER_ROW):
         items = [(style, c, price)
                  for style, chosen, price in items
                  for c in (chosen if isinstance(chosen, list) else [chosen])]
-    n_styles = max(len(items), 1)
-    # balanced outer grid: as few rows as possible, then even columns
-    nrows = math.ceil(n_styles / per_row)
-    ncols = math.ceil(n_styles / nrows)
+
+    # Sizes in inches. These reproduce the old fixed grid for plain photos:
+    # the hero height and block width a one-row card used to get.
+    hero_h = HERO_U * UNIT_IN * (MARGIN_T - MARGIN_B)
+    plain_w = BLOCK_W * (MARGIN_R - MARGIN_L) / (1 + BLOCK_COL_GAP)
+    col_gap = BLOCK_COL_GAP * plain_w
+    row_gap = BLOCK_ROW_GAP * hero_h
+    pad, title_room = 0.3, 0.8  # page edge, and room for the last row's titles
+
+    # The photos come first: their shapes decide the layout.
+    heroes, anys = [], []
+    for style, chosen, _ in items:
+        name, style_any = _hero_choice(style, chosen)
+        heroes.append(_prep_hero(_open(_style_path(), name), round(hero_h * DPI)) if name else None)
+        anys.append(style_any)
+    widths = [max(plain_w, h.width / h.height * hero_h) if h else plain_w for h in heroes]
+    rows = _split_rows([w / plain_w for w in widths], per_row)
 
     if SHOW_SWATCHES:
-        # swatch-row count per style, and the tallest block in each outer row — a
+        # swatch-row count per style, and the tallest block in each row — a
         # row's height grows with its swatches while the hero photo stays fixed
         sw_rows_per = [max(math.ceil(max(_count_swatches(style), 1) / MAXCOLS), 1)
                        for style, _, _ in items]
-        row_slots = [max(sw_rows_per[r * ncols:(r + 1) * ncols] or [1])
-                     for r in range(nrows)]
-        row_heights = [HERO_U + SW_U * m for m in row_slots]
+        row_slots = [max(sw_rows_per[i] for i in row) for row in rows]
     else:
         # hero photos only: no swatch rows, so every block is just the photo
-        row_slots = [0] * nrows
-        row_heights = [HERO_U] * nrows
+        row_slots = [0] * len(rows)
+    row_h = [hero_h * (HERO_U + SW_U * m) / HERO_U for m in row_slots]
 
-    fig = plt.figure(figsize=(BLOCK_W * ncols, sum(row_heights) * UNIT_IN), dpi=DPI)
+    content_w = max([sum(widths[i] for i in row) + col_gap * (len(row) - 1) for row in rows] or [plain_w])
+    fig_w = content_w + 2 * pad
+    fig_h = sum(row_h) + row_gap * max(len(rows) - 1, 0) + 2 * pad + title_room
+    fig = plt.figure(figsize=(fig_w, fig_h), dpi=DPI)
     fig.patch.set_facecolor(CARD_BG)
-    outer = gridspec.GridSpec(nrows, ncols, figure=fig, height_ratios=row_heights,
-                              left=MARGIN_L, right=MARGIN_R, top=MARGIN_T, bottom=MARGIN_B,
-                              wspace=BLOCK_COL_GAP, hspace=BLOCK_ROW_GAP)
 
-    for idx, (style, chosen, price) in enumerate(items):
-        r, c = divmod(idx, ncols)
-        _draw_style_block(fig, outer[r, c], style, chosen, price=price,
-                          sw_rows_slots=row_slots[r])
+    # Rows top to bottom, blocks left to right, each at its own width; a row
+    # narrower than the widest is centered, so it leaves no hole on one side.
+    top = fig_h - pad
+    for r, row in enumerate(rows):
+        x = pad + (content_w - sum(widths[i] for i in row) - col_gap * (len(row) - 1)) / 2
+        for i in row:
+            style, chosen, price = items[i]
+            spec = gridspec.GridSpec(1, 1, figure=fig,
+                                     left=x / fig_w, right=(x + widths[i]) / fig_w,
+                                     top=top / fig_h, bottom=(top - row_h[r]) / fig_h)[0]
+            _draw_style_block(fig, spec, style, chosen, price=price, sw_rows_slots=row_slots[r],
+                              hero=heroes[i], style_any=anys[i])
+            x += widths[i] + col_gap
+        top -= row_h[r] + row_gap
 
     if save_to:
         fig.savefig(save_to, facecolor=CARD_BG, bbox_inches="tight")
