@@ -65,13 +65,6 @@ UNIT_IN = 1.125    # inci per unit tata letak — naikkan untuk memperbesar SELU
 BLOCK_W = 5.0      # lebar (inci) satu blok style
 PER_ROW = 5        # maksimal blok style per baris sebelum turun (4->[4] 6->[3,3] ...)
 
-# --- foto hero lebar (depan + belakang) -------------------------------------
-# Semua foto hero tampil dengan TINGGI yang sama; blok style ikut melebar untuk
-# foto yang lebar (mis. depan + belakang), dan baris dihitung per lebar blok
-# (blok selebar 2x dihitung 2 di PER_ROW). Tepi putih kiri/kanan foto dipangkas
-# dulu: piksel yang bedanya dari putih <= angka ini dianggap latar.
-HERO_TRIM_TOL = 12
-
 # --- tinggi foto hero vs. swatch --------------------------------------------
 HERO_U = 5.0       # satuan tinggi foto hero (foto style)
 SW_U   = 1.1       # satuan tinggi SATU baris swatch (makin kecil = swatch makin kecil)
