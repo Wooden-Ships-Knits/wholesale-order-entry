@@ -103,7 +103,7 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 ### 5.9 Internal Use section *(revision 2026-07-16: shown only when "Filled by" = Sales Representative)*
 - New or reorder (optional)
 - New account / existing (required)
-- Campaign (Rep non-show order / Other) (optional)
+- Campaign (Rep non-show order / Other) (optional). On Accept this sets the Salesforce order's Campaign lookup: Rep non-show order -> "Rep - Non Show Orders"; Other -> the Campaign whose name matches the typed text exactly (case aside). No match = order still created, Campaign empty, admin warned.
 - ~~PO # (optional)~~ — moved to the order header (§5.1) 2026-08-04 so customers can fill it too
 - Order written by (required) — dropdown fed by the Salesforce `Written_By__c` picklist (`GET /api/order-writers`)
 - Split (Y/N) with — "with" is a dropdown of the same rep list

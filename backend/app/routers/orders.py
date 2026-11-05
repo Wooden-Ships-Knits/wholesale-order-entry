@@ -45,11 +45,11 @@ CONFLICT_NEIGHBOURS = 5
 def campaign_value(choice: str, other: str = "") -> str:
     """The stored form of the Internal Use campaign: 'rep-non-show' as is (it is
     what salesforce.client.campaign_id_for resolves on Accept), 'other' with its
-    text as "Other: <text>". Shared by submit and the /admin campaign edit so the
-    two can never store it differently."""
+    text as "Other: <text>", which Accept resolves as a Campaign name. Shared by
+    submit and the /admin campaign edit so the two can never store it differently."""
     other = other.strip()
     if choice == "other" and other:
-        return f"Other: {other}"
+        return f"{mapping.CAMPAIGN_OTHER_PREFIX}{other}"
     return choice
 
 
