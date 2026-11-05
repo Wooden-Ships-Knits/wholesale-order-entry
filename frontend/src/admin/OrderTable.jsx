@@ -834,8 +834,10 @@ export default function OrderTable({
     const reason =
       status === 'declined' ? window.prompt('Reason for declining (optional):') ?? '' : ''
     try {
-      await setOrderStatus(order.id, status, reason)
+      const updated = await setOrderStatus(order.id, status, reason)
       onChanged()
+      // An alert, not onError: onChanged reloads the table, which clears the banner.
+      if (updated?.campaignWarning) window.alert(updated.campaignWarning)
     } catch (err) {
       onError(err.message)
     }

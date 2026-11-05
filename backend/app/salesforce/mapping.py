@@ -111,6 +111,7 @@ SPLIT_WITH = "Split_With__c"  # picklist of rep names
 COMMISSION_CROSS_CHECKED_BY = "Commission_Cross_Checked_By__c"  # picklist
 COMMISSION_CROSS_CHECKED = "Novriati"  # standing value for web orders
 CAMPAIGN_REP_NON_SHOW_NAME = "Rep - Non Show Orders"  # our 'rep-non-show' -> this Campaign
+CAMPAIGN_OTHER_PREFIX = "Other: "  # our stored form of Other + its typed text
 # Org default warehouse "000 - Bali" (~59k orders). Per-store warehouses for the
 # rare >24/SKU case are left to the team to switch on the Draft (spec decision).
 WAREHOUSE_BALI_ID = "a0p900000008hZlAAI"
@@ -669,6 +670,20 @@ def build_sales_order_header(
         header[CAMPAIGN] = campaign_id
 
     return {k: v for k, v in header.items() if v not in ("", None)}
+
+
+def campaign_name_for(campaign_value: str | None) -> str | None:
+    """The Salesforce Campaign name an order's stored campaign value points at.
+
+    Campaign__c is a lookup, so it can only hold a Campaign record's id, never
+    text: the typed "Other" text has to name a Campaign that already exists.
+    None when the order names no campaign (blank, or Other with nothing typed).
+    """
+    if campaign_value == "rep-non-show":
+        return CAMPAIGN_REP_NON_SHOW_NAME
+    if campaign_value and campaign_value.startswith(CAMPAIGN_OTHER_PREFIX):
+        return campaign_value[len(CAMPAIGN_OTHER_PREFIX):].strip() or None
+    return None
 
 
 _po_field_ok: bool | None = None
