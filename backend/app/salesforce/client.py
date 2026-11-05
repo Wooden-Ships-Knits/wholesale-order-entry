@@ -155,19 +155,21 @@ def match_order_territory(value: str | None) -> str | None:
 
 
 def campaign_id_for(campaign_value: str | None) -> str | None:
-    """Resolve our order campaign value to a Campaign record id. Only the
-    'rep-non-show' option maps to a campaign ('Rep - Non Show Orders'); anything
-    else returns None (Campaign left empty)."""
-    if campaign_value != "rep-non-show":
+    """Resolve our order campaign value to a Campaign record id, or None when it
+    names no campaign or no Campaign has that name.
+
+    Deliberately not cached: this runs once per Accept, and a stale "not found"
+    would leave an order without its campaign after the record was created. Some
+    old names exist twice, so prefer the active, newest one.
+    """
+    name = mapping.campaign_name_for(campaign_value)
+    if not name:
         return None
-
-    def fetch() -> str | None:
-        rows = query_all(
-            f"SELECT Id FROM Campaign WHERE Name = '{soql_str(mapping.CAMPAIGN_REP_NON_SHOW_NAME)}' LIMIT 1"
-        )
-        return rows[0]["Id"] if rows else None
-
-    return _cached("campaign:rep-non-show", fetch)
+    rows = query_all(
+        f"SELECT Id FROM Campaign WHERE Name = '{soql_str(name)}' "
+        "ORDER BY IsActive DESC, CreatedDate DESC LIMIT 1"
+    )
+    return rows[0]["Id"] if rows else None
 
 
 def create_sales_order(header: dict[str, Any], lines: list[dict[str, Any]]) -> tuple[str, str | None]:

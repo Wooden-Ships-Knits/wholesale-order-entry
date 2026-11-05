@@ -382,12 +382,16 @@ def list_order_items(payload: OrderItemsRequest, db: Session = Depends(get_db)) 
     return {"items": [_item_row(i) for i in db.execute(stmt).scalars()]}
 
 
-def _push_order_to_salesforce(order: Order) -> None:
+def _push_order_to_salesforce(order: Order) -> str | None:
     """Create the Kugamon Draft order for an accepted order. Sets sf_order_id /
     sf_order_number on success; raises HTTPException (surfaced to the admin) on
-    any problem. Idempotent: a re-push is a no-op once sf_order_id is set."""
+    any problem. Idempotent: a re-push is a no-op once sf_order_id is set.
+
+    Returns a warning for the admin when the order names a campaign Salesforce
+    doesn't have. That alone doesn't fail the push: the order is still good, and
+    a typo in a free-text box shouldn't stop it being accepted."""
     if order.sf_order_id:
-        return  # already pushed — don't create a second order
+        return None  # already pushed — don't create a second order
     if not order.sf_account_id:
         raise HTTPException(
             status_code=400,
@@ -425,11 +429,12 @@ def _push_order_to_salesforce(order: Order) -> None:
     if not lines:
         raise HTTPException(status_code=400, detail="This order has no line items to push.")
 
+    campaign_id = sf_client.campaign_id_for(order.campaign)
     header = mapping.build_sales_order_header(
         order,
         pricebook_id,
         sales_territory=sf_client.match_order_territory(order.sales_territory),
-        campaign_id=sf_client.campaign_id_for(order.campaign),
+        campaign_id=campaign_id,
     )
     try:
         so_id, so_number = sf_client.create_sales_order(header, lines)
@@ -445,6 +450,15 @@ def _push_order_to_salesforce(order: Order) -> None:
     order.sf_order_number = so_number
     logger.info("Pushed order %s to Salesforce as %s", str(order.id)[:8], so_number or so_id)
 
+    campaign_name = mapping.campaign_name_for(order.campaign)
+    if campaign_name and not campaign_id:
+        return (
+            f'No Salesforce campaign is named "{campaign_name}", so order '
+            f"{so_number or so_id} was created with its Campaign empty. "
+            "Set the Campaign on the order in Salesforce."
+        )
+    return None
+
 
 @router.post("/orders/{order_id}/status", dependencies=[AdminRequired])
 def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_db)) -> dict:
@@ -457,8 +471,9 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
     # Accept = push the order into Salesforce (Kugamon Draft). If the push
     # fails, raise BEFORE changing status so the order stays actionable and the
     # team can fix the cause (e.g. missing account) and click Accept again.
+    campaign_warning = None
     if payload.status == "accepted":
-        _push_order_to_salesforce(order)
+        campaign_warning = _push_order_to_salesforce(order)
     order.status = payload.status
     order.status_reason = payload.reason or None
     order.status_at = datetime.now(timezone.utc)
@@ -473,7 +488,7 @@ def set_status(order_id: str, payload: StatusRequest, db: Session = Depends(get_
     # No buyer email on Accept/Decline yet — the only automatic buyer mail is
     # the order copy at submit. A confirmation (and especially a decline) is a
     # relationship message the team words itself via the email draft modal.
-    return _row(order)
+    return {**_row(order), "campaignWarning": campaign_warning}
 
 
 @router.post("/orders/{order_id}/conflict-resolution", dependencies=[AdminRequired])
