@@ -8,7 +8,7 @@ export default function InternalUse({
   setCertOnFile,
   reps = [],
   writers = [],
-  // { show, required, territoryRep } from lib/splitRules.js — Split only
+  // { show, required, writerRep, territoryRep } from lib/splitRules.js — Split only
   // applies when the order lands in another rep's territory.
   splitRule = { show: true, required: false, territoryRep: null },
   // Territory owners from the sheet (REGION col C). Deliberately NOT the
@@ -137,7 +137,9 @@ export default function InternalUse({
             Split?{splitRule.required && <span className="req">*</span>}
           </legend>
           {splitRule.required && (
-            <p className="split-note">In {splitRule.territoryRep}&rsquo;s territory</p>
+            <p className="split-note">
+              In {splitRule.territoryRep}&rsquo;s territory, split with {splitRule.writerRep}
+            </p>
           )}
           {/* Locked once the rule fills it in: the territory decides who the
               order is split with, so the answer is shown, not asked for. Left

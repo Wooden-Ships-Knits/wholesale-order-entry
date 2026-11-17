@@ -4,6 +4,13 @@
 // Territory is owned by a rep. When an order is written by someone from one
 // rep's team but lands in another rep's territory, the two reps split it.
 //
+// "Split with" names the WRITER'S rep (the Split tab's Reps column), not the
+// territory's: the order already sits in the territory, so the split is what
+// credits the rep who wrote it. Julie Mandell writing in a House territory
+// splits with Rande Cohen. This is how the team fills Split_With__c by hand,
+// and the open-order report copies a split order into the Split With rep's
+// file, so naming the territory's rep would hand that copy to nobody new.
+//
 // The comparison is always rep vs rep — never the writer's own name, since
 // several writers map to one rep (Julie Mandell and Maxey Zipperer both belong
 // to Rande Cohen).
@@ -35,10 +42,10 @@ export function repForWriter(writer, writerReps) {
  *
  * Rules:
  *   same rep            -> hidden, not required (nothing to split)
- *   different reps      -> shown, required, territory's rep preselected
+ *   different reps      -> shown, required, writer's rep preselected
  *   territory has no rep-> shown, optional, nothing preselected
- *   rep not selectable  -> shown, optional (it could not be preselected anyway;
- *                          "House" arrives here, being no one in the picklist)
+ *   writer's rep not in -> shown, optional (it could not be preselected anyway)
+ *   the dropdown
  *   writer unmapped     -> shown, optional (fails open; a missing sheet row or
  *                          an unreachable sheet must never block an order)
  */
@@ -55,7 +62,7 @@ export function updateSplitRequirement({
   if (writerRep === territoryRep) {
     return { show: false, required: false, defaultSplitWith: '', writerRep, territoryRep }
   }
-  if (!splitOptions.includes(territoryRep)) return optional
+  if (!splitOptions.includes(writerRep)) return optional
 
-  return { show: true, required: true, defaultSplitWith: territoryRep, writerRep, territoryRep }
+  return { show: true, required: true, defaultSplitWith: writerRep, writerRep, territoryRep }
 }
