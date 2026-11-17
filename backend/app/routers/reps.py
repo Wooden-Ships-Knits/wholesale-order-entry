@@ -29,8 +29,9 @@ def list_split_options(response: Response) -> dict:
     """Names offerable in the order form's "Split with" dropdown (REGION col C).
 
     Deliberately not the Written_By__c picklist: a split is between reps, and
-    that picklist also contains people who write orders for a rep. split_with
-    is never pushed to Salesforce, so it need not match a Salesforce picklist.
+    that picklist also contains people who write orders for a rep. Accept
+    pushes split_with to Split_With__c, an unrestricted picklist, so a name
+    missing from it is still accepted.
     """
     response.headers["Cache-Control"] = "no-store"
     return {"options": sheets_client.split_options()}
