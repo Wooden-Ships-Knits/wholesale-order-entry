@@ -79,7 +79,7 @@
         <mxCell id="h1" value="&lt;b&gt;SAME REP&lt;/b&gt;&lt;br&gt;Split section &lt;b&gt;hidden&lt;/b&gt;&lt;br&gt;values cleared, so nothing&lt;br&gt;stale is submitted" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="20" y="930" width="215" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="h2" value="&lt;b&gt;DIFFERENT REP&lt;/b&gt;&lt;br&gt;shown &#183; required &#183; &lt;b&gt;LOCKED&lt;/b&gt;&lt;br&gt;Y preselected, Split with = territory&#39;s rep&lt;br&gt;&lt;i&gt;&quot;House&quot; counts as a rep here&lt;/i&gt;&lt;br&gt;submit is blocked if empty" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+        <mxCell id="h2" value="&lt;b&gt;DIFFERENT REP&lt;/b&gt;&lt;br&gt;shown &#183; required &#183; &lt;b&gt;LOCKED&lt;/b&gt;&lt;br&gt;Y preselected, Split with = writer&#39;s rep&lt;br&gt;&lt;i&gt;(Split tab: Julie Mandell → Rande Cohen)&lt;/i&gt;&lt;br&gt;submit is blocked if empty" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
           <mxGeometry x="255" y="930" width="240" height="90" as="geometry" />
         </mxCell>
         <mxCell id="h3" value="&lt;b&gt;CANNOT TELL&lt;/b&gt;&lt;br&gt;writer not in the Split tab, or state&lt;br&gt;unmapped, or the sheet is unreachable&lt;br&gt;→ shown &#183; &lt;b&gt;optional&lt;/b&gt; &#183; blank&lt;br&gt;&lt;i&gt;fails open: never blocks an order&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
@@ -100,7 +100,7 @@
         <mxCell id="s1" value="&lt;b&gt;Buyer submits&lt;/b&gt;&lt;br&gt;Postgres &#183; PDF &#183; admin email&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;nothing reaches Salesforce yet&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="120" y="1110" width="290" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="s2" value="&lt;b&gt;Admin clicks Accept in /admin&lt;/b&gt;&lt;br&gt;creates the Kugamon Draft&lt;br&gt;kugo2p__SalesOrder__c + lines&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;split / split_with are NOT pushed&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s2" value="&lt;b&gt;Admin clicks Accept in /admin&lt;/b&gt;&lt;br&gt;creates the Kugamon Draft&lt;br&gt;kugo2p__SalesOrder__c + lines&lt;br&gt;split &#8594; Split_Commission__c (Yes/No)&lt;br&gt;split_with &#8594; Split_With__c" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="480" y="1110" width="290" height="70" as="geometry" />
         </mxCell>
         <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry" /></mxCell>
