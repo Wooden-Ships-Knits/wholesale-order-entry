@@ -44,7 +44,7 @@ docker-compose.yml
 ```
 
 ## API surface (see architecture.md §5)
-- `GET /api/seasons` (currently returns the 2 most recent — interim decision 2026-07-16)
+- `GET /api/seasons` — the 3 newest seasons, minus any unticked in `/admin` → Catalog → *Collections on the order form* (unticked codes saved as a JSON list in `./output/settings/order_form_seasons.json`, `app/services/form_seasons.py`). `?limit=0` = every season (admin tools). Admin side: `GET/POST /api/admin/catalog/seasons`.
 - `GET /api/products?season=F26`
 - `GET /api/accounts?email=...` | `?accountId=...` | `?name=...` (partial store-name match)
 - `GET /api/reps` — active `Account.Salesperson__c` picklist values
@@ -161,7 +161,7 @@ uvicorn app.main:app --reload --port 8080
 - ~~Admin email recipient(s)~~ — confirmed 2026-07-22: `wholesale@wooden-ships.com` (reps' orders already land there; it's also the From address).
 - SKU definition for the "2 pcs per SKU" rule.
 - SMTP provider.
-- Which seasons to sell right now — `GET /api/seasons` is hardcoded to the 2 most recent (2026-07-16).
+- ~~Which seasons to sell right now~~ — since 2026-11-20: the 3 newest, and the team can untick any of them in `/admin` → Catalog.
 - Uploaded tax-cert retention/access policy (files land beside the order PDFs in `output/orders`).
 - Whether stored address lat/lng should sync to Salesforce.
 ```

@@ -13,7 +13,7 @@
                 <mxCell id="internaluse" value="Internal Use section shown&lt;br&gt;(New/reorder, Account, Campaign, PO#,&lt;br&gt;Order written by, Split — rep-only fields)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f7f5f1;strokeColor=#8a6d3b;fontColor=#4c4a45;" parent="1" vertex="1">
                     <mxGeometry x="700" y="70" width="230" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="season" value="Select collection / season code&lt;br&gt;(2 most recent, e.g. FALL 2026 - F26)&lt;br&gt;+ Ship Window (calendar month)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5651d;strokeColor=#7a430f;fontColor=#ffffff;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="season" value="Select collection / season code&lt;br&gt;(3 newest, untickable in /admin Catalog, e.g. FALL 2026 - F26)&lt;br&gt;+ Ship Window (calendar month)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5651d;strokeColor=#7a430f;fontColor=#ffffff;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="370" y="180" width="220" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="req" value="Frontend requests products&lt;br&gt;for selected season" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6d3b;fontColor=#333333;" parent="1" vertex="1">

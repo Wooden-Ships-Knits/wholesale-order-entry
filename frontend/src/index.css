@@ -1492,6 +1492,42 @@ a.admin-tab {
   max-width: 62ch;
   margin: 0 0 1rem;
 }
+.catalog-form-seasons {
+  border: 0;
+  border-bottom: 1px solid #dcd8d0;
+  margin: 0 0 1.25rem;
+  padding: 0 0 1.25rem;
+}
+.catalog-form-seasons legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b6862;
+}
+.catalog-season-ticks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+}
+.catalog-season {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #dcd8d0;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.catalog-season.on {
+  border-color: #2b2a27;
+  font-weight: 600;
+}
+.catalog-season input[type='checkbox'] {
+  margin: 0;
+}
 .catalog-picker {
   display: flex;
   align-items: end;
