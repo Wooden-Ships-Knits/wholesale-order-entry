@@ -156,7 +156,7 @@ other's guard.
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/seasons` | Season codes (currently the 2 most recent) |
+| GET | `/seasons` | Season codes the order form sells (3 newest, minus any unticked in /admin → Catalog) |
 | GET | `/ship-windows?season=F26` | Per-season ship windows (Google Sheet) |
 | GET | `/products?season=F26` | Products + prices for a season (Salesforce) |
 | GET | `/accounts?email=…` / `?name=…` / `?accountId=…` | Buyer lookup (name = **exact** whole-name match, case-insensitive) |

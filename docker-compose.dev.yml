@@ -43,6 +43,7 @@ services:
       # Page cache for prospect scoring. Without this every re-run
       # re-fetches every shop's catalogue.
       - ./output-dev/prospects:/output/prospects
+      - ./output-dev/settings:/output/settings
       - ./backend/credentials/dialy-report-automation-e20c53e67542.json:/credentials/service-account.json:ro
     depends_on:
       db:

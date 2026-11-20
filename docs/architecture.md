@@ -127,7 +127,7 @@ Single-VM deployment via Docker Compose: `nginx`, `backend`, and `db` run as con
 - **Lookup by store name (added 2026-07-16):** same SELECT with
   `WHERE Name LIKE '%:name%' ORDER BY Name LIMIT 25` — partial, case-insensitive; `%`/`_` in user input are escaped; capped so a broad term cannot pull the whole org. The frontend routes a query containing `@` to email, a bare 15/18-char id to accountId, anything else to name.
 - Return all candidates so the frontend can show the "matching account" dropdown.
-- `GET /api/seasons` currently returns only the **two most recent** wholesale books (interim decision 2026-07-16 — confirm which seasons should be on sale).
+- `GET /api/seasons` returns the **three newest** wholesale books, minus any unticked in /admin → Catalog (unticked codes saved as a JSON list in `./output/settings/order_form_seasons.json`; no file = all three). `?limit=0` returns all.
 
 ### 3.4 Field-mapping layer
 All object/field names live in one config module (`backend/app/salesforce/mapping.py`) so renaming to match the real org is a one-file change, not a code hunt.
@@ -215,7 +215,7 @@ order_items
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/seasons` | Collection/season codes (currently the 2 most recent) |
+| GET | `/api/seasons` | Collection/season codes the order form sells (3 newest, minus any unticked in /admin) |
 | GET | `/api/products?season=F26` | Products + price + color for a season (from Salesforce) |
 | GET | `/api/accounts?email=...` / `?accountId=...` / `?name=...` | Buyer lookup candidates (from Salesforce; `name` = partial store-name match) |
 | GET | `/api/ship-windows?season=F26` | Per-season ship windows from the planning Google Sheet |

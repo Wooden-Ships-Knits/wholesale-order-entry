@@ -222,6 +222,11 @@ class Settings(BaseSettings):
     notice_cache_dir: str = "/output/notices/cache"
     notice_output_dir: str = "/output/notices"
 
+    # Which of the 3 newest collections the order form hides, unticked in
+    # /admin -> Catalog. A small JSON file on a mounted volume
+    # (app/services/form_seasons.py).
+    form_seasons_file: str = "/output/settings/order_form_seasons.json"
+
     # --- prospect scoring (app/prospects/) ---
     # Where the scraper caches the pages it fetches. Absolute and mounted, like
     # the two above: the scraper's own default is the relative "data/.cache",
