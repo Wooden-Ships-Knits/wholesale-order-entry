@@ -99,8 +99,13 @@ export const cardPdfUrl = (id) => `/api/admin/orders/${id}/pdf?full=1`
 export const certUrl = (id) => `/api/admin/orders/${id}/certificate`
 
 // Every season with a wholesale price book, newest first. limit=0 opts out of
-// the 2-season cap the order form uses — notices are built for past seasons.
+// the order form's season list — notices are built for past seasons.
 export const getAllSeasons = () => request('/api/seasons?limit=0')
+
+// The 3 newest seasons, each flagged onForm (shown on the order form).
+export const getFormSeasons = () => request('/api/admin/catalog/seasons')
+export const setFormSeason = (seasonCode, onForm) =>
+  post('/api/admin/catalog/seasons', { season_code: seasonCode, on_form: onForm })
 
 // ---- Payment notice cards ----
 // Photos stream from Drive while the card is drawn, so there is nothing to

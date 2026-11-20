@@ -2,11 +2,12 @@
 
 Admin-only. The list is the same catalogue /api/products serves; the only thing
 stored on this side is the hidden set (app/services/hidden_products.py), one row
-per (season, style, color). Salesforce is never written to.
+per (season, style, color), and which of the 3 newest seasons the order form
+hides (a JSON file, app/services/form_seasons.py). Salesforce is never written to.
 """
 import logging
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -14,7 +15,8 @@ from app.admin.security import AdminRequired
 from app.db.session import get_db
 from app.routers.products import load_rows
 from app.salesforce import mapping
-from app.services import hidden_products
+from app.routers.seasons import all_seasons
+from app.services import form_seasons, hidden_products
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,43 @@ class HiddenRequest(BaseModel):
     style_name: str = Field(min_length=1)
     color: str = Field(min_length=1)
     hidden: bool
+
+
+class FormSeasonRequest(BaseModel):
+    season_code: str = SEASON
+    on_form: bool
+
+
+def _season_rows(seasons: list[dict], on: list[str]) -> dict:
+    on_set = set(on)
+    return {
+        "seasons": [
+            {"code": s["code"], "label": s["label"], "onForm": s["code"] in on_set}
+            for s in seasons
+        ]
+    }
+
+
+@router.get("/catalog/seasons")
+def get_form_seasons() -> dict:
+    """The 3 newest seasons, each flagged with whether the order form shows it."""
+    cands = all_seasons()[: form_seasons.CANDIDATES]
+    codes = [s["code"] for s in cands]
+    return _season_rows(cands, form_seasons.shown(codes, form_seasons.hidden_codes()))
+
+
+@router.post("/catalog/seasons")
+def set_form_season(payload: FormSeasonRequest) -> dict:
+    """Show or hide one of the 3 newest seasons on the order form. One season
+    per request, like /catalog/hidden, so two open tabs don't overwrite each
+    other's ticks."""
+    cands = all_seasons()[: form_seasons.CANDIDATES]
+    codes = [s["code"] for s in cands]
+    try:
+        on = form_seasons.set_shown(payload.season_code, payload.on_form, codes)
+    except (form_seasons.NotACandidateError, form_seasons.LastSeasonError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return _season_rows(cands, on)
 
 
 @router.get("/catalog")

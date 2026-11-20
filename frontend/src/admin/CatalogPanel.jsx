@@ -11,12 +11,15 @@
 // people looking at it, and a whole-list save would have the slower tab
 // overwrite the faster one's work.
 import { useEffect, useMemo, useState } from 'react'
-import { getAllSeasons, getCatalog, setProductHidden } from './api'
+import { getAllSeasons, getCatalog, getFormSeasons, setFormSeason, setProductHidden } from './api'
 
 const rowKey = (r) => `${r.styleName}|||${r.color}`
 
 export default function CatalogPanel() {
   const [seasons, setSeasons] = useState([])
+  // The 3 newest seasons, each with onForm — the "on the order form" ticks.
+  const [formSeasons, setFormSeasons] = useState([])
+  const [savingSeason, setSavingSeason] = useState('')
   const [season, setSeason] = useState('')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -31,7 +34,31 @@ export default function CatalogPanel() {
     getAllSeasons()
       .then((d) => setSeasons(d.seasons))
       .catch((e) => setError(`Could not load collections: ${e.message}`))
+    getFormSeasons()
+      .then((d) => setFormSeasons(d.seasons))
+      .catch((e) => setError(`Could not load the order form's collections: ${e.message}`))
   }, [])
+
+  async function toggleFormSeason(s) {
+    if (savingSeason) return
+    const next = !s.onForm
+    setFormSeasons((prev) => prev.map((x) => (x.code === s.code ? { ...x, onForm: next } : x)))
+    setSavingSeason(s.code)
+    setError('')
+    try {
+      // The server answers with all 3, so a tick another admin saved
+      // meanwhile shows up too.
+      const d = await setFormSeason(s.code, next)
+      setFormSeasons(d.seasons)
+    } catch (e) {
+      setFormSeasons((prev) => prev.map((x) => (x.code === s.code ? { ...x, onForm: !next } : x)))
+      setError(`Could not update ${s.label}: ${e.message}`)
+    } finally {
+      setSavingSeason('')
+    }
+  }
+
+  const onFormCount = formSeasons.filter((s) => s.onForm).length
 
   async function chooseSeason(code) {
     setSeason(code)
@@ -100,6 +127,38 @@ export default function CatalogPanel() {
 
   return (
     <section className="catalog-panel">
+      {/* Which collections the order form's picker offers. Saved per click,
+          like the product ticks below. */}
+      <fieldset className="catalog-form-seasons">
+        <legend>Collections on the order form</legend>
+        <p className="catalog-intro">
+          The order form offers the 3 newest collections. Untick one to take it off
+          the form&rsquo;s Collection picker.
+        </p>
+        <div className="catalog-season-ticks">
+          {formSeasons.map((s) => {
+            // The last ticked box can't be cleared: an order form with no
+            // collection can't take an order. The server refuses it too.
+            const last = s.onForm && onFormCount === 1
+            return (
+              <label
+                key={s.code}
+                className={s.onForm ? 'catalog-season on' : 'catalog-season'}
+                title={last ? 'At least one collection has to stay on the order form' : undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!s.onForm}
+                  disabled={Boolean(savingSeason) || last}
+                  onChange={() => toggleFormSeason(s)}
+                />
+                {s.label}
+              </label>
+            )
+          })}
+        </div>
+      </fieldset>
+
       <p className="catalog-intro">
         Tick an item to remove it from the order form's style and colour pickers for
         that collection. Nothing is changed in Salesforce, and orders already placed

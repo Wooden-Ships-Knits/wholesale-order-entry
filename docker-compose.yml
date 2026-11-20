@@ -30,6 +30,9 @@ services:
       # Page cache for prospect scoring. Without this every re-run
       # re-fetches every shop's catalogue.
       - ./output/prospects:/output/prospects
+      # Admin settings saved from /admin (which collections the order form
+      # sells). A plain JSON file — must survive a rebuild.
+      - ./output/settings:/output/settings
       # Google service-account key (read-only) for the ship-window sheet.
       - ./backend/credentials/dialy-report-automation-e20c53e67542.json:/credentials/service-account.json:ro
     depends_on:

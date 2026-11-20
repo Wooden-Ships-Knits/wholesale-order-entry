@@ -41,7 +41,7 @@ The web form must contain **every field and section present in the Excel order f
 ## 4. Key flow
 
 1. The form asks **who is filling it in** ("Filled by": Sales Representative / Customer — required). Choosing Sales Representative reveals the Internal Use section at the top of the form.
-2. Buyer selects a **collection / season** code (e.g. Fall 2026 / F26) — the selector offers the **two most recent seasons** (interim decision, see §9) — and a **ship window** (rolling calendar months).
+2. Buyer selects a **collection / season** code (e.g. Fall 2026 / F26) — the selector offers the three newest seasons, minus any the team has unticked in /admin → Catalog — and a **ship window** (rolling calendar months).
 3. The product table loads live from Salesforce (style, color, price) for that season.
 4. Buyer enters **email, store name, or Salesforce account ID**; the system looks up Salesforce and, on a match, auto-fills Bill To / Ship To / tax ID. If multiple matches, buyer picks from a dropdown. If none, fields are entered manually — and the order is treated as a **new account** (Payment and Tax-exemption sections appear).
 5. Addresses can be typed manually or filled via **Google Maps Places search** (one search box per address; captures lat/lng). Ship To offers "Same as Bill To".
@@ -57,7 +57,7 @@ _See `architecture.md` and `wooden-ships-order-flow.mermaid` / `.drawio` for the
 The website must reproduce all fields from the Excel form. Fields marked _auto_ are populated by Salesforce or computed.
 
 ### 5.1 Order header
-- Collection / season selector (drives product list; offers the two most recent seasons — see §9)
+- Collection / season selector (drives product list; offers the three newest seasons, minus any unticked in /admin → Catalog — see §9)
 - Order date
 - Order total $$ _(auto)_
 - **Filled by** (Sales Representative / Customer — required; replaces "Part ship OK?", revision 2026-07-16). Selecting Sales Representative reveals the Internal Use section.
@@ -157,7 +157,7 @@ Per row: Code #, Style name, Color, X/S qty, S/M qty, M/L qty, Total qty _(auto)
 - Admin email recipient address(es).
 - Which sizes are true SKUs for the "2 pcs per SKU" rule — the Salesforce data model supports the assumption (each style × color × size is its own `Product2` record); confirm the business rule counts SKUs the same way.
 - Whether Bill To buyer name should also be validated against Salesforce.
-- **Which seasons to sell right now** — the seasons endpoint currently returns only the two most recent wholesale price books (interim code decision 2026-07-16); confirm with the team.
+- ~~**Which seasons to sell right now**~~ — resolved 2026-11-20: the three newest, and the team can untick any of them in /admin → Catalog → Collections on the order form.
 - **Uploaded tax-cert retention** — certs are saved beside the order PDFs; confirm retention period and who may access them.
 - **Address lat/lng** — captured by the Google Maps search and stored with the order; confirm whether/how they should sync to Salesforce.
 - **Conflict check UI** — the nearby-stockist API (§5.12) exists; decide where it surfaces (on the form at submit, an admin review screen, or a rep tool) and whether a conflict blocks submission or just warns.
